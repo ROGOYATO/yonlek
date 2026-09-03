@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
@@ -489,5 +489,141 @@ describe('WorkspaceRoot priority sorting', () => {
       high.id,
       normal.id,
     ])
+  })
+})
+
+
+describe('WorkspaceRoot project task summary', () => {
+  it('shows project completion counts and updates them with task status', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const project = commands.addProject('Robotics Research')
+    commands.addTask(project.id, 'Draft experiment plan')
+    const doing = commands.addTask(project.id, 'Run camera calibration')
+    const done = commands.addTask(project.id, 'Review safety checklist')
+    commands.changeTaskStatus(doing.id, 'doing')
+    commands.changeTaskStatus(done.id, 'done')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    expect(screen.getByText('1 of 3 tasks done')).toBeTruthy()
+
+    await user.selectOptions(
+      screen.getByLabelText('Status for Run camera calibration'),
+      'done',
+    )
+
+    expect(screen.getByText('2 of 3 tasks done')).toBeTruthy()
+  })
+})
+
+
+describe('WorkspaceRoot project focus', () => {
+  it('shows one selected project and keeps focus when that project is renamed', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const robotics = commands.addProject('Robotics Research')
+    const field = commands.addProject('Field Tests')
+    commands.addTask(robotics.id, 'Draft experiment plan')
+    commands.addTask(field.id, 'Inspect test site')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.selectOptions(screen.getByLabelText('View project'), field.id)
+
+    expect(
+      screen.queryByRole('heading', { name: 'Robotics Research' }),
+    ).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Field Tests' })).toBeTruthy()
+
+    await act(async () => {
+      commands.renameProject(field.id, 'Outdoor Trials')
+    })
+
+    expect(
+      (screen.getByLabelText('View project') as HTMLSelectElement).value,
+    ).toBe(field.id)
+    expect(screen.getByRole('heading', { name: 'Outdoor Trials' })).toBeTruthy()
+    expect(
+      screen.queryByRole('heading', { name: 'Robotics Research' }),
+    ).toBeNull()
+  })
+})
+
+
+describe('WorkspaceRoot project focus deletion', () => {
+  it('falls back to all projects when the selected project is deleted', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    commands.addProject('Robotics Research')
+    const field = commands.addProject('Field Tests')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.selectOptions(screen.getByLabelText('View project'), field.id)
+    await user.click(
+      screen.getByRole('button', { name: 'Delete project Field Tests' }),
+    )
+
+    expect(
+      (screen.getByLabelText('View project') as HTMLSelectElement).value,
+    ).toBe('all')
+    expect(
+      screen.getByRole('heading', { name: 'Robotics Research' }),
+    ).toBeTruthy()
+  })
+})
+
+
+describe('WorkspaceRoot project selector counts', () => {
+  it('shows task counts in project choices', () => {
+    const { store, commands } = createTestApplication()
+    const robotics = commands.addProject('Robotics Research')
+    commands.addProject('Field Tests')
+    commands.addTask(robotics.id, 'Draft experiment plan')
+    commands.addTask(robotics.id, 'Review safety checklist')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    expect(
+      screen.getByRole('option', { name: 'Robotics Research (2 tasks)' }),
+    ).toBeTruthy()
+    expect(
+      screen.getByRole('option', { name: 'Field Tests (0 tasks)' }),
+    ).toBeTruthy()
+  })
+})
+
+
+describe('WorkspaceRoot visible task count', () => {
+  it('shows how many project tasks remain visible after filtering', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const project = commands.addProject('Robotics Research')
+    commands.addTask(project.id, 'Draft experiment plan')
+    const high = commands.addTask(project.id, 'Review safety checklist')
+    commands.changeTaskPriority(high.id, 'high')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.selectOptions(screen.getByLabelText('Filter by priority'), 'high')
+
+    expect(screen.getByText('Showing 1 of 2 tasks')).toBeTruthy()
+  })
+})
+
+
+describe('WorkspaceRoot workspace summary', () => {
+  it('shows aggregate project, task, and completed-task counts', () => {
+    const { store, commands } = createTestApplication()
+    const robotics = commands.addProject('Robotics Research')
+    const field = commands.addProject('Field Tests')
+    const done = commands.addTask(robotics.id, 'Review safety checklist')
+    commands.addTask(field.id, 'Inspect test site')
+    commands.changeTaskStatus(done.id, 'done')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    expect(screen.getByText('2 projects · 2 tasks · 1 done')).toBeTruthy()
   })
 })

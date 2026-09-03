@@ -5,6 +5,7 @@ import {
   type TaskDueDateFilter,
 } from './domain/task-filter'
 import { sortTasks, type TaskSort } from './domain/task-sort'
+import { summarizeTasks } from './domain/task-summary'
 import type { TaskPriority, TaskStatus } from './domain/task'
 import { emptyWorkspace, type WorkspaceState } from './domain/workspace'
 
@@ -49,6 +50,7 @@ export function App({
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all')
   const [dueDateFilter, setDueDateFilter] = useState<TaskDueDateFilter>('all')
   const [taskSort, setTaskSort] = useState<TaskSort>('created')
+  const [projectView, setProjectView] = useState<string>('all')
   const [error, setError] = useState<string | null>(null)
 
   function submitProject(event: FormEvent<HTMLFormElement>) {
@@ -67,9 +69,47 @@ export function App({
     }
   }
 
+  const workspaceSummary = summarizeTasks(state.tasks)
+  const projectLabel = state.projects.length === 1 ? 'project' : 'projects'
+  const taskLabel = workspaceSummary.total === 1 ? 'task' : 'tasks'
+
+  const effectiveProjectView =
+    projectView === 'all' ||
+    state.projects.some((project) => project.id === projectView)
+      ? projectView
+      : 'all'
+  const visibleProjects = state.projects.filter(
+    (project) =>
+      effectiveProjectView === 'all' || project.id === effectiveProjectView,
+  )
+
   return (
     <main>
       <h1>Workspace</h1>
+      <p className="workspace-summary">
+        {state.projects.length} {projectLabel} · {workspaceSummary.total}{' '}
+        {taskLabel} · {workspaceSummary.done} done
+      </p>
+
+      <label htmlFor="project-view">View project</label>
+      <select
+        id="project-view"
+        value={effectiveProjectView}
+        onChange={(event) => setProjectView(event.target.value)}
+      >
+        <option value="all">All projects</option>
+        {state.projects.map((project) => {
+          const taskCount = state.tasks.filter(
+            (task) => task.projectId === project.id,
+          ).length
+
+          return (
+            <option key={project.id} value={project.id}>
+              {project.name} ({taskCount} tasks)
+            </option>
+          )
+        })}
+      </select>
 
       {error ? <p role="alert">{error}</p> : null}
 
@@ -164,7 +204,7 @@ export function App({
       {state.projects.length === 0 ? (
         <p>No projects yet.</p>
       ) : (
-        state.projects.map((project) => {
+        visibleProjects.map((project) => {
           const projectTasks = state.tasks.filter(
             (task) => task.projectId === project.id,
           )
@@ -179,10 +219,18 @@ export function App({
           )
           const taskTitle = taskTitles[project.id] ?? ''
           const editedProjectName = projectEdits[project.id] ?? project.name
+          const projectSummary = summarizeTasks(projectTasks)
 
           return (
             <section key={project.id}>
               <h2>{project.name}</h2>
+              <p className="project-summary">
+                {projectSummary.done} of {projectSummary.total} tasks done
+              </p>
+
+              <p className="project-visible-count">
+                Showing {tasks.length} of {projectTasks.length} tasks
+              </p>
 
               {onRenameProject ? (
                 <form

@@ -169,3 +169,37 @@ Browser recovery belongs above the persistence boundary. Storage parsing keeps a
 stable `Workspace storage is invalid` contract; BrowserApp converts that failure
 to a user-facing recovery state and can deliberately replace invalid saved data
 with an empty versioned workspace.
+
+
+## Project-focus view state
+
+Project focus is presentation state keyed by immutable project ID, not by project
+name. Renaming therefore preserves focus. If the selected ID no longer exists,
+derive an effective `all` selection rather than mutating state during render.
+
+Project focus is intentionally not persisted in the workspace storage document.
+Do not expand the persisted schema for a UI preference without a separate tested
+storage design/migration decision.
+
+## Living documentation and handoff
+
+When a run teaches a durable rule, confirms a checkpoint, exposes a useful
+failure mode, or changes architecture/behavior, update the relevant Markdown in
+the next applicable bundle/maintenance step and update the aligned handoff.
+Preserve useful historical fixes and always distinguish user-confirmed live state
+from prepared target state.
+
+
+## React external-store test synchronization
+
+`WorkspaceRoot` consumes the application store through `useSyncExternalStore`.
+When a test mutates that external store directly after `render`, synchronize the
+mutation with React before reading the DOM.
+
+Use `act(...)`, `findBy...`, or `waitFor(...)` as appropriate. This is required
+for test synchronization only; do not weaken the product assertion or add
+artificial production delays.
+
+TDD 056 is the reference case: a direct `commands.renameProject(...)` call after
+render was wrapped in `act(...)`, while the selected-project and renamed-heading
+assertions stayed unchanged.

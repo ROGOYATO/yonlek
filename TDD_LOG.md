@@ -177,3 +177,56 @@ Lint: 0 warnings, 0 errors
 The persistence parser deliberately distinguishes an unsupported version from
 invalid data. BrowserApp does not parse storage independently; it catches the
 storage boundary's stable error and owns the user-facing recovery action.
+
+
+## Confirmed checkpoint after cycle 053
+
+User-confirmed at commit `ab244c6`:
+
+```text
+Tests: 82 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+git diff --check: passed
+Working tree: clean after commit
+```
+
+
+## Cycles 054-060
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 054 | Task summary counts total/todo/doing/done | GREEN |
+| 055 | Per-project completed-task summary updates with task status | GREEN |
+| 056 | Focus one project by ID; rename preserves focus | GREEN |
+| 057 | Deleting the focused project falls back to all projects | GREEN |
+| 058 | Project selector includes task counts | GREEN |
+| 059 | Project view reports visible vs total tasks after filters | GREEN |
+| 060 | Workspace aggregate project/task/done summary | GREEN |
+
+Expected successful checkpoint:
+
+```text
+Tests: 90 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+```
+
+Project focus remains UI state only. It stores project IDs rather than names and
+uses a derived fallback when the selected project disappears.
+
+Documentation/handoff maintenance is a living-project rule from the confirmed
+TDD 053 checkpoint onward.
+
+
+## TDD 056 test synchronization correction
+
+The first TDD 056 GREEN verification exposed a React test synchronization issue,
+not a product-behavior defect. The project selector retained the selected
+project ID, but the test called `commands.renameProject(...)` directly after
+render and asserted the renamed heading before React flushed the
+`useSyncExternalStore` update.
+
+With user approval, only that mutation was wrapped in `act(...)`. Behavioral
+assertions were left unchanged. The corrected focused GREEN must pass before
+TDD 057 begins.

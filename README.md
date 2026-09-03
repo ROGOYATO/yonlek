@@ -6,14 +6,13 @@ The current implementation is intentionally small. It is being developed as a se
 
 ## Current checkpoint
 
-Live checkpoint before the workflow update:
+Prepared checkpoint for this batch:
 
-- branch: `main`
-- current commit before this batch: `f0be272` (`TDD 031-038: add due dates and task sorting`)
-- TDD state: cycle 053 GREEN
-- tests: 82 passing
-- production build: passing after the Vite client type declaration correction
-- lint: 0 warnings, 0 errors
+- starting commit: `ab244c6` (`TDD 046-053: harden workspace persistence recovery`)
+- TDD state: cycle 060 GREEN
+- tests: 90 passing
+- production build: expected passing
+- lint: expected 0 warnings, 0 errors
 
 ## Implemented behavior
 
@@ -22,7 +21,11 @@ Projects:
 - create a project;
 - reject a blank project name;
 - rename a project with the same validation rule;
-- delete a project and its tasks.
+- delete a project and its tasks;
+- show per-project completion and visible-task counts;
+- focus the workspace on one project by stable project ID;
+- fall back to all projects if the focused project is deleted;
+- show task counts in the project selector.
 
 Tasks:
 
@@ -42,9 +45,13 @@ Tasks:
 Application:
 
 - browser startup loads versioned workspace data from `localStorage`;
-- accepted workspace actions are persisted;
+- accepted workspace actions are persisted transactionally;
+- failed persistence writes do not advance in-memory state or subscribers;
+- stored project/task data and relationships are validated before loading;
+- invalid saved data has a browser recovery/reset path;
 - React subscribes to the workspace store;
-- project and task validation failures are shown to the user instead of escaping the event handler.
+- project and task validation failures are shown to the user instead of escaping the event handler;
+- the project-focus selection is presentation state and is not persisted yet.
 
 ## Architecture
 
@@ -141,6 +148,21 @@ The Windows PowerShell bundle workflow has a few rules that are now part of the 
 - Complete terminal output is saved under `.tdd-logs/`. The runner never calls `exit`, `git reset --hard`, or `git clean`.
 
 If a bundle stops, use its log and current `git status --short` as the basis for the next resume bundle instead of manually applying later GREEN patches.
+
+
+## Living project documentation
+
+`README.md`, `CONTRIBUTING.md`, `TDD_LOG.md`, and the aligned handoff are living
+project state. Durable workflow rules, failure modes, architecture decisions, and
+confirmed checkpoints are folded into the relevant Markdown/handoff instead of
+being left only in chat history. Handoffs distinguish user-confirmed live state
+from prepared target state.
+
+
+Project view state is intentionally not persisted yet. The selected project is
+held as React UI state keyed by immutable project ID, so project renames preserve
+focus and deleting the selected project can fall back to the all-projects view
+without a persistence migration.
 
 ## Hosting and backend status
 

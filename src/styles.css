@@ -198,3 +198,19 @@ textarea {
   min-height: 88px;
   resize: vertical;
 }
+
+.workspace-summary {
+  margin: -14px 0 22px;
+  color: #596273;
+  font-weight: 700;
+}
+
+.project-summary,
+.project-visible-count {
+  margin: 4px 0;
+  color: #596273;
+}
+
+.project-visible-count {
+  font-size: 0.9rem;
+}
