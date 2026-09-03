@@ -1,0 +1,33 @@
+import { useSyncExternalStore } from 'react'
+
+import { App } from './App'
+import type { WorkspaceCommands } from './application/workspace-commands'
+import type { WorkspaceStore } from './application/workspace-store'
+
+export interface WorkspaceRootProps {
+  store: WorkspaceStore
+  commands: WorkspaceCommands
+}
+
+export function WorkspaceRoot({
+  store,
+  commands,
+}: WorkspaceRootProps) {
+  const state = useSyncExternalStore(
+    store.subscribe,
+    store.getState,
+    store.getState,
+  )
+
+  return (
+    <App
+      state={state}
+      onCreateProject={(name) => {
+        commands.addProject(name)
+      }}
+      onCreateTask={(projectId, title) => {
+        commands.addTask(projectId, title)
+      }}
+    />
+  )
+}
