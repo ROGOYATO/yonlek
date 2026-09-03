@@ -29,6 +29,18 @@ export function WorkspaceRoot({
       state={state}
       initialViewPreferences={initialViewPreferences}
       onViewPreferencesChange={onViewPreferencesChange}
+      onCreateArea={(name) => {
+        commands.addArea(name)
+      }}
+      onRenameArea={(areaId, name) => {
+        commands.renameArea(areaId, name)
+      }}
+      onDeleteArea={(areaId) => {
+        commands.deleteArea(areaId)
+      }}
+      onChangeProjectArea={(projectId, areaId) => {
+        commands.changeProjectArea(projectId, areaId)
+      }}
       onCreateProject={(name) => {
         commands.addProject(name)
       }}

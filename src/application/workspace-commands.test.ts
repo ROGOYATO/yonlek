@@ -200,3 +200,31 @@ describe('project description command', () => {
     expect(store.getState().projects[0]).not.toHaveProperty('description')
   })
 })
+
+
+describe('area commands', () => {
+  it('creates, renames, assigns, and deletes areas through the workspace store', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['area-1', 'project-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-03T19:20:00.000Z',
+    })
+
+    const area = commands.addArea('Engineering')
+    const project = commands.addProject('Robotics Research')
+
+    commands.renameArea(area.id, 'Robotics')
+    commands.changeProjectArea(project.id, area.id)
+
+    expect(store.getState().areas?.[0]?.name).toBe('Robotics')
+    expect(store.getState().projects[0]?.areaId).toBe(area.id)
+
+    commands.deleteArea(area.id)
+
+    expect(store.getState().areas).toEqual([])
+    expect(store.getState().projects[0]).not.toHaveProperty('areaId')
+    expect(loadWorkspace(storage).projects[0]).not.toHaveProperty('areaId')
+  })
+})

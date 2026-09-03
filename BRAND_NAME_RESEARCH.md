@@ -87,3 +87,14 @@ Until formal clearance:
 - internal repo/package: `workspace-app`
 - do not claim registration or legal clearance
 - do not spend heavily on final branding around the name
+
+
+## Implementation status
+
+The user selected **Yönlek** as the working product name.
+
+The application heading, recovery heading, HTML metadata, and npm package name
+use Yönlek / `yonlek`. Existing browser persistence keys intentionally remain
+under `workspace-app.*` until a deliberate data migration exists.
+
+Formal trademark clearance remains pending.

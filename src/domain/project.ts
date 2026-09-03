@@ -3,6 +3,7 @@
   name: string
   createdAt: string
   description?: string
+  areaId?: string
 }
 
 export interface CreateProjectInput {
@@ -55,5 +56,28 @@ export function setProjectDescription(
   return {
     ...project,
     description: normalizedDescription,
+  }
+}
+
+
+export function moveProjectToArea(
+  project: Project,
+  areaId: string | null,
+): Project {
+  if (areaId === null) {
+    const next = { ...project }
+    delete next.areaId
+    return next
+  }
+
+  const normalizedAreaId = areaId.trim()
+
+  if (!normalizedAreaId) {
+    throw new Error('Project area is required')
+  }
+
+  return {
+    ...project,
+    areaId: normalizedAreaId,
   }
 }

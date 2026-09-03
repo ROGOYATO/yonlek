@@ -46,7 +46,21 @@ function isValidProject(value: unknown): boolean {
     value.name.trim().length > 0 &&
     isIsoInstant(value.createdAt) &&
     (value.description === undefined ||
-      typeof value.description === 'string')
+      typeof value.description === 'string') &&
+    (value.areaId === undefined ||
+      (typeof value.areaId === 'string' && value.areaId.trim().length > 0))
+  )
+}
+
+
+function isValidArea(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    value.id.trim().length > 0 &&
+    typeof value.name === 'string' &&
+    value.name.trim().length > 0 &&
+    isIsoInstant(value.createdAt)
   )
 }
 
@@ -115,15 +129,37 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
 
   if (
     !isRecord(workspace) ||
+    (workspace.areas !== undefined && !Array.isArray(workspace.areas)) ||
     !Array.isArray(workspace.projects) ||
     !Array.isArray(workspace.tasks)
   ) {
     invalidStorage()
   }
 
+  const areas = workspace.areas ?? []
+
   if (
+    !areas.every(isValidArea) ||
     !workspace.projects.every(isValidProject) ||
     !workspace.tasks.every(isValidTask)
+  ) {
+    invalidStorage()
+  }
+
+  const areaIds = new Set(
+    areas.map((area) => (area as { id: string }).id),
+  )
+
+  if (areaIds.size !== areas.length) {
+    invalidStorage()
+  }
+
+  if (
+    workspace.projects.some(
+      (project) =>
+        (project as { areaId?: string }).areaId !== undefined &&
+        !areaIds.has((project as { areaId: string }).areaId),
+    )
   ) {
     invalidStorage()
   }

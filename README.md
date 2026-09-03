@@ -1,4 +1,4 @@
-# Workspace App
+# Yönlek
 
 A local-first project and task manager built with React, Vite, and TypeScript.
 
@@ -9,16 +9,27 @@ The current implementation is intentionally small. It is being developed as a se
 Starting checkpoint for this batch:
 
 - branch: `main`
-- commit: `eb21884` (`TDD 069-075: harden preference and workspace storage`)
-- TDD state: cycle 084 GREEN
-- tests: 126 passing
+- commit: `142e051` (`TDD 076-084: add task moves and project descriptions`)
+- TDD state: cycle 092 GREEN
+- tests: 148 passing
 - production build: passing
 - lint: 0 warnings, 0 errors
 
-See [`FEATURES.md`](./FEATURES.md) for the maintained bare-bone feature
-checklist and deferred UI-polish roadmap.
+Yönlek is now the product-facing working name. Existing persistence keys remain
+`workspace-app.*` so branding does not strand previously saved local data.
+
+See [`FEATURES.md`](./FEATURES.md) for the maintained feature-first roadmap.
 
 ## Implemented behavior
+
+Areas:
+
+- create, rename, and delete Areas;
+- optionally assign Projects to Areas;
+- delete Areas without deleting Projects;
+- clear Project Area assignments when an Area is deleted;
+- show per-Area Project counts;
+- persist and validate Area records and Project-to-Area relationships.
 
 Projects:
 
@@ -259,3 +270,18 @@ Workspace
 `BRAND_NAME_RESEARCH.md` records preliminary naming research. `Yönlek` is a
 working candidate only; it is not considered legally cleared until official
 trademark searches are completed.
+
+
+Hierarchy direction:
+
+```text
+Workspace
+→ Area
+→ Project
+→ List
+→ Task
+→ Subtask
+```
+
+The `areas` field is an additive optional field in storage version 1. Older
+saved workspaces without Areas remain valid.

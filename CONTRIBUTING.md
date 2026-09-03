@@ -289,3 +289,61 @@ Do not copy:
 
 Prefer our own hierarchy, terminology, interaction details, and visual identity.
 Use `CLICKUP_REFERENCE.md` as the maintained reference for this rule.
+
+
+## Product identity and persistence identifiers
+
+The visible working product name is **Yönlek** and the npm package name is
+`yonlek`.
+
+Do not rename `workspace-app.workspace` or
+`workspace-app.view-preferences` merely for branding. They are established
+persistence identifiers; changing them without migration would strand existing
+local data.
+
+## Areas
+
+Areas are optional durable groupings above Projects.
+
+- Project identity is unchanged by Area assignment.
+- Deleting an Area preserves its Projects and clears their `areaId`.
+- Version-1 workspace documents without `areas` remain valid.
+- When Areas are present, validate records, duplicate Area IDs, and
+  Project-to-Area references.
+- Keep Area behavior separate from the eventual visual navigation design.
+
+
+## Repository-file access in jsdom tests
+
+A Vitest test running under `jsdom` must not assume that `import.meta.url`
+resolves to a Node `file:` URL.
+
+When a test needs to inspect repository files such as `index.html` or
+`package.json`, use an explicit filesystem path rooted at the repository, for
+example:
+
+```ts
+import { resolve } from 'node:path'
+
+readFileSync(resolve(process.cwd(), 'index.html'), 'utf8')
+```
+
+TDD 085 is the reference case. The original test used
+`readFileSync(new URL(..., import.meta.url))` and failed before reaching its
+product assertions because the URL scheme was not `file:` under the jsdom
+execution. The approved correction changed only file location; all Yönlek and
+storage-key assertions remained unchanged.
+
+
+## RED markers for missing-module cycles
+
+When the intended first RED is that a new module does not exist yet, Vitest can
+fail during module collection before individual `it(...)` cases are collected.
+In that situation, RED validation must use stable file/module markers, for
+example the test file path and `Cannot find module './area'`.
+
+Do not require individual test-case names for a collection-time missing-module
+RED because those names may never appear in output.
+
+TDD 086 is the reference case. The test itself was correct and remained
+unchanged; only the fail-fast runner's expected RED markers were corrected.

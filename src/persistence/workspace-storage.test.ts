@@ -474,3 +474,107 @@ it('loads a valid optional project description', () => {
     'Camera-guided robotics experiments.',
   )
 })
+
+
+describe('area persistence', () => {
+  it('round-trips areas and project area assignments', () => {
+    const store = new MemoryStore()
+    const workspace = {
+      areas: [
+        {
+          id: 'area-1',
+          name: 'Engineering',
+          createdAt: '2026-09-03T19:40:00.000Z',
+        },
+      ],
+      projects: [
+        {
+          id: 'project-1',
+          name: 'Robotics Research',
+          createdAt: '2026-09-03T19:41:00.000Z',
+          areaId: 'area-1',
+        },
+      ],
+      tasks: [],
+    }
+
+    saveWorkspace(store, workspace)
+
+    expect(loadWorkspace(store)).toEqual(workspace)
+  })
+
+  it('rejects an invalid persisted area record', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            areas: [
+              {
+                id: 'area-1',
+                name: 42,
+                createdAt: '2026-09-03T19:40:00.000Z',
+              },
+            ],
+            projects: [],
+            tasks: [],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects duplicate persisted area ids', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            areas: [
+              {
+                id: 'area-1',
+                name: 'Engineering',
+                createdAt: '2026-09-03T19:40:00.000Z',
+              },
+              {
+                id: 'area-1',
+                name: 'Operations',
+                createdAt: '2026-09-03T19:41:00.000Z',
+              },
+            ],
+            projects: [],
+            tasks: [],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects a project that references a missing area', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            areas: [],
+            projects: [
+              {
+                id: 'project-1',
+                name: 'Robotics Research',
+                createdAt: '2026-09-03T19:41:00.000Z',
+                areaId: 'missing-area',
+              },
+            ],
+            tasks: [],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+})

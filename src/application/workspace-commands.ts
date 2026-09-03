@@ -1,3 +1,4 @@
+import { createArea } from '../domain/area'
 import { createProject } from '../domain/project'
 import {
   createTask,
@@ -12,6 +13,10 @@ export interface WorkspaceRuntime {
 }
 
 export interface WorkspaceCommands {
+  addArea(name: string): ReturnType<typeof createArea>
+  renameArea(areaId: string, name: string): void
+  deleteArea(areaId: string): void
+  changeProjectArea(projectId: string, areaId: string | null): void
   addProject(name: string): ReturnType<typeof createProject>
   addTask(projectId: string, title: string): ReturnType<typeof createTask>
   renameProject(projectId: string, name: string): void
@@ -31,6 +36,44 @@ export function createWorkspaceCommands(
   runtime: WorkspaceRuntime,
 ): WorkspaceCommands {
   return {
+    addArea(name) {
+      const area = createArea({
+        id: runtime.nextId(),
+        name,
+        now: runtime.now(),
+      })
+
+      store.dispatch({
+        type: 'area/added',
+        area,
+      })
+
+      return area
+    },
+
+    renameArea(areaId, name) {
+      store.dispatch({
+        type: 'area/nameChanged',
+        areaId,
+        name,
+      })
+    },
+
+    deleteArea(areaId) {
+      store.dispatch({
+        type: 'area/deleted',
+        areaId,
+      })
+    },
+
+    changeProjectArea(projectId, areaId) {
+      store.dispatch({
+        type: 'project/areaChanged',
+        projectId,
+        areaId,
+      })
+    },
+
     addProject(name) {
       const project = createProject({
         id: runtime.nextId(),

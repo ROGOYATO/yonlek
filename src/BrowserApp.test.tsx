@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
+import { createArea } from './domain/area'
 import { createProject } from './domain/project'
 import { createTask } from './domain/task'
 import { createDefaultViewPreferences } from './domain/view-preferences'
@@ -433,4 +434,43 @@ it('persists a task project move across browser composition reloads', async () =
       ) as HTMLSelectElement
     ).value,
   ).toBe(field.id)
+})
+
+
+it('restores areas and project area assignments from browser storage', () => {
+  const storage = new MemoryStore()
+  const area = createArea({
+    id: 'area-1',
+    name: 'Engineering',
+    now: '2026-09-03T19:45:00.000Z',
+  })
+  const project = {
+    ...createProject({
+      id: 'project-1',
+      name: 'Robotics Research',
+      now: '2026-09-03T19:46:00.000Z',
+    }),
+    areaId: area.id,
+  }
+
+  saveWorkspace(storage, {
+    areas: [area],
+    projects: [project],
+    tasks: [],
+  })
+
+  render(
+    <BrowserApp
+      storage={storage}
+      runtime={{
+        nextId: () => 'unused-id',
+        now: () => '2026-09-03T19:47:00.000Z',
+      }}
+    />,
+  )
+
+  expect(
+    (screen.getByLabelText('Area for Robotics Research') as HTMLSelectElement)
+      .value,
+  ).toBe(area.id)
 })

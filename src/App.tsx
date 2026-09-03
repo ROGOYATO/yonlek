@@ -16,6 +16,10 @@ import { emptyWorkspace, type WorkspaceState } from './domain/workspace'
 
 export interface AppProps {
   state?: WorkspaceState
+  onCreateArea?: (name: string) => void
+  onRenameArea?: (areaId: string, name: string) => void
+  onDeleteArea?: (areaId: string) => void
+  onChangeProjectArea?: (projectId: string, areaId: string | null) => void
   onCreateProject?: (name: string) => void
   onRenameProject?: (projectId: string, name: string) => void
   onChangeProjectDescription?: (projectId: string, description: string | null) => void
@@ -38,6 +42,10 @@ function errorMessage(error: unknown): string {
 
 export function App({
   state = emptyWorkspace,
+  onCreateArea,
+  onRenameArea,
+  onDeleteArea,
+  onChangeProjectArea,
   onCreateProject,
   onRenameProject,
   onChangeProjectDescription,
@@ -53,6 +61,8 @@ export function App({
   initialViewPreferences = createDefaultViewPreferences(),
   onViewPreferencesChange,
 }: AppProps) {
+  const [areaName, setAreaName] = useState('')
+  const [areaEdits, setAreaEdits] = useState<Record<string, string>>({})
   const [projectName, setProjectName] = useState('')
   const [projectEdits, setProjectEdits] = useState<Record<string, string>>({})
   const [projectDescriptions, setProjectDescriptions] = useState<Record<string, string>>({})
@@ -80,6 +90,22 @@ export function App({
   }
   const [error, setError] = useState<string | null>(null)
 
+  function submitArea(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!onCreateArea) {
+      return
+    }
+
+    try {
+      onCreateArea(areaName)
+      setAreaName('')
+      setError(null)
+    } catch (caught) {
+      setError(errorMessage(caught))
+    }
+  }
+
   function submitProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -96,6 +122,7 @@ export function App({
     }
   }
 
+  const areas = state.areas ?? []
   const workspaceSummary = summarizeTasks(state.tasks)
   const projectLabel = state.projects.length === 1 ? 'project' : 'projects'
   const taskLabel = workspaceSummary.total === 1 ? 'task' : 'tasks'
@@ -112,7 +139,7 @@ export function App({
 
   return (
     <main>
-      <h1>Workspace</h1>
+      <h1>Yönlek</h1>
       <p className="workspace-summary">
         {state.projects.length} {projectLabel} · {workspaceSummary.total}{' '}
         {taskLabel} · {workspaceSummary.done} done
@@ -226,6 +253,96 @@ export function App({
         Clear task filters
       </button>
 
+      {onCreateArea ? (
+        <section>
+          <h2>Areas</h2>
+          <form onSubmit={submitArea}>
+            <label htmlFor="area-name">Area name</label>
+            <input
+              id="area-name"
+              value={areaName}
+              onChange={(event) => setAreaName(event.target.value)}
+            />
+            <button type="submit">Add area</button>
+          </form>
+
+          {areas.length === 0 ? (
+            <p>No areas yet.</p>
+          ) : (
+            <ul>
+              {areas.map((area) => {
+                const editedAreaName = areaEdits[area.id] ?? area.name
+
+                return (
+                  <li key={area.id}>
+                    <span>
+                      {area.name} (
+                      {
+                        state.projects.filter(
+                          (project) => project.areaId === area.id,
+                        ).length
+                      }{' '}
+                      {
+                        state.projects.filter(
+                          (project) => project.areaId === area.id,
+                        ).length === 1
+                          ? 'project'
+                          : 'projects'
+                      }
+                      )
+                    </span>
+                    {onRenameArea ? (
+                      <form
+                        onSubmit={(event) => {
+                          event.preventDefault()
+
+                          try {
+                            onRenameArea(area.id, editedAreaName)
+                            setAreaEdits((current) => {
+                              const next = { ...current }
+                              delete next[area.id]
+                              return next
+                            })
+                            setError(null)
+                          } catch (caught) {
+                            setError(errorMessage(caught))
+                          }
+                        }}
+                      >
+                        <label htmlFor={`area-edit-${area.id}`}>
+                          Name for area {area.name}
+                        </label>
+                        <input
+                          id={`area-edit-${area.id}`}
+                          value={editedAreaName}
+                          onChange={(event) =>
+                            setAreaEdits((current) => ({
+                              ...current,
+                              [area.id]: event.target.value,
+                            }))
+                          }
+                        />
+                        <button type="submit">
+                          Save area name for {area.name}
+                        </button>
+                      </form>
+                    ) : null}
+                    {onDeleteArea ? (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteArea(area.id)}
+                      >
+                        Delete area {area.name}
+                      </button>
+                    ) : null}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+      ) : null}
+
       {onCreateProject ? (
         <form onSubmit={submitProject}>
           <label htmlFor="project-name">Project name</label>
@@ -270,6 +387,31 @@ export function App({
               <p className="project-visible-count">
                 Showing {tasks.length} of {projectTasks.length} tasks
               </p>
+
+              {onChangeProjectArea ? (
+                <>
+                  <label htmlFor={`project-area-${project.id}`}>
+                    Area for {project.name}
+                  </label>
+                  <select
+                    id={`project-area-${project.id}`}
+                    value={project.areaId ?? ''}
+                    onChange={(event) =>
+                      onChangeProjectArea(
+                        project.id,
+                        event.target.value || null,
+                      )
+                    }
+                  >
+                    <option value="">No area</option>
+                    {areas.map((area) => (
+                      <option key={area.id} value={area.id}>
+                        {area.name}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              ) : null}
 
               {onRenameProject ? (
                 <form

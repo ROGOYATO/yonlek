@@ -806,3 +806,85 @@ describe('WorkspaceRoot project description', () => {
     expect(store.getState().projects[0]).not.toHaveProperty('description')
   })
 })
+
+
+describe('WorkspaceRoot areas', () => {
+  function createAreaApplication() {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['area-1', 'project-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-03T19:30:00.000Z',
+    })
+
+    return { store, commands }
+  }
+
+  it('lets a user create, rename, and delete an area', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createAreaApplication()
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.type(screen.getByLabelText('Area name'), 'Engineering')
+    await user.click(screen.getByRole('button', { name: 'Add area' }))
+
+    expect(store.getState().areas?.[0]?.name).toBe('Engineering')
+
+    const input = screen.getByLabelText('Name for area Engineering')
+    await user.clear(input)
+    await user.type(input, 'Robotics')
+    await user.click(
+      screen.getByRole('button', { name: 'Save area name for Engineering' }),
+    )
+
+    expect(store.getState().areas?.[0]?.name).toBe('Robotics')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Delete area Robotics' }),
+    )
+
+    expect(store.getState().areas).toEqual([])
+  })
+
+  it('lets a user assign and unassign a project from an area', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createAreaApplication()
+    const area = commands.addArea('Engineering')
+    commands.addProject('Robotics Research')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    const select = screen.getByLabelText('Area for Robotics Research')
+
+    await user.selectOptions(select, area.id)
+    expect(store.getState().projects[0]?.areaId).toBe(area.id)
+
+    await user.selectOptions(select, '')
+    expect(store.getState().projects[0]).not.toHaveProperty('areaId')
+  })
+})
+
+
+describe('WorkspaceRoot area summaries', () => {
+  it('shows how many projects belong to each area', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['area-1', 'area-2', 'project-1', 'project-2']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-03T19:50:00.000Z',
+    })
+    const engineering = commands.addArea('Engineering')
+    commands.addArea('Operations')
+    const robotics = commands.addProject('Robotics Research')
+    commands.addProject('Field Tests')
+    commands.changeProjectArea(robotics.id, engineering.id)
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    expect(screen.getByText('Engineering (1 project)')).toBeTruthy()
+    expect(screen.getByText('Operations (0 projects)')).toBeTruthy()
+  })
+})

@@ -342,3 +342,67 @@ Durable decisions:
 - keep `FEATURES.md` as the roadmap;
 - use `CLICKUP_REFERENCE.md` as a legal-safe capability reference;
 - keep `Yönlek` as a preliminary working name only until trademark clearance.
+
+
+## Cycles 085-092
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 085 | Product-facing Yönlek identity while preserving storage keys | GREEN |
+| 086 | Area create/rename domain behavior | GREEN |
+| 087 | Workspace Area add/rename/delete actions | GREEN |
+| 088 | Project-to-Area assignment and Area-delete cleanup | GREEN |
+| 089 | Area and Project-Area application commands | GREEN |
+| 090 | Area management and Project-Area UI | GREEN |
+| 091 | Area persistence validation and browser reload composition | GREEN |
+| 092 | Per-Area Project summaries | GREEN |
+
+Expected successful checkpoint:
+
+```text
+Tests: 148 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+```
+
+No styling-system or visual redesign is part of this batch.
+
+
+## TDD 085 test-harness correction
+
+The first TDD 085 GREEN verification stopped after the product-facing Yönlek
+changes were applied. `App.test.tsx` and the recovery-screen identity assertion
+passed, but the repository-file identity test crashed before checking
+`index.html` or `package.json`.
+
+Cause:
+
+```text
+TypeError: The URL must be of scheme file
+```
+
+The test used `readFileSync(new URL(..., import.meta.url))` under a jsdom
+environment. With user approval, only the file-location mechanism was changed
+to `resolve(process.cwd(), ...)`. No product assertion was weakened or removed.
+
+The corrected TDD 085 focused GREEN must pass before TDD 086 begins.
+
+
+## TDD 086 RED-marker correction
+
+The first TDD 086 run stopped even though the new Area test failed for the
+intended reason: `./area` did not exist yet. Vitest failed while collecting the
+suite, so no individual test names were emitted. The runner had incorrectly
+required those test-name strings.
+
+The test was not changed. The exact stopped RED state was preserved, TDD 086 was
+resumed with `redAlreadyApplied`, and RED validation was corrected to require
+stable file/module markers:
+
+```text
+src/domain/area.test.ts
+Cannot find module './area'
+```
+
+Durable rule: collection-time REDs use collection/file/module evidence rather
+than assertions that cannot run before import succeeds.

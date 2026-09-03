@@ -234,3 +234,111 @@ it('changes a project description without mutating the previous state', () => {
   )
   expect(state.projects[0]).not.toHaveProperty('description')
 })
+
+
+describe('workspace areas', () => {
+  const area = {
+    id: 'area-1',
+    name: 'Engineering',
+    createdAt: '2026-09-03T19:00:00.000Z',
+  }
+
+  it('adds an area', () => {
+    const next = workspaceReducer(
+      { areas: [], projects: [], tasks: [] },
+      { type: 'area/added', area } as never,
+    )
+
+    expect(next.areas).toEqual([area])
+  })
+
+  it('renames an area without mutating the previous state', () => {
+    const state = { areas: [area], projects: [], tasks: [] }
+
+    const next = workspaceReducer(state, {
+      type: 'area/nameChanged',
+      areaId: area.id,
+      name: 'Robotics',
+    } as never)
+
+    expect(next.areas?.[0]?.name).toBe('Robotics')
+    expect(state.areas[0]?.name).toBe('Engineering')
+  })
+
+  it('deletes an area without deleting projects or tasks', () => {
+    const state = {
+      areas: [area],
+      projects: [project],
+      tasks: [task],
+    }
+
+    const next = workspaceReducer(state, {
+      type: 'area/deleted',
+      areaId: area.id,
+    } as never)
+
+    expect(next.areas).toEqual([])
+    expect(next.projects).toEqual([project])
+    expect(next.tasks).toEqual([task])
+  })
+})
+
+
+describe('project area relationships', () => {
+  const area = {
+    id: 'area-1',
+    name: 'Engineering',
+    createdAt: '2026-09-03T19:10:00.000Z',
+  }
+
+  it('assigns a project to an existing area', () => {
+    const state = {
+      areas: [area],
+      projects: [project],
+      tasks: [task],
+    }
+
+    const next = workspaceReducer(state, {
+      type: 'project/areaChanged',
+      projectId: project.id,
+      areaId: area.id,
+    } as never)
+
+    expect(next.projects[0]?.areaId).toBe(area.id)
+    expect(state.projects[0]).not.toHaveProperty('areaId')
+  })
+
+  it('rejects assigning a project to a missing area', () => {
+    expect(() =>
+      workspaceReducer(
+        {
+          areas: [area],
+          projects: [project],
+          tasks: [task],
+        },
+        {
+          type: 'project/areaChanged',
+          projectId: project.id,
+          areaId: 'missing-area',
+        } as never,
+      ),
+    ).toThrow('Cannot move a project to a missing area')
+  })
+
+  it('unassigns projects when their area is deleted', () => {
+    const assignedProject = { ...project, areaId: area.id }
+
+    const next = workspaceReducer(
+      {
+        areas: [area],
+        projects: [assignedProject],
+        tasks: [task],
+      },
+      { type: 'area/deleted', areaId: area.id } as never,
+    )
+
+    expect(next.areas).toEqual([])
+    expect(next.projects[0]).not.toHaveProperty('areaId')
+    expect(next.tasks).toEqual([task])
+  })
+})

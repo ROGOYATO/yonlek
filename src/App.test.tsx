@@ -9,7 +9,7 @@ describe('App', () => {
   it('renders the empty workspace screen', () => {
     const html = renderToStaticMarkup(<App />)
 
-    expect(html).toContain('Workspace')
+    expect(html).toContain('Yönlek')
     expect(html).toContain('No projects yet.')
   })
 

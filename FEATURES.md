@@ -4,7 +4,13 @@ Direction: build an original, feature-rich project/work management product that
 can reach broad capability parity with products such as ClickUp **without**
 copying their protected expression, branding, assets, or distinctive UI.
 
-Current confirmed baseline: `eb21884`.
+Current prepared feature state after TDD 092.
+
+## Product identity
+
+- [x] Product-facing Yönlek identity
+- [x] Existing localStorage keys preserved across branding
+- [ ] Formal Yönlek trademark clearance
 
 ## Product hierarchy
 
@@ -18,7 +24,7 @@ Workspace
 → Subtask
 
 - [x] Workspace domain/persistence boundary
-- [ ] Areas
+- [x] Areas
 - [x] Projects
 - [ ] Lists inside projects
 - [x] Tasks
@@ -35,6 +41,8 @@ Workspace
 - [x] Completion summaries
 - [x] Move tasks between projects
 - [x] Project descriptions
+- [x] Assign projects to Areas
+- [x] Unassign projects when an Area is deleted
 - [ ] Manual project ordering
 - [ ] Archive / restore
 - [ ] Project templates

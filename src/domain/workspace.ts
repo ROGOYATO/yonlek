@@ -1,4 +1,6 @@
+import { renameArea, type Area } from './area'
 import {
+  moveProjectToArea,
   renameProject,
   setProjectDescription,
   type Project,
@@ -14,20 +16,26 @@ import {
 } from './task'
 
 export interface WorkspaceState {
+  areas?: Area[]
   projects: Project[]
   tasks: Task[]
 }
 
 export const emptyWorkspace: WorkspaceState = {
+  areas: [],
   projects: [],
   tasks: [],
 }
 
 export type WorkspaceAction =
+  | { type: 'area/added'; area: Area }
+  | { type: 'area/deleted'; areaId: string }
+  | { type: 'area/nameChanged'; areaId: string; name: string }
   | { type: 'project/added'; project: Project }
   | { type: 'project/deleted'; projectId: string }
   | { type: 'project/nameChanged'; projectId: string; name: string }
   | { type: 'project/descriptionChanged'; projectId: string; description: string | null }
+  | { type: 'project/areaChanged'; projectId: string; areaId: string | null }
   | { type: 'task/added'; task: Task }
   | { type: 'task/statusChanged'; taskId: string; status: TaskStatus }
   | { type: 'task/titleChanged'; taskId: string; title: string }
@@ -42,6 +50,31 @@ export function workspaceReducer(
   action: WorkspaceAction,
 ): WorkspaceState {
   switch (action.type) {
+    case 'area/added':
+      return {
+        ...state,
+        areas: [...(state.areas ?? []), action.area],
+      }
+
+    case 'area/nameChanged':
+      return {
+        ...state,
+        areas: (state.areas ?? []).map((area) =>
+          area.id === action.areaId ? renameArea(area, action.name) : area,
+        ),
+      }
+
+    case 'area/deleted':
+      return {
+        ...state,
+        areas: (state.areas ?? []).filter((area) => area.id !== action.areaId),
+        projects: state.projects.map((project) =>
+          project.areaId === action.areaId
+            ? moveProjectToArea(project, null)
+            : project,
+        ),
+      }
+
     case 'project/added':
       return {
         ...state,
@@ -67,6 +100,24 @@ export function workspaceReducer(
             : project,
         ),
       }
+
+    case 'project/areaChanged': {
+      if (
+        action.areaId !== null &&
+        !(state.areas ?? []).some((area) => area.id === action.areaId)
+      ) {
+        throw new Error('Cannot move a project to a missing area')
+      }
+
+      return {
+        ...state,
+        projects: state.projects.map((project) =>
+          project.id === action.projectId
+            ? moveProjectToArea(project, action.areaId)
+            : project,
+        ),
+      }
+    }
 
     case 'project/deleted':
       return {
