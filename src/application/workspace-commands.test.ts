@@ -155,3 +155,48 @@ describe('task description command', () => {
     expect(store.getState().tasks[0]).not.toHaveProperty('description')
   })
 })
+
+
+describe('task project command', () => {
+  it('moves a task between projects through the workspace store', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'project-2', 'task-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-03T16:30:00.000Z',
+    })
+    const robotics = commands.addProject('Robotics Research')
+    const field = commands.addProject('Field Tests')
+    const task = commands.addTask(robotics.id, 'Draft experiment plan')
+
+    commands.changeTaskProject(task.id, field.id)
+
+    expect(store.getState().tasks[0]?.projectId).toBe(field.id)
+    expect(loadWorkspace(storage).tasks[0]?.projectId).toBe(field.id)
+  })
+})
+
+
+describe('project description command', () => {
+  it('sets and clears a project description through the workspace store', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => 'project-1',
+      now: () => '2026-09-03T17:00:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+
+    commands.changeProjectDescription(
+      project.id,
+      'Camera-guided robotics experiments.',
+    )
+    expect(store.getState().projects[0]?.description).toBe(
+      'Camera-guided robotics experiments.',
+    )
+
+    commands.changeProjectDescription(project.id, null)
+    expect(store.getState().projects[0]).not.toHaveProperty('description')
+  })
+})

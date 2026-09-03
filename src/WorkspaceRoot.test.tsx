@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -705,5 +705,104 @@ describe('WorkspaceRoot view preference changes', () => {
       sort: 'priority',
     })
     expect(store.getState()).toBe(initialState)
+  })
+})
+
+
+describe('WorkspaceRoot task project movement', () => {
+  it('lets a user move a task between project sections', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const robotics = commands.addProject('Robotics Research')
+    const field = commands.addProject('Field Tests')
+    const task = commands.addTask(robotics.id, 'Draft experiment plan')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.selectOptions(
+      screen.getByLabelText('Project for Draft experiment plan'),
+      field.id,
+    )
+
+    expect(store.getState().tasks[0]?.projectId).toBe(field.id)
+
+    const roboticsSection = screen
+      .getByRole('heading', { name: 'Robotics Research' })
+      .closest('section')
+    const fieldSection = screen
+      .getByRole('heading', { name: 'Field Tests' })
+      .closest('section')
+
+    expect(roboticsSection).not.toBeNull()
+    expect(fieldSection).not.toBeNull()
+    expect(within(roboticsSection!).queryByText(task.title)).toBeNull()
+    expect(within(fieldSection!).getByText(task.title)).toBeTruthy()
+  })
+
+  it('keeps project focus while a moved task leaves that project', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const robotics = commands.addProject('Robotics Research')
+    const field = commands.addProject('Field Tests')
+    commands.addTask(robotics.id, 'Draft experiment plan')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.selectOptions(screen.getByLabelText('View project'), robotics.id)
+    await user.selectOptions(
+      screen.getByLabelText('Project for Draft experiment plan'),
+      field.id,
+    )
+
+    expect(
+      (screen.getByLabelText('View project') as HTMLSelectElement).value,
+    ).toBe(robotics.id)
+    expect(screen.queryByText('Draft experiment plan')).toBeNull()
+    expect(screen.getByText('Showing 0 of 0 tasks')).toBeTruthy()
+    expect(
+      screen.getByRole('option', { name: 'Robotics Research (0 tasks)' }),
+    ).toBeTruthy()
+    expect(
+      screen.getByRole('option', { name: 'Field Tests (1 tasks)' }),
+    ).toBeTruthy()
+  })
+})
+
+
+describe('WorkspaceRoot project description', () => {
+  it('lets a user set and clear a project description', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    commands.addProject('Robotics Research')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    const input = screen.getByLabelText('Description for Robotics Research')
+    await user.type(input, 'Camera-guided robotics experiments.')
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Save project description for Robotics Research',
+      }),
+    )
+
+    expect(store.getState().projects[0]?.description).toBe(
+      'Camera-guided robotics experiments.',
+    )
+    expect(
+      (screen.getByLabelText(
+        'Description for Robotics Research',
+      ) as HTMLTextAreaElement).value,
+    ).toBe('Camera-guided robotics experiments.')
+
+    await user.clear(
+      screen.getByLabelText('Description for Robotics Research'),
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Save project description for Robotics Research',
+      }),
+    )
+
+    expect(store.getState().projects[0]).not.toHaveProperty('description')
   })
 })

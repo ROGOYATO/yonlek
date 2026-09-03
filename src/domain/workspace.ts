@@ -1,5 +1,10 @@
-import { renameProject, type Project } from './project'
 import {
+  renameProject,
+  setProjectDescription,
+  type Project,
+} from './project'
+import {
+  moveTaskToProject,
   renameTask,
   setTaskDescription,
   setTaskDueDate,
@@ -22,12 +27,14 @@ export type WorkspaceAction =
   | { type: 'project/added'; project: Project }
   | { type: 'project/deleted'; projectId: string }
   | { type: 'project/nameChanged'; projectId: string; name: string }
+  | { type: 'project/descriptionChanged'; projectId: string; description: string | null }
   | { type: 'task/added'; task: Task }
   | { type: 'task/statusChanged'; taskId: string; status: TaskStatus }
   | { type: 'task/titleChanged'; taskId: string; title: string }
   | { type: 'task/priorityChanged'; taskId: string; priority: TaskPriority }
   | { type: 'task/dueDateChanged'; taskId: string; dueDate: string | null }
   | { type: 'task/descriptionChanged'; taskId: string; description: string | null }
+  | { type: 'task/projectChanged'; taskId: string; projectId: string }
   | { type: 'task/deleted'; taskId: string }
 
 export function workspaceReducer(
@@ -47,6 +54,16 @@ export function workspaceReducer(
         projects: state.projects.map((project) =>
           project.id === action.projectId
             ? renameProject(project, action.name)
+            : project,
+        ),
+      }
+
+    case 'project/descriptionChanged':
+      return {
+        ...state,
+        projects: state.projects.map((project) =>
+          project.id === action.projectId
+            ? setProjectDescription(project, action.description)
             : project,
         ),
       }
@@ -122,6 +139,25 @@ export function workspaceReducer(
             : task,
         ),
       }
+
+    case 'task/projectChanged': {
+      const projectExists = state.projects.some(
+        (project) => project.id === action.projectId,
+      )
+
+      if (!projectExists) {
+        throw new Error('Cannot move a task to a missing project')
+      }
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? moveTaskToProject(task, action.projectId)
+            : task,
+        ),
+      }
+    }
 
     case 'task/deleted':
       return {

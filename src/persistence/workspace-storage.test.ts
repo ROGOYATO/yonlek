@@ -425,3 +425,52 @@ it('rejects an invalid persisted task creation timestamp', () => {
 
   expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
 })
+
+
+it('rejects a non-string persisted project description', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: [
+            {
+              id: 'project-1',
+              name: 'Robotics Research',
+              createdAt: '2026-09-03T17:10:00.000Z',
+              description: 123,
+            },
+          ],
+          tasks: [],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+})
+
+it('loads a valid optional project description', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: [
+            {
+              id: 'project-1',
+              name: 'Robotics Research',
+              createdAt: '2026-09-03T17:11:00.000Z',
+              description: 'Camera-guided robotics experiments.',
+            },
+          ],
+          tasks: [],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(loadWorkspace(store).projects[0]?.description).toBe(
+    'Camera-guided robotics experiments.',
+  )
+})

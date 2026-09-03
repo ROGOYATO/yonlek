@@ -18,6 +18,7 @@ export interface AppProps {
   state?: WorkspaceState
   onCreateProject?: (name: string) => void
   onRenameProject?: (projectId: string, name: string) => void
+  onChangeProjectDescription?: (projectId: string, description: string | null) => void
   onCreateTask?: (projectId: string, title: string) => void
   onDeleteProject?: (projectId: string) => void
   onRenameTask?: (taskId: string, title: string) => void
@@ -26,6 +27,7 @@ export interface AppProps {
   onChangeTaskPriority?: (taskId: string, priority: TaskPriority) => void
   onChangeTaskDueDate?: (taskId: string, dueDate: string | null) => void
   onChangeTaskDescription?: (taskId: string, description: string | null) => void
+  onChangeTaskProject?: (taskId: string, projectId: string) => void
   initialViewPreferences?: ViewPreferences
   onViewPreferencesChange?: (preferences: ViewPreferences) => void
 }
@@ -38,6 +40,7 @@ export function App({
   state = emptyWorkspace,
   onCreateProject,
   onRenameProject,
+  onChangeProjectDescription,
   onCreateTask,
   onDeleteProject,
   onRenameTask,
@@ -46,11 +49,13 @@ export function App({
   onChangeTaskPriority,
   onChangeTaskDueDate,
   onChangeTaskDescription,
+  onChangeTaskProject,
   initialViewPreferences = createDefaultViewPreferences(),
   onViewPreferencesChange,
 }: AppProps) {
   const [projectName, setProjectName] = useState('')
   const [projectEdits, setProjectEdits] = useState<Record<string, string>>({})
+  const [projectDescriptions, setProjectDescriptions] = useState<Record<string, string>>({})
   const [taskTitles, setTaskTitles] = useState<Record<string, string>>({})
   const [taskEdits, setTaskEdits] = useState<Record<string, string>>({})
   const [taskDescriptions, setTaskDescriptions] = useState<Record<string, string>>({})
@@ -251,6 +256,8 @@ export function App({
           )
           const taskTitle = taskTitles[project.id] ?? ''
           const editedProjectName = projectEdits[project.id] ?? project.name
+          const editedProjectDescription =
+            projectDescriptions[project.id] ?? project.description ?? ''
           const projectSummary = summarizeTasks(projectTasks)
 
           return (
@@ -297,6 +304,41 @@ export function App({
                   />
                   <button type="submit">
                     Save project name for {project.name}
+                  </button>
+                </form>
+              ) : null}
+
+              {onChangeProjectDescription ? (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault()
+
+                    onChangeProjectDescription(
+                      project.id,
+                      editedProjectDescription || null,
+                    )
+                    setProjectDescriptions((current) => {
+                      const next = { ...current }
+                      delete next[project.id]
+                      return next
+                    })
+                  }}
+                >
+                  <label htmlFor={`project-description-${project.id}`}>
+                    Description for {project.name}
+                  </label>
+                  <textarea
+                    id={`project-description-${project.id}`}
+                    value={editedProjectDescription}
+                    onChange={(event) =>
+                      setProjectDescriptions((current) => ({
+                        ...current,
+                        [project.id]: event.target.value,
+                      }))
+                    }
+                  />
+                  <button type="submit">
+                    Save project description for {project.name}
                   </button>
                 </form>
               ) : null}
@@ -496,6 +538,33 @@ export function App({
                                 )
                               }
                             />
+                          </>
+                        ) : null}
+
+                        {onChangeTaskProject ? (
+                          <>
+                            <label htmlFor={`task-project-${task.id}`}>
+                              Project for {task.title}
+                            </label>
+                            <select
+                              id={`task-project-${task.id}`}
+                              value={task.projectId}
+                              onChange={(event) =>
+                                onChangeTaskProject(
+                                  task.id,
+                                  event.target.value,
+                                )
+                              }
+                            >
+                              {state.projects.map((candidateProject) => (
+                                <option
+                                  key={candidateProject.id}
+                                  value={candidateProject.id}
+                                >
+                                  {candidateProject.name}
+                                </option>
+                              ))}
+                            </select>
                           </>
                         ) : null}
 

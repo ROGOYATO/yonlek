@@ -109,3 +109,17 @@ export function setTaskDescription(
     description: normalizedDescription,
   }
 }
+
+
+export function moveTaskToProject(task: Task, projectId: string): Task {
+  const normalizedProjectId = projectId.trim()
+
+  if (!normalizedProjectId) {
+    throw new Error('Task project is required')
+  }
+
+  return {
+    ...task,
+    projectId: normalizedProjectId,
+  }
+}

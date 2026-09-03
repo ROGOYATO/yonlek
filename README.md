@@ -6,14 +6,17 @@ The current implementation is intentionally small. It is being developed as a se
 
 ## Current checkpoint
 
-User-confirmed starting checkpoint for this batch:
+Starting checkpoint for this batch:
 
 - branch: `main`
-- commit: `5689bf1` (`TDD 061-068: persist workspace view preferences`)
-- TDD state: cycle 075 GREEN
-- tests: 110 passing
+- commit: `eb21884` (`TDD 069-075: harden preference and workspace storage`)
+- TDD state: cycle 084 GREEN
+- tests: 126 passing
 - production build: passing
 - lint: 0 warnings, 0 errors
+
+See [`FEATURES.md`](./FEATURES.md) for the maintained bare-bone feature
+checklist and deferred UI-polish roadmap.
 
 ## Implemented behavior
 
@@ -207,6 +210,17 @@ The asymmetry is intentional: preferences are disposable UI state, while
 workspace entities are durable data whose identity and timestamps must remain
 internally consistent.
 
+
+Feature-first product direction:
+
+- tasks can move between existing projects without changing their identity;
+- project focus remains stable when a task moves out of the focused project;
+- moved task relationships persist through browser storage and reload;
+- projects support optional descriptions with storage validation;
+- `FEATURES.md` is the maintained product checklist;
+- visual styling is intentionally deferred while core bare-bone workflows are
+  still being added.
+
 ## Hosting and backend status
 
 The app is intended to run as a static React/Vite frontend, including GitHub Pages with a custom domain. GitHub Pages deployment has not been added yet.
@@ -220,3 +234,28 @@ The project's own source-code license has not been chosen yet.
 Do not assume that the repository is MIT-licensed merely because several dependencies are. Direct dependency licenses are tracked in `THIRD_PARTY_NOTICES.md`.
 
 No ClickUp source code, proprietary assets, branding, icons, screenshots, or copied UI text are used.
+
+
+## Product reference direction
+
+The product may pursue broad capability parity with established work-management
+tools, including ClickUp, but it must remain an independent product.
+
+Use `CLICKUP_REFERENCE.md` only as a capability and architecture reference.
+Do not copy ClickUp source code, protected assets, screenshots, icons, marketing
+copy, distinctive UI composition, or branded feature names.
+
+Our independent target hierarchy is:
+
+```text
+Workspace
+→ Area
+→ Project
+→ List
+→ Task
+→ Subtask
+```
+
+`BRAND_NAME_RESEARCH.md` records preliminary naming research. `Yönlek` is a
+working candidate only; it is not considered legally cleared until official
+trademark searches are completed.

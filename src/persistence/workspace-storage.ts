@@ -44,7 +44,9 @@ function isValidProject(value: unknown): boolean {
     value.id.trim().length > 0 &&
     typeof value.name === 'string' &&
     value.name.trim().length > 0 &&
-    isIsoInstant(value.createdAt)
+    isIsoInstant(value.createdAt) &&
+    (value.description === undefined ||
+      typeof value.description === 'string')
   )
 }
 

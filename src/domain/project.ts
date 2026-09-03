@@ -2,6 +2,7 @@
   id: string
   name: string
   createdAt: string
+  description?: string
 }
 
 export interface CreateProjectInput {
@@ -35,5 +36,24 @@ export function renameProject(project: Project, nextName: string): Project {
   return {
     ...project,
     name,
+  }
+}
+
+
+export function setProjectDescription(
+  project: Project,
+  description: string | null,
+): Project {
+  const normalizedDescription = description?.trim() ?? ''
+
+  if (!normalizedDescription) {
+    const next = { ...project }
+    delete next.description
+    return next
+  }
+
+  return {
+    ...project,
+    description: normalizedDescription,
   }
 }

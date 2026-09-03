@@ -297,3 +297,48 @@ Lint: 0 warnings, 0 errors
 The persistence policy is intentionally asymmetric: view preferences degrade to
 defaults or best-effort saves, while durable workspace data fails closed when
 identity or timestamp invariants are invalid.
+
+
+## Cycles 076-084
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 076 | Task project reassignment domain mutation | GREEN |
+| 077 | Reducer moves tasks only to existing projects | GREEN |
+| 078 | Application command moves a task between projects | GREEN |
+| 079 | Task-move UI, focused-project behavior, and browser persistence | GREEN |
+| 080 | Optional project-description domain behavior | GREEN |
+| 081 | Reducer project-description action | GREEN |
+| 082 | Project-description application command | GREEN |
+| 083 | Set and clear project descriptions through the UI | GREEN |
+| 084 | Persisted project descriptions are validated | GREEN |
+
+Expected successful checkpoint:
+
+```text
+Tests: 126 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+```
+
+Product sequencing decision: continue building bare-bone features before a
+dedicated styling/UI-polish phase. `FEATURES.md` is the checklist for that
+sequence and must remain aligned with confirmed implementation state.
+
+
+## Product-direction research after TDD 075
+
+Public ClickUp documentation was reviewed for feature breadth and architecture.
+
+Durable decisions:
+
+- pursue broad functional capability, not visual cloning;
+- keep an independent hierarchy: Workspace → Area → Project → List → Task →
+  Subtask;
+- prioritize hierarchy, richer task entities, multiple views, relationships,
+  automation, and knowledge features before final styling;
+- defer multi-user permissions/backend collaboration until the local domain
+  model is broader and stable;
+- keep `FEATURES.md` as the roadmap;
+- use `CLICKUP_REFERENCE.md` as a legal-safe capability reference;
+- keep `Yönlek` as a preliminary working name only until trademark clearance.

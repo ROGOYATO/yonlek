@@ -370,3 +370,67 @@ it('resets view preferences when invalid workspace data is reset', async () => {
     'created',
   )
 })
+
+
+it('persists a task project move across browser composition reloads', async () => {
+  const user = userEvent.setup()
+  const storage = new MemoryStore()
+  const robotics = createProject({
+    id: 'project-1',
+    name: 'Robotics Research',
+    now: '2026-09-03T16:40:00.000Z',
+  })
+  const field = createProject({
+    id: 'project-2',
+    name: 'Field Tests',
+    now: '2026-09-03T16:41:00.000Z',
+  })
+  const task = createTask({
+    id: 'task-1',
+    projectId: robotics.id,
+    title: 'Draft experiment plan',
+    now: '2026-09-03T16:42:00.000Z',
+  })
+
+  saveWorkspace(storage, {
+    projects: [robotics, field],
+    tasks: [task],
+  })
+
+  const firstRender = render(
+    <BrowserApp
+      storage={storage}
+      runtime={{
+        nextId: () => 'unused-id',
+        now: () => '2026-09-03T16:43:00.000Z',
+      }}
+    />,
+  )
+
+  await user.selectOptions(
+    screen.getByLabelText('Project for Draft experiment plan'),
+    field.id,
+  )
+
+  expect(loadWorkspace(storage).tasks[0]?.projectId).toBe(field.id)
+
+  firstRender.unmount()
+
+  render(
+    <BrowserApp
+      storage={storage}
+      runtime={{
+        nextId: () => 'unused-id',
+        now: () => '2026-09-03T16:44:00.000Z',
+      }}
+    />,
+  )
+
+  expect(
+    (
+      screen.getByLabelText(
+        'Project for Draft experiment plan',
+      ) as HTMLSelectElement
+    ).value,
+  ).toBe(field.id)
+})

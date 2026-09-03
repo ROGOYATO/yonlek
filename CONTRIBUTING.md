@@ -251,3 +251,41 @@ the normalized in-memory view anyway.
 
 Resetting invalid workspace data also resets view preferences so recovery does
 not immediately reapply stale filters or focus.
+
+
+## Feature-first phase and FEATURES.md
+
+`FEATURES.md` is the maintained product checklist. Update it whenever a feature
+moves from planned to implemented, when a new core capability is identified, or
+when scope is deliberately deferred.
+
+During the current feature-first phase:
+
+- prioritize domain behavior, application flows, persistence, recovery, and
+  usable semantic controls;
+- do not spend cycles on visual redesign, animation, spacing systems, icon
+  systems, or cosmetic polish unless a minimal change is required for feature
+  usability or accessibility;
+- keep CSS/style work separate from behavior batches whenever possible;
+- a feature is checked only after its behavior cycles and final gates pass.
+
+Task movement is a relationship change, not task recreation: keep the same task
+ID and metadata, validate that the target project exists, and let the normal
+transactional workspace store persist the new relationship.
+
+
+## Legal-safe competitor reference work
+
+Competitor research may inform generic features, workflows, data relationships,
+and product-management concepts. It must not be used as a pixel-copy or source
+for proprietary expression.
+
+Do not copy:
+
+- competitor source code or bundled assets;
+- screenshots, logos, icons, illustrations, or proprietary fonts;
+- distinctive marketing wording or branded feature names;
+- exact visual composition solely to make the product look like a competitor.
+
+Prefer our own hierarchy, terminology, interaction details, and visual identity.
+Use `CLICKUP_REFERENCE.md` as the maintained reference for this rule.

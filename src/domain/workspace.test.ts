@@ -178,3 +178,59 @@ it('changes a task description without mutating the previous state', () => {
   )
   expect(state.tasks[0]).not.toHaveProperty('description')
 })
+
+
+it('moves a task to an existing project without mutating the previous state', () => {
+  const field = createProject({
+    id: 'project-2',
+    name: 'Field Tests',
+    now: '2026-09-03T16:20:00.000Z',
+  })
+  const state = {
+    projects: [project, field],
+    tasks: [task],
+  }
+
+  const next = workspaceReducer(state, {
+    type: 'task/projectChanged',
+    taskId: task.id,
+    projectId: field.id,
+  } as never)
+
+  expect(next.tasks[0]?.projectId).toBe(field.id)
+  expect(state.tasks[0]?.projectId).toBe(project.id)
+})
+
+it('rejects moving a task to a missing project', () => {
+  const state = {
+    projects: [project],
+    tasks: [task],
+  }
+
+  expect(() =>
+    workspaceReducer(state, {
+      type: 'task/projectChanged',
+      taskId: task.id,
+      projectId: 'missing-project',
+    } as never),
+  ).toThrow('Cannot move a task to a missing project')
+})
+
+
+it('changes a project description without mutating the previous state', () => {
+  const state = {
+    projects: [project],
+    tasks: [task],
+  }
+
+  const next = workspaceReducer(state, {
+    type: 'project/descriptionChanged',
+    projectId: project.id,
+    description: '  Camera-guided robotics experiments.  ',
+  } as never)
+
+  expect(next.projects[0]?.description).toBe(
+    'Camera-guided robotics experiments.',
+  )
+  expect(state.projects[0]).not.toHaveProperty('description')
+})

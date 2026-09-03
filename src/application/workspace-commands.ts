@@ -15,11 +15,13 @@ export interface WorkspaceCommands {
   addProject(name: string): ReturnType<typeof createProject>
   addTask(projectId: string, title: string): ReturnType<typeof createTask>
   renameProject(projectId: string, name: string): void
+  changeProjectDescription(projectId: string, description: string | null): void
   renameTask(taskId: string, title: string): void
   changeTaskStatus(taskId: string, status: TaskStatus): void
   changeTaskPriority(taskId: string, priority: TaskPriority): void
   changeTaskDueDate(taskId: string, dueDate: string | null): void
   changeTaskDescription(taskId: string, description: string | null): void
+  changeTaskProject(taskId: string, projectId: string): void
   deleteTask(taskId: string): void
   deleteProject(projectId: string): void
 }
@@ -68,6 +70,14 @@ export function createWorkspaceCommands(
       })
     },
 
+    changeProjectDescription(projectId, description) {
+      store.dispatch({
+        type: 'project/descriptionChanged',
+        projectId,
+        description,
+      })
+    },
+
     renameTask(taskId, title) {
       store.dispatch({
         type: 'task/titleChanged',
@@ -105,6 +115,14 @@ export function createWorkspaceCommands(
         type: 'task/descriptionChanged',
         taskId,
         description,
+      })
+    },
+
+    changeTaskProject(taskId, projectId) {
+      store.dispatch({
+        type: 'task/projectChanged',
+        taskId,
+        projectId,
       })
     },
 
