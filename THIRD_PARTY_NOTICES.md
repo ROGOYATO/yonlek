@@ -1,8 +1,8 @@
 # Third-Party Notices
 
-This file records direct npm dependencies used by this starter. It is not a license for this project's own source code.
+This file records direct npm dependencies used by the application. It is not a license for this project's own source code.
 
-Versions are constrained by `package.json`; the exact installed versions will be recorded in `package-lock.json` after `npm install`.
+Exact installed versions are recorded in the committed `package-lock.json`.
 
 | Package | Role | License |
 | --- | --- | --- |
