@@ -25,8 +25,9 @@ export function createWorkspaceStore(storage: KeyValueStore): WorkspaceStore {
     },
 
     dispatch(action) {
-      state = workspaceReducer(state, action)
-      saveWorkspace(storage, state)
+      const nextState = workspaceReducer(state, action)
+      saveWorkspace(storage, nextState)
+      state = nextState
 
       for (const listener of listeners) {
         listener()

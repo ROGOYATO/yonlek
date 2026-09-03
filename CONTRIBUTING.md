@@ -153,3 +153,19 @@ When one minimal implementation naturally satisfies both a domain test and its
 browser interaction, put both expectations in the same RED cycle. Do not invent
 a later RED that would already pass after the domain GREEN. Description search
 in TDD 043 is the reference example.
+
+
+## Persistence boundary rules
+
+Persisted browser data is untrusted input. Validate the versioned document,
+workspace arrays, project records, task records, optional task metadata, and
+task-to-project relationships before exposing it to the application.
+
+Store dispatch is transactional at the in-memory/persistence boundary: compute
+the next reducer state, persist it, then publish it and notify subscribers. A
+failed write must leave the previous state and subscriber observations intact.
+
+Browser recovery belongs above the persistence boundary. Storage parsing keeps a
+stable `Workspace storage is invalid` contract; BrowserApp converts that failure
+to a user-facing recovery state and can deliberately replace invalid saved data
+with an empty versioned workspace.

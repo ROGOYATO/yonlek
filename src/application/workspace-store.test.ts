@@ -93,3 +93,33 @@ describe('workspace store subscriptions', () => {
     expect(calls).toBe(0)
   })
 })
+
+
+class FailingWriteStore implements KeyValueStore {
+  getItem() {
+    return null
+  }
+
+  setItem() {
+    throw new Error('Persistence write failed')
+  }
+}
+
+it('keeps state and subscribers unchanged when persistence fails', () => {
+  const store = createWorkspaceStore(new FailingWriteStore())
+  const observedProjectCounts: number[] = []
+
+  store.subscribe(() => {
+    observedProjectCounts.push(store.getState().projects.length)
+  })
+
+  expect(() =>
+    store.dispatch({
+      type: 'project/added',
+      project,
+    }),
+  ).toThrow('Persistence write failed')
+
+  expect(store.getState().projects).toEqual([])
+  expect(observedProjectCounts).toEqual([])
+})

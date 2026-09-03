@@ -151,3 +151,29 @@ TDD 043 intentionally places the domain and browser description-search
 expectations in one RED cycle because one filter implementation satisfies both.
 A separate later browser RED would already have been GREEN and would violate the
 test-first sequencing rule.
+
+
+## Cycles 046-053
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 046 | Failed persistence writes leave store state and subscribers unchanged | GREEN |
+| 047 | Malformed JSON produces a stable invalid-storage error | GREEN |
+| 048 | Versioned workspace document requires project/task arrays | GREEN |
+| 049 | Persisted project records are validated | GREEN |
+| 050 | Persisted task core fields, status, and priority are validated | GREEN |
+| 051 | Optional task metadata and project relationships are validated | GREEN |
+| 052 | BrowserApp renders a readable invalid-storage recovery state | GREEN |
+| 053 | User can reset invalid saved data and re-enter an empty workspace | GREEN |
+
+Expected successful checkpoint:
+
+```text
+Tests: 82 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+```
+
+The persistence parser deliberately distinguishes an unsupported version from
+invalid data. BrowserApp does not parse storage independently; it catches the
+storage boundary's stable error and owns the user-facing recovery action.

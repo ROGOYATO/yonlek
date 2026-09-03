@@ -46,3 +46,260 @@ describe('workspace storage', () => {
     expect(loadWorkspace(store)).toEqual(workspace)
   })
 })
+
+
+it('reports malformed JSON as invalid workspace storage', () => {
+  const store: KeyValueStore = {
+    getItem: () => '{not-json',
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+})
+
+
+it('rejects a versioned document without workspace arrays', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: {},
+          tasks: [],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+})
+
+it('still reports unsupported storage versions separately', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 2,
+        workspace: {
+          projects: [],
+          tasks: [],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow(
+    'Unsupported workspace storage version',
+  )
+})
+
+
+it('rejects an invalid persisted project record', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: [
+            {
+              id: 'project-1',
+              name: 42,
+              createdAt: '2026-09-03T05:30:00.000Z',
+            },
+          ],
+          tasks: [],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+})
+
+
+it('rejects an invalid persisted task status', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: [
+            {
+              id: 'project-1',
+              name: 'Robotics Research',
+              createdAt: '2026-09-03T05:30:00.000Z',
+            },
+          ],
+          tasks: [
+            {
+              id: 'task-1',
+              projectId: 'project-1',
+              title: 'Draft experiment plan',
+              status: 'blocked',
+              priority: 'normal',
+              createdAt: '2026-09-03T05:35:00.000Z',
+            },
+          ],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+})
+
+it('rejects an invalid persisted task priority', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: [
+            {
+              id: 'project-1',
+              name: 'Robotics Research',
+              createdAt: '2026-09-03T05:30:00.000Z',
+            },
+          ],
+          tasks: [
+            {
+              id: 'task-1',
+              projectId: 'project-1',
+              title: 'Draft experiment plan',
+              status: 'todo',
+              priority: 'urgent',
+              createdAt: '2026-09-03T05:35:00.000Z',
+            },
+          ],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+})
+
+
+it('rejects an invalid persisted task due date', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: [
+            {
+              id: 'project-1',
+              name: 'Robotics Research',
+              createdAt: '2026-09-03T05:30:00.000Z',
+            },
+          ],
+          tasks: [
+            {
+              id: 'task-1',
+              projectId: 'project-1',
+              title: 'Draft experiment plan',
+              status: 'todo',
+              priority: 'normal',
+              createdAt: '2026-09-03T05:35:00.000Z',
+              dueDate: '2026-02-31',
+            },
+          ],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+})
+
+it('rejects a non-string persisted task description', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: [
+            {
+              id: 'project-1',
+              name: 'Robotics Research',
+              createdAt: '2026-09-03T05:30:00.000Z',
+            },
+          ],
+          tasks: [
+            {
+              id: 'task-1',
+              projectId: 'project-1',
+              title: 'Draft experiment plan',
+              status: 'todo',
+              priority: 'normal',
+              createdAt: '2026-09-03T05:35:00.000Z',
+              description: 123,
+            },
+          ],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+})
+
+it('rejects a persisted task whose project is missing', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: [],
+          tasks: [
+            {
+              id: 'task-1',
+              projectId: 'missing-project',
+              title: 'Draft experiment plan',
+              status: 'todo',
+              priority: 'normal',
+              createdAt: '2026-09-03T05:35:00.000Z',
+            },
+          ],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+})
+
+it('loads valid optional due dates and descriptions', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: [
+            {
+              id: 'project-1',
+              name: 'Robotics Research',
+              createdAt: '2026-09-03T05:30:00.000Z',
+            },
+          ],
+          tasks: [
+            {
+              id: 'task-1',
+              projectId: 'project-1',
+              title: 'Draft experiment plan',
+              status: 'todo',
+              priority: 'normal',
+              createdAt: '2026-09-03T05:35:00.000Z',
+              dueDate: '2026-09-12',
+              description: 'Prepare the calibration procedure.',
+            },
+          ],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(loadWorkspace(store).tasks[0]).toMatchObject({
+    dueDate: '2026-09-12',
+    description: 'Prepare the calibration procedure.',
+  })
+})
