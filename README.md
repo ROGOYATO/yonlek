@@ -10,8 +10,8 @@ Live checkpoint before the workflow update:
 
 - branch: `main`
 - commit: `470ee43` (`TDD 015-021: add persisted task management interactions`)
-- TDD state: cycle 021 GREEN
-- tests: 34 passing
+- TDD state: cycle 030 GREEN
+- tests: 46 passing
 - production build: passing
 - lint: 0 warnings, 0 errors
 
@@ -21,6 +21,7 @@ Projects:
 
 - create a project;
 - reject a blank project name;
+- rename a project with the same validation rule;
 - delete a project and its tasks.
 
 Tasks:
@@ -30,7 +31,10 @@ Tasks:
 - rename a task;
 - change task status between `todo`, `doing`, and `done`;
 - change priority between `low`, `normal`, and `high`;
-- delete a task without deleting its project.
+- delete a task without deleting its project;
+- search task titles;
+- filter tasks by status and priority;
+- clear all task filters together.
 
 Application:
 

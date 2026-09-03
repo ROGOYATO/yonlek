@@ -23,3 +23,17 @@ export function createProject(input: CreateProjectInput): Project {
     createdAt: input.now,
   }
 }
+
+
+export function renameProject(project: Project, nextName: string): Project {
+  const name = nextName.trim()
+
+  if (!name) {
+    throw new Error('Project name is required')
+  }
+
+  return {
+    ...project,
+    name,
+  }
+}

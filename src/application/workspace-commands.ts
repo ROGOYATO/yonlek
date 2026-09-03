@@ -14,6 +14,7 @@ export interface WorkspaceRuntime {
 export interface WorkspaceCommands {
   addProject(name: string): ReturnType<typeof createProject>
   addTask(projectId: string, title: string): ReturnType<typeof createTask>
+  renameProject(projectId: string, name: string): void
   renameTask(taskId: string, title: string): void
   changeTaskStatus(taskId: string, status: TaskStatus): void
   changeTaskPriority(taskId: string, priority: TaskPriority): void
@@ -55,6 +56,14 @@ export function createWorkspaceCommands(
       })
 
       return task
+    },
+
+    renameProject(projectId, name) {
+      store.dispatch({
+        type: 'project/nameChanged',
+        projectId,
+        name,
+      })
     },
 
     renameTask(taskId, title) {

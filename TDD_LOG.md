@@ -50,3 +50,30 @@ Working tree: clean after commit
 Beginning with the next batch, multi-cycle TDD work uses the fail-fast bundle runner documented in `CONTRIBUTING.md`.
 
 The runner enforces the same RED/GREEN order; it automates the repetitive patch application and verification steps. It does not weaken the test-first requirement.
+
+
+## Cycles 022-030
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 022 | Rename a project with normalization and blank-name validation | GREEN |
+| 023 | Workspace reducer project-name change without mutation | GREEN |
+| 024 | Project rename application command | GREEN |
+| 025 | Project rename UI and blank-rename feedback | GREEN |
+| 026 | Pure task filtering by query, status, and priority | GREEN |
+| 027 | Task-title search UI | GREEN |
+| 028 | Task status filter UI | GREEN |
+| 029 | Task priority filter UI | GREEN |
+| 030 | Clear task search/status/priority filters together | GREEN |
+
+Expected successful checkpoint:
+
+```text
+Tests: 46 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+```
+
+Workflow maintenance 003 adds exact partial-state validation for safe resume
+bundles. Cycle 022 was moved to a new test file so the historical BOM in
+`src/domain/project.test.ts` remains untouched.

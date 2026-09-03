@@ -10,6 +10,13 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
+& chcp.com 65001 > $null
+
 $script:LogPath = $null
 
 function Write-BundleLog {
@@ -46,13 +53,29 @@ function Invoke-LoggedNative {
     $command = Get-Command $Program -ErrorAction Stop
     $captured = [System.Collections.Generic.List[string]]::new()
 
-    & $command.Source @Arguments 2>&1 | ForEach-Object {
-        $line = [string]$_
-        $captured.Add($line)
-        Write-BundleLog $line
-    }
+    $previousErrorActionPreference = $ErrorActionPreference
 
-    $code = $LASTEXITCODE
+    try {
+        $ErrorActionPreference = "Continue"
+
+        & $command.Source @Arguments 2>&1 | ForEach-Object {
+            if ($_ -is [System.Management.Automation.ErrorRecord]) {
+                $line = [string]$_.Exception.Message
+            } else {
+                $line = [string]$_
+            }
+
+            if ($line -ne 'System.Management.Automation.RemoteException') {
+                $captured.Add($line)
+                Write-BundleLog $line
+            }
+        }
+
+        $code = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
 
     return [pscustomobject]@{
         ExitCode = $code
@@ -130,7 +153,14 @@ function Invoke-ManifestCommand {
     $arguments = @()
 
     if ($null -ne $Command.args) {
-        $arguments = @($Command.args | ForEach-Object { [string]$_ })
+        $arguments = @(
+            $Command.args | ForEach-Object {
+                ([string]$_).
+                    Replace('{repo}', $script:ResolvedRepo).
+                    Replace('{bundle}', $script:ResolvedBundleRoot).
+                    Replace('{manifest}', $script:ResolvedManifestPath)
+            }
+        )
     }
 
     $result = Invoke-LoggedNative `
@@ -176,6 +206,9 @@ try {
     $Repo = [System.IO.Path]::GetFullPath($Repo)
     $BundleRoot = [System.IO.Path]::GetFullPath($BundleRoot)
 
+    $script:ResolvedRepo = $Repo
+    $script:ResolvedBundleRoot = $BundleRoot
+
     if (-not (Test-Path -LiteralPath $Repo -PathType Container)) {
         Stop-Bundle "Repository directory does not exist: $Repo"
     }
@@ -197,6 +230,8 @@ try {
     if (-not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
         Stop-Bundle "Manifest not found: $ManifestPath"
     }
+
+    $script:ResolvedManifestPath = $ManifestPath
 
     Set-Location -LiteralPath $Repo
 
@@ -247,16 +282,81 @@ try {
         }
     }
 
+    $statusResult = Invoke-LoggedNative `
+        -Program "git" `
+        -Arguments @("status", "--porcelain") `
+        -Label "Precondition - working tree"
+
+    Assert-NativeSuccess $statusResult "Git status"
+
+    $actualStatus = @(
+        $statusResult.Output -split "`r?`n" |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    )
+    $expectedStatus = @($manifest.expectedStatus | ForEach-Object { [string]$_ })
+
     if ($manifest.requireClean) {
-        $statusResult = Invoke-LoggedNative `
-            -Program "git" `
-            -Arguments @("status", "--porcelain") `
-            -Label "Precondition - clean working tree"
-
-        Assert-NativeSuccess $statusResult "Git status"
-
-        if (-not [string]::IsNullOrWhiteSpace($statusResult.Output)) {
+        if ($actualStatus.Count -ne 0) {
             Stop-Bundle "Working tree is not clean. No patches were applied."
+        }
+    } elseif ($expectedStatus.Count -gt 0) {
+        $actualSorted = @($actualStatus | Sort-Object)
+        $expectedSorted = @($expectedStatus | Sort-Object)
+
+        if (($actualSorted -join "`n") -ne ($expectedSorted -join "`n")) {
+            Stop-Bundle (
+                "Working tree does not match the expected resume state.`n" +
+                "Expected:`n$($expectedSorted -join "`n")`n" +
+                "Actual:`n$($actualSorted -join "`n")"
+            )
+        }
+    }
+
+    foreach ($entry in @($manifest.expectedFileSha256)) {
+        $relativePath = [string]$entry.path
+        $expectedSha = ([string]$entry.sha256).ToLowerInvariant()
+        $candidate = Join-Path $Repo $relativePath
+
+        if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+            Stop-Bundle "Expected checksum file is missing: $relativePath"
+        }
+
+        $actualSha = (Get-FileHash -Algorithm SHA256 -LiteralPath $candidate).Hash.ToLowerInvariant()
+
+        if ($actualSha -ne $expectedSha) {
+            Stop-Bundle (
+                "Checksum mismatch for $relativePath. " +
+                "Expected $expectedSha, found $actualSha."
+            )
+        }
+    }
+
+    foreach ($entry in @($manifest.expectedNormalizedFileSha256)) {
+        $relativePath = [string]$entry.path
+        $expectedSha = ([string]$entry.sha256).ToLowerInvariant()
+        $candidate = Join-Path $Repo $relativePath
+
+        if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+            Stop-Bundle "Expected normalized-checksum file is missing: $relativePath"
+        }
+
+        $text = [System.IO.File]::ReadAllText($candidate)
+        $normalized = $text.Replace("`r`n", "`n").Replace("`r", "`n")
+        $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes($normalized)
+        $sha = [System.Security.Cryptography.SHA256]::Create()
+
+        try {
+            $actualSha = ([System.BitConverter]::ToString($sha.ComputeHash($bytes))).Replace("-", "").ToLowerInvariant()
+        }
+        finally {
+            $sha.Dispose()
+        }
+
+        if ($actualSha -ne $expectedSha) {
+            Stop-Bundle (
+                "Normalized checksum mismatch for $relativePath. " +
+                "Expected $expectedSha, found $actualSha."
+            )
         }
     }
 
@@ -276,9 +376,15 @@ try {
         Write-BundleLog ""
         Write-BundleLog "##### MAINTENANCE $($step.id) #####"
 
-        Invoke-Patch `
-            -RelativePath ([string]$step.patch) `
-            -Label "Maintenance $($step.id)"
+        if ($null -ne $step.action) {
+            [void](Invoke-ManifestCommand `
+                -Command $step.action `
+                -Label "Maintenance $($step.id) setup")
+        } else {
+            Invoke-Patch `
+                -RelativePath ([string]$step.patch) `
+                -Label "Maintenance $($step.id)"
+        }
 
         foreach ($command in @($step.commands)) {
             [void](Invoke-ManifestCommand `
@@ -291,9 +397,17 @@ try {
         Write-BundleLog ""
         Write-BundleLog "##### TDD $($cycle.id) RED #####"
 
-        Invoke-Patch `
-            -RelativePath ([string]$cycle.redPatch) `
-            -Label "TDD $($cycle.id) RED"
+        if ([bool]$cycle.redAlreadyApplied) {
+            Write-BundleLog "TDD $($cycle.id) RED setup was already applied by the stopped run."
+        } elseif ($null -ne $cycle.redAction) {
+            [void](Invoke-ManifestCommand `
+                -Command $cycle.redAction `
+                -Label "TDD $($cycle.id) RED setup")
+        } else {
+            Invoke-Patch `
+                -RelativePath ([string]$cycle.redPatch) `
+                -Label "TDD $($cycle.id) RED"
+        }
 
         $redResult = Invoke-ManifestCommand `
             -Command $cycle.redCommand `
@@ -305,9 +419,15 @@ try {
         Write-BundleLog ""
         Write-BundleLog "##### TDD $($cycle.id) GREEN #####"
 
-        Invoke-Patch `
-            -RelativePath ([string]$cycle.greenPatch) `
-            -Label "TDD $($cycle.id) GREEN"
+        if ($null -ne $cycle.greenAction) {
+            [void](Invoke-ManifestCommand `
+                -Command $cycle.greenAction `
+                -Label "TDD $($cycle.id) GREEN setup")
+        } else {
+            Invoke-Patch `
+                -RelativePath ([string]$cycle.greenPatch) `
+                -Label "TDD $($cycle.id) GREEN"
+        }
 
         foreach ($command in @($cycle.greenCommands)) {
             [void](Invoke-ManifestCommand `
@@ -321,6 +441,28 @@ try {
             -Label "TDD $($cycle.id) - git diff --check"
 
         Assert-NativeSuccess $diffCheck "TDD $($cycle.id) git diff --check"
+    }
+
+
+    foreach ($step in @($manifest.postSteps)) {
+        Write-BundleLog ""
+        Write-BundleLog "##### POST $($step.id) #####"
+
+        if ($null -ne $step.action) {
+            [void](Invoke-ManifestCommand `
+                -Command $step.action `
+                -Label "Post $($step.id) setup")
+        } else {
+            Invoke-Patch `
+                -RelativePath ([string]$step.patch) `
+                -Label "Post $($step.id)"
+        }
+
+        foreach ($command in @($step.commands)) {
+            [void](Invoke-ManifestCommand `
+                -Command $command `
+                -Label "Post $($step.id) - $($command.label)")
+        }
     }
 
     foreach ($command in @($manifest.finalCommands)) {

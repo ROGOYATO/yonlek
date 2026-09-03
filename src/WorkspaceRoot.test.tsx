@@ -24,7 +24,7 @@ class MemoryStore implements KeyValueStore {
 function createTestApplication() {
   const storage = new MemoryStore()
   const store = createWorkspaceStore(storage)
-  const ids = ['project-1', 'task-1']
+  const ids = ['project-1', 'task-1', 'task-2', 'task-3']
   const commands = createWorkspaceCommands(store, {
     nextId: () => ids.shift() ?? 'unexpected-id',
     now: () => '2026-09-03T02:00:00.000Z',
@@ -190,5 +190,150 @@ describe('WorkspaceRoot validation feedback', () => {
       'Task title is required',
     )
     expect(store.getState().tasks).toEqual([])
+  })
+})
+
+
+describe('WorkspaceRoot project rename', () => {
+  it('lets a user rename a project', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    commands.addProject('Robotics Research')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    const input = screen.getByLabelText('Name for Robotics Research')
+    await user.clear(input)
+    await user.type(input, 'Autonomy Lab')
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Save project name for Robotics Research',
+      }),
+    )
+
+    expect(store.getState().projects[0]?.name).toBe('Autonomy Lab')
+    expect(
+      screen.getByRole('heading', { name: 'Autonomy Lab' }),
+    ).toBeTruthy()
+  })
+
+  it('shows a validation error for a blank project rename', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    commands.addProject('Robotics Research')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    const input = screen.getByLabelText('Name for Robotics Research')
+    await user.clear(input)
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Save project name for Robotics Research',
+      }),
+    )
+
+    expect(screen.getByRole('alert').textContent).toContain(
+      'Project name is required',
+    )
+    expect(store.getState().projects[0]?.name).toBe('Robotics Research')
+  })
+})
+
+
+describe('WorkspaceRoot task search', () => {
+  it('filters visible tasks by title', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const project = commands.addProject('Robotics Research')
+    commands.addTask(project.id, 'Draft experiment plan')
+    commands.addTask(project.id, 'Review safety checklist')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.type(screen.getByLabelText('Search tasks'), 'safety')
+
+    expect(screen.getByText('Review safety checklist')).toBeTruthy()
+    expect(screen.queryByText('Draft experiment plan')).toBeNull()
+  })
+})
+
+
+describe('WorkspaceRoot status filter', () => {
+  it('filters visible tasks by status', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const project = commands.addProject('Robotics Research')
+    const todoTask = commands.addTask(project.id, 'Draft experiment plan')
+    const doneTask = commands.addTask(project.id, 'Review safety checklist')
+    commands.changeTaskStatus(doneTask.id, 'done')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.selectOptions(screen.getByLabelText('Filter by status'), 'done')
+
+    expect(screen.getByText('Review safety checklist')).toBeTruthy()
+    expect(screen.queryByText(todoTask.title)).toBeNull()
+  })
+})
+
+
+describe('WorkspaceRoot priority filter', () => {
+  it('filters visible tasks by priority', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const project = commands.addProject('Robotics Research')
+    const normalTask = commands.addTask(project.id, 'Draft experiment plan')
+    const highTask = commands.addTask(project.id, 'Review safety checklist')
+    commands.changeTaskPriority(highTask.id, 'high')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.selectOptions(
+      screen.getByLabelText('Filter by priority'),
+      'high',
+    )
+
+    expect(screen.getByText('Review safety checklist')).toBeTruthy()
+    expect(screen.queryByText(normalTask.title)).toBeNull()
+  })
+})
+
+
+describe('WorkspaceRoot clear task filters', () => {
+  it('clears search, status, and priority filters together', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const project = commands.addProject('Robotics Research')
+    commands.addTask(project.id, 'Draft experiment plan')
+    const review = commands.addTask(project.id, 'Review safety checklist')
+    commands.changeTaskStatus(review.id, 'done')
+    commands.changeTaskPriority(review.id, 'high')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.type(screen.getByLabelText('Search tasks'), 'safety')
+    await user.selectOptions(screen.getByLabelText('Filter by status'), 'done')
+    await user.selectOptions(
+      screen.getByLabelText('Filter by priority'),
+      'high',
+    )
+
+    expect(screen.queryByText('Draft experiment plan')).toBeNull()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Clear task filters' }),
+    )
+
+    expect(screen.getByText('Draft experiment plan')).toBeTruthy()
+    expect(screen.getByText('Review safety checklist')).toBeTruthy()
+    expect(
+      (screen.getByLabelText('Search tasks') as HTMLInputElement).value,
+    ).toBe('')
+    expect(
+      (screen.getByLabelText('Filter by status') as HTMLSelectElement).value,
+    ).toBe('all')
+    expect(
+      (screen.getByLabelText('Filter by priority') as HTMLSelectElement).value,
+    ).toBe('all')
   })
 })

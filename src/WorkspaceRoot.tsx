@@ -25,6 +25,9 @@ export function WorkspaceRoot({
       onCreateProject={(name) => {
         commands.addProject(name)
       }}
+      onRenameProject={(projectId, name) => {
+        commands.renameProject(projectId, name)
+      }}
       onCreateTask={(projectId, title) => {
         commands.addTask(projectId, title)
       }}

@@ -125,3 +125,20 @@ it('deletes a task without deleting its project', () => {
   expect(next.tasks).toEqual([])
   expect(state.tasks).toEqual([task])
 })
+
+
+it('renames a project without mutating the previous state', () => {
+  const state = {
+    projects: [project],
+    tasks: [task],
+  }
+
+  const next = workspaceReducer(state, {
+    type: 'project/nameChanged',
+    projectId: project.id,
+    name: '  Autonomy Lab  ',
+  } as never)
+
+  expect(next.projects[0]?.name).toBe('Autonomy Lab')
+  expect(state.projects[0]?.name).toBe('Robotics Research')
+})

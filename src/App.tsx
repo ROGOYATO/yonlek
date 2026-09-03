@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react'
 
+import { filterTasks } from './domain/task-filter'
 import type { TaskPriority, TaskStatus } from './domain/task'
 import { emptyWorkspace, type WorkspaceState } from './domain/workspace'
 
 export interface AppProps {
   state?: WorkspaceState
   onCreateProject?: (name: string) => void
+  onRenameProject?: (projectId: string, name: string) => void
   onCreateTask?: (projectId: string, title: string) => void
   onDeleteProject?: (projectId: string) => void
   onRenameTask?: (taskId: string, title: string) => void
@@ -21,6 +23,7 @@ function errorMessage(error: unknown): string {
 export function App({
   state = emptyWorkspace,
   onCreateProject,
+  onRenameProject,
   onCreateTask,
   onDeleteProject,
   onRenameTask,
@@ -29,8 +32,12 @@ export function App({
   onChangeTaskPriority,
 }: AppProps) {
   const [projectName, setProjectName] = useState('')
+  const [projectEdits, setProjectEdits] = useState<Record<string, string>>({})
   const [taskTitles, setTaskTitles] = useState<Record<string, string>>({})
   const [taskEdits, setTaskEdits] = useState<Record<string, string>>({})
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all')
+  const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all')
   const [error, setError] = useState<string | null>(null)
 
   function submitProject(event: FormEvent<HTMLFormElement>) {
@@ -55,6 +62,52 @@ export function App({
 
       {error ? <p role="alert">{error}</p> : null}
 
+      <label htmlFor="task-search">Search tasks</label>
+      <input
+        id="task-search"
+        value={searchQuery}
+        onChange={(event) => setSearchQuery(event.target.value)}
+      />
+
+      <label htmlFor="task-status-filter">Filter by status</label>
+      <select
+        id="task-status-filter"
+        value={statusFilter}
+        onChange={(event) =>
+          setStatusFilter(event.target.value as TaskStatus | 'all')
+        }
+      >
+        <option value="all">All statuses</option>
+        <option value="todo">To do</option>
+        <option value="doing">Doing</option>
+        <option value="done">Done</option>
+      </select>
+
+      <label htmlFor="task-priority-filter">Filter by priority</label>
+      <select
+        id="task-priority-filter"
+        value={priorityFilter}
+        onChange={(event) =>
+          setPriorityFilter(event.target.value as TaskPriority | 'all')
+        }
+      >
+        <option value="all">All priorities</option>
+        <option value="low">Low</option>
+        <option value="normal">Normal</option>
+        <option value="high">High</option>
+      </select>
+
+      <button
+        type="button"
+        onClick={() => {
+          setSearchQuery('')
+          setStatusFilter('all')
+          setPriorityFilter('all')
+        }}
+      >
+        Clear task filters
+      </button>
+
       {onCreateProject ? (
         <form onSubmit={submitProject}>
           <label htmlFor="project-name">Project name</label>
@@ -71,14 +124,57 @@ export function App({
         <p>No projects yet.</p>
       ) : (
         state.projects.map((project) => {
-          const tasks = state.tasks.filter(
+          const projectTasks = state.tasks.filter(
             (task) => task.projectId === project.id,
           )
+          const tasks = filterTasks(projectTasks, {
+            query: searchQuery,
+            status: statusFilter,
+            priority: priorityFilter,
+          })
           const taskTitle = taskTitles[project.id] ?? ''
+          const editedProjectName = projectEdits[project.id] ?? project.name
 
           return (
             <section key={project.id}>
               <h2>{project.name}</h2>
+
+              {onRenameProject ? (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault()
+
+                    try {
+                      onRenameProject(project.id, editedProjectName)
+                      setProjectEdits((current) => {
+                        const next = { ...current }
+                        delete next[project.id]
+                        return next
+                      })
+                      setError(null)
+                    } catch (caught) {
+                      setError(errorMessage(caught))
+                    }
+                  }}
+                >
+                  <label htmlFor={`project-edit-${project.id}`}>
+                    Name for {project.name}
+                  </label>
+                  <input
+                    id={`project-edit-${project.id}`}
+                    value={editedProjectName}
+                    onChange={(event) =>
+                      setProjectEdits((current) => ({
+                        ...current,
+                        [project.id]: event.target.value,
+                      }))
+                    }
+                  />
+                  <button type="submit">
+                    Save project name for {project.name}
+                  </button>
+                </form>
+              ) : null}
 
               {onDeleteProject ? (
                 <button
@@ -124,7 +220,7 @@ export function App({
               ) : null}
 
               {tasks.length === 0 ? (
-                <p>No tasks yet.</p>
+                <p>{projectTasks.length === 0 ? 'No tasks yet.' : 'No matching tasks.'}</p>
               ) : (
                 <ul>
                   {tasks.map((task) => {

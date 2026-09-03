@@ -101,3 +101,13 @@ git diff --check
 ```
 
 For a TDD bundle, use the bundle runner instead of manually skipping between patches.
+
+
+## Resuming a stopped bundle
+
+A resume bundle may intentionally start from one known dirty file left by an
+earlier stopped run. In that case the manifest must list the exact expected
+`git status --porcelain` line and the SHA-256 of the expected modified file.
+
+Do not disable the clean-tree guard generally. Resume exceptions must be pinned
+to the exact partial state they are designed to continue from.

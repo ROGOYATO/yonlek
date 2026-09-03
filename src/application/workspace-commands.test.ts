@@ -91,3 +91,20 @@ describe('workspace mutation commands', () => {
     expect(store.getState()).toEqual({ projects: [], tasks: [] })
   })
 })
+
+
+describe('project rename command', () => {
+  it('renames a project through the workspace store', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => 'project-1',
+      now: () => '2026-09-03T04:35:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+
+    commands.renameProject(project.id, '  Autonomy Lab  ')
+
+    expect(store.getState().projects[0]?.name).toBe('Autonomy Lab')
+  })
+})
