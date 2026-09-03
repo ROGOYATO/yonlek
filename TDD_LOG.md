@@ -230,3 +230,45 @@ render and asserted the renamed heading before React flushed the
 With user approval, only that mutation was wrapped in `act(...)`. Behavioral
 assertions were left unchanged. The corrected focused GREEN must pass before
 TDD 057 begins.
+
+
+## Cycles 061-068
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 061 | View-preference defaults and immutable updates | GREEN |
+| 062 | Separate versioned view-preference storage round-trip | GREEN |
+| 063 | Invalid/unsupported preferences fall back to defaults | GREEN |
+| 064 | Workspace UI initializes from supplied preferences | GREEN |
+| 065 | Workspace UI reports preference changes without changing domain state | GREEN |
+| 066 | BrowserApp restores saved preferences | GREEN |
+| 067 | BrowserApp persists preference changes separately from workspace data | GREEN |
+| 068 | Deleting focused project repairs saved focus to All projects | GREEN |
+
+Expected successful checkpoint:
+
+```text
+Tests: 102 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+```
+
+The preference document is intentionally separate from `workspace-app.workspace`.
+Invalid workspace data remains a recovery/error condition; invalid view
+preferences are disposable and fall back to defaults.
+
+
+## TDD 068 production-build correction
+
+All TDD 061-068 focused GREENs completed and the final test suite reached
+102/102 with clean lint. The production TypeScript build then stopped with
+TS2724 because `BrowserApp.tsx` imported the `ViewPreferences` type from
+`persistence/view-preferences-storage.ts`, which consumes but does not export
+that type.
+
+No behavior test was changed. The build-boundary correction imports
+`ViewPreferences` from its defining module, `domain/view-preferences.ts`, then
+reruns the production build, full `npm run check`, and diff gates before commit.
+
+Durable rule: type ownership follows the defining module unless another
+boundary intentionally re-exports the type as public API.

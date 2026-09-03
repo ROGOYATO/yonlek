@@ -5,6 +5,11 @@ import {
   type WorkspaceRuntime,
 } from './application/workspace-commands'
 import { createWorkspaceStore } from './application/workspace-store'
+import type { ViewPreferences } from './domain/view-preferences'
+import {
+  loadViewPreferences,
+  saveViewPreferences,
+} from './persistence/view-preferences-storage'
 import { saveWorkspace, type KeyValueStore } from './persistence/workspace-storage'
 import { emptyWorkspace } from './domain/workspace'
 import { WorkspaceRoot } from './WorkspaceRoot'
@@ -26,8 +31,9 @@ function createBrowserApplication(
   try {
     const store = createWorkspaceStore(storage)
     const commands = createWorkspaceCommands(store, runtime)
+    const viewPreferences = loadViewPreferences(storage)
 
-    return { store, commands, error: null }
+    return { store, commands, viewPreferences, error: null }
   } catch {
     return {
       store: null,
@@ -45,7 +51,12 @@ export function BrowserApp({
     createBrowserApplication(storage, runtime),
   )
 
-  if (application.error || !application.store || !application.commands) {
+  if (
+    application.error ||
+    !application.store ||
+    !application.commands ||
+    !application.viewPreferences
+  ) {
     return (
       <main>
         <h1>Workspace</h1>
@@ -67,6 +78,10 @@ export function BrowserApp({
     <WorkspaceRoot
       store={application.store}
       commands={application.commands}
+      initialViewPreferences={application.viewPreferences as ViewPreferences}
+      onViewPreferencesChange={(preferences) => {
+        saveViewPreferences(storage, preferences)
+      }}
     />
   )
 }

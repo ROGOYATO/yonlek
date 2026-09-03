@@ -2,11 +2,12 @@
 
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { createWorkspaceCommands } from './application/workspace-commands'
 import { createWorkspaceStore } from './application/workspace-store'
 import type { KeyValueStore } from './persistence/workspace-storage'
+import { createDefaultViewPreferences } from './domain/view-preferences'
 import { WorkspaceRoot } from './WorkspaceRoot'
 
 class MemoryStore implements KeyValueStore {
@@ -625,5 +626,84 @@ describe('WorkspaceRoot workspace summary', () => {
     render(<WorkspaceRoot store={store} commands={commands} />)
 
     expect(screen.getByText('2 projects · 2 tasks · 1 done')).toBeTruthy()
+  })
+})
+
+
+describe('WorkspaceRoot initial view preferences', () => {
+  it('starts with the supplied project focus, filters, query, and sort', () => {
+    const { store, commands } = createTestApplication()
+    const robotics = commands.addProject('Robotics Research')
+    const field = commands.addProject('Field Tests')
+    commands.addTask(robotics.id, 'Draft experiment plan')
+    commands.addTask(field.id, 'Inspect test site')
+
+    render(
+      <WorkspaceRoot
+        store={store}
+        commands={commands}
+        initialViewPreferences={{
+          ...createDefaultViewPreferences(),
+          projectView: field.id,
+          query: 'inspect',
+          status: 'todo',
+          priority: 'normal',
+          dueDate: 'withoutDueDate',
+          sort: 'title',
+        }}
+      />,
+    )
+
+    expect(
+      (screen.getByLabelText('View project') as HTMLSelectElement).value,
+    ).toBe(field.id)
+    expect((screen.getByLabelText('Search tasks') as HTMLInputElement).value).toBe(
+      'inspect',
+    )
+    expect(
+      (screen.getByLabelText('Filter by status') as HTMLSelectElement).value,
+    ).toBe('todo')
+    expect(
+      (screen.getByLabelText('Filter by priority') as HTMLSelectElement).value,
+    ).toBe('normal')
+    expect(
+      (screen.getByLabelText('Filter by due date') as HTMLSelectElement).value,
+    ).toBe('withoutDueDate')
+    expect((screen.getByLabelText('Sort tasks') as HTMLSelectElement).value).toBe(
+      'title',
+    )
+    expect(screen.getByRole('heading', { name: 'Field Tests' })).toBeTruthy()
+    expect(
+      screen.queryByRole('heading', { name: 'Robotics Research' }),
+    ).toBeNull()
+    expect(screen.getByText('Inspect test site')).toBeTruthy()
+  })
+})
+
+
+describe('WorkspaceRoot view preference changes', () => {
+  it('reports updated view preferences without changing workspace state', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const onViewPreferencesChange = vi.fn()
+    const initialState = store.getState()
+
+    render(
+      <WorkspaceRoot
+        store={store}
+        commands={commands}
+        onViewPreferencesChange={onViewPreferencesChange}
+      />,
+    )
+
+    await user.type(screen.getByLabelText('Search tasks'), 'safety')
+    await user.selectOptions(screen.getByLabelText('Sort tasks'), 'priority')
+
+    expect(onViewPreferencesChange).toHaveBeenLastCalledWith({
+      ...createDefaultViewPreferences(),
+      query: 'safety',
+      sort: 'priority',
+    })
+    expect(store.getState()).toBe(initialState)
   })
 })

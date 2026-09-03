@@ -203,3 +203,33 @@ artificial production delays.
 TDD 056 is the reference case: a direct `commands.renameProject(...)` call after
 render was wrapped in `act(...)`, while the selected-project and renamed-heading
 assertions stayed unchanged.
+
+
+## View-preference persistence boundary
+
+Do not add UI filters, search text, sort order, or selected-project focus to the
+versioned workspace document merely to remember the current screen.
+
+Use the separate versioned view-preference storage boundary. Workspace storage
+is durable domain data and is validated strictly; view preferences are
+non-critical UI state and invalid/unsupported preference documents fall back to
+defaults.
+
+When a project referenced by saved focus is deleted, repair the preference to
+`all` at the user action boundary so the persisted view does not remain stale.
+
+
+## Type ownership across boundaries
+
+Import a type from the module that owns and defines it. A module that merely
+uses a type does not automatically become a re-export boundary.
+
+For example, `ViewPreferences` belongs to `domain/view-preferences.ts`.
+`persistence/view-preferences-storage.ts` accepts and returns that type but does
+not re-export it, so composition code must import the type from the domain
+module.
+
+Only import a type through another layer when that layer intentionally exports
+it as part of its public API. This keeps dependency direction explicit and lets
+the production TypeScript build catch accidental boundary assumptions that
+transpile-only tests may not.

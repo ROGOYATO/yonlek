@@ -6,13 +6,14 @@ The current implementation is intentionally small. It is being developed as a se
 
 ## Current checkpoint
 
-Prepared checkpoint for this batch:
+Checkpoint represented by this source state:
 
-- starting commit: `ab244c6` (`TDD 046-053: harden workspace persistence recovery`)
-- TDD state: cycle 060 GREEN
-- tests: 90 passing
-- production build: expected passing
-- lint: expected 0 warnings, 0 errors
+- starting commit for TDD 061-068: `df1b4ff` (`TDD 054-060: add project focus and workspace summaries`)
+- TDD state: cycle 068 GREEN
+- tests: 102 passing
+- production build: passing after the `ViewPreferences` type-import correction
+- lint: 0 warnings, 0 errors
+- workspace-data schema: unchanged by view-preference persistence
 
 ## Implemented behavior
 
@@ -163,6 +164,34 @@ Project view state is intentionally not persisted yet. The selected project is
 held as React UI state keyed by immutable project ID, so project renames preserve
 focus and deleting the selected project can fall back to the all-projects view
 without a persistence migration.
+
+
+View preferences:
+
+- project focus, task search, task filters, and task sorting are stored under a
+  separate versioned `workspace-app.view-preferences` document;
+- preference corruption or unsupported preference versions fall back to
+  defaults and never block workspace startup;
+- preference writes do not modify the versioned workspace project/task
+  document;
+- deleting the currently focused project repairs the saved focus back to
+  `All projects`.
+
+This separation is deliberate: projects and tasks are durable workspace data;
+focus/filter/sort values are disposable UI preferences.
+
+
+Type ownership:
+
+- import domain types from the module that defines them;
+- a persistence or application boundary may consume a domain type without
+  becoming that type's public owner;
+- do not import a type through another boundary unless that boundary
+  intentionally re-exports it as part of its API.
+
+The TDD 068 build correction is the reference case: `ViewPreferences` is
+defined by `domain/view-preferences.ts`; `view-preferences-storage.ts` consumes
+it but does not re-export it.
 
 ## Hosting and backend status
 

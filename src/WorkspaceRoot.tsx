@@ -3,15 +3,20 @@ import { useSyncExternalStore } from 'react'
 import { App } from './App'
 import type { WorkspaceCommands } from './application/workspace-commands'
 import type { WorkspaceStore } from './application/workspace-store'
+import type { ViewPreferences } from './domain/view-preferences'
 
 export interface WorkspaceRootProps {
   store: WorkspaceStore
   commands: WorkspaceCommands
+  initialViewPreferences?: ViewPreferences
+  onViewPreferencesChange?: (preferences: ViewPreferences) => void
 }
 
 export function WorkspaceRoot({
   store,
   commands,
+  initialViewPreferences,
+  onViewPreferencesChange,
 }: WorkspaceRootProps) {
   const state = useSyncExternalStore(
     store.subscribe,
@@ -22,6 +27,8 @@ export function WorkspaceRoot({
   return (
     <App
       state={state}
+      initialViewPreferences={initialViewPreferences}
+      onViewPreferencesChange={onViewPreferencesChange}
       onCreateProject={(name) => {
         commands.addProject(name)
       }}

@@ -6,6 +6,11 @@ import {
 } from './domain/task-filter'
 import { sortTasks, type TaskSort } from './domain/task-sort'
 import { summarizeTasks } from './domain/task-summary'
+import {
+  createDefaultViewPreferences,
+  updateViewPreferences,
+  type ViewPreferences,
+} from './domain/view-preferences'
 import type { TaskPriority, TaskStatus } from './domain/task'
 import { emptyWorkspace, type WorkspaceState } from './domain/workspace'
 
@@ -21,6 +26,8 @@ export interface AppProps {
   onChangeTaskPriority?: (taskId: string, priority: TaskPriority) => void
   onChangeTaskDueDate?: (taskId: string, dueDate: string | null) => void
   onChangeTaskDescription?: (taskId: string, description: string | null) => void
+  initialViewPreferences?: ViewPreferences
+  onViewPreferencesChange?: (preferences: ViewPreferences) => void
 }
 
 function errorMessage(error: unknown): string {
@@ -39,18 +46,33 @@ export function App({
   onChangeTaskPriority,
   onChangeTaskDueDate,
   onChangeTaskDescription,
+  initialViewPreferences = createDefaultViewPreferences(),
+  onViewPreferencesChange,
 }: AppProps) {
   const [projectName, setProjectName] = useState('')
   const [projectEdits, setProjectEdits] = useState<Record<string, string>>({})
   const [taskTitles, setTaskTitles] = useState<Record<string, string>>({})
   const [taskEdits, setTaskEdits] = useState<Record<string, string>>({})
   const [taskDescriptions, setTaskDescriptions] = useState<Record<string, string>>({})
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all')
-  const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all')
-  const [dueDateFilter, setDueDateFilter] = useState<TaskDueDateFilter>('all')
-  const [taskSort, setTaskSort] = useState<TaskSort>('created')
-  const [projectView, setProjectView] = useState<string>('all')
+  const [viewPreferences, setViewPreferences] = useState<ViewPreferences>(
+    initialViewPreferences,
+  )
+  const {
+    projectView,
+    query: searchQuery,
+    status: statusFilter,
+    priority: priorityFilter,
+    dueDate: dueDateFilter,
+    sort: taskSort,
+  } = viewPreferences
+
+  function updatePreferences(patch: Partial<ViewPreferences>) {
+    setViewPreferences((current) => {
+      const next = updateViewPreferences(current, patch)
+      onViewPreferencesChange?.(next)
+      return next
+    })
+  }
   const [error, setError] = useState<string | null>(null)
 
   function submitProject(event: FormEvent<HTMLFormElement>) {
@@ -95,7 +117,7 @@ export function App({
       <select
         id="project-view"
         value={effectiveProjectView}
-        onChange={(event) => setProjectView(event.target.value)}
+        onChange={(event) => updatePreferences({ projectView: event.target.value })}
       >
         <option value="all">All projects</option>
         {state.projects.map((project) => {
@@ -117,7 +139,7 @@ export function App({
       <input
         id="task-search"
         value={searchQuery}
-        onChange={(event) => setSearchQuery(event.target.value)}
+        onChange={(event) => updatePreferences({ query: event.target.value })}
       />
 
       <label htmlFor="task-status-filter">Filter by status</label>
@@ -125,7 +147,9 @@ export function App({
         id="task-status-filter"
         value={statusFilter}
         onChange={(event) =>
-          setStatusFilter(event.target.value as TaskStatus | 'all')
+          updatePreferences({
+            status: event.target.value as TaskStatus | 'all',
+          })
         }
       >
         <option value="all">All statuses</option>
@@ -139,7 +163,9 @@ export function App({
         id="task-priority-filter"
         value={priorityFilter}
         onChange={(event) =>
-          setPriorityFilter(event.target.value as TaskPriority | 'all')
+          updatePreferences({
+            priority: event.target.value as TaskPriority | 'all',
+          })
         }
       >
         <option value="all">All priorities</option>
@@ -155,7 +181,9 @@ export function App({
         id="task-due-date-filter"
         value={dueDateFilter}
         onChange={(event) =>
-          setDueDateFilter(event.target.value as TaskDueDateFilter)
+          updatePreferences({
+            dueDate: event.target.value as TaskDueDateFilter,
+          })
         }
       >
         <option value="all">All due dates</option>
@@ -169,7 +197,9 @@ export function App({
       <select
         id="task-sort"
         value={taskSort}
-        onChange={(event) => setTaskSort(event.target.value as TaskSort)}
+        onChange={(event) =>
+          updatePreferences({ sort: event.target.value as TaskSort })
+        }
       >
         <option value="created">Created</option>
         <option value="title">Title</option>
@@ -180,10 +210,12 @@ export function App({
       <button
         type="button"
         onClick={() => {
-          setSearchQuery('')
-          setStatusFilter('all')
-          setPriorityFilter('all')
-          setDueDateFilter('all')
+          updatePreferences({
+            query: '',
+            status: 'all',
+            priority: 'all',
+            dueDate: 'all',
+          })
         }}
       >
         Clear task filters
@@ -272,7 +304,13 @@ export function App({
               {onDeleteProject ? (
                 <button
                   type="button"
-                  onClick={() => onDeleteProject(project.id)}
+                  onClick={() => {
+                    if (effectiveProjectView === project.id) {
+                      updatePreferences({ projectView: 'all' })
+                    }
+
+                    onDeleteProject(project.id)
+                  }}
                 >
                   Delete project {project.name}
                 </button>
