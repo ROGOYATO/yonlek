@@ -88,3 +88,15 @@ it('falls back to defaults for invalid preference values', () => {
 
   expect(loadViewPreferences(storage)).toEqual(createDefaultViewPreferences())
 })
+
+
+it('falls back to defaults when preference storage cannot be read', () => {
+  const storage: KeyValueStore = {
+    getItem: () => {
+      throw new Error('Preference read failed')
+    },
+    setItem: () => undefined,
+  }
+
+  expect(loadViewPreferences(storage)).toEqual(createDefaultViewPreferences())
+})

@@ -43,7 +43,13 @@ function isValidPreferences(value: unknown): value is ViewPreferences {
 export function loadViewPreferences(
   storage: KeyValueStore,
 ): ViewPreferences {
-  const raw = storage.getItem(STORAGE_KEY)
+  let raw: string | null
+
+  try {
+    raw = storage.getItem(STORAGE_KEY)
+  } catch {
+    return createDefaultViewPreferences()
+  }
 
   if (raw === null) {
     return createDefaultViewPreferences()

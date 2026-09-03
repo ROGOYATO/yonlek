@@ -31,6 +31,17 @@ class MemoryStore implements KeyValueStore {
   }
 }
 
+
+class PreferenceWriteFailingStore extends MemoryStore {
+  setItem(key: string, value: string) {
+    if (key === 'workspace-app.view-preferences') {
+      throw new Error('Preference write failed')
+    }
+
+    super.setItem(key, value)
+  }
+}
+
 describe('BrowserApp', () => {
   it('renders workspace state loaded from browser storage', () => {
     const storage = new MemoryStore()
@@ -261,4 +272,101 @@ it('repairs persisted project focus when the focused project is deleted', async 
   expect(
     screen.getByRole('heading', { name: 'Robotics Research' }),
   ).toBeTruthy()
+})
+
+
+it('keeps view changes usable when preference persistence fails', async () => {
+  const user = userEvent.setup()
+  const storage = new PreferenceWriteFailingStore()
+
+  saveWorkspace(storage, emptyWorkspace)
+
+  render(
+    <BrowserApp
+      storage={storage}
+      runtime={{
+        nextId: () => 'unused-id',
+        now: () => '2026-09-03T15:10:00.000Z',
+      }}
+    />,
+  )
+
+  await user.selectOptions(screen.getByLabelText('Sort tasks'), 'priority')
+
+  expect((screen.getByLabelText('Sort tasks') as HTMLSelectElement).value).toBe(
+    'priority',
+  )
+  expect(screen.queryByRole('alert')).toBeNull()
+})
+
+
+it('repairs a saved project focus that no longer exists', () => {
+  const storage = new MemoryStore()
+  const robotics = createProject({
+    id: 'project-1',
+    name: 'Robotics Research',
+    now: '2026-09-03T15:20:00.000Z',
+  })
+
+  saveWorkspace(storage, {
+    projects: [robotics],
+    tasks: [],
+  })
+  saveViewPreferences(storage, {
+    ...createDefaultViewPreferences(),
+    projectView: 'missing-project',
+  })
+
+  render(
+    <BrowserApp
+      storage={storage}
+      runtime={{
+        nextId: () => 'unused-id',
+        now: () => '2026-09-03T15:21:00.000Z',
+      }}
+    />,
+  )
+
+  expect(
+    (screen.getByLabelText('View project') as HTMLSelectElement).value,
+  ).toBe('all')
+  expect(loadViewPreferences(storage).projectView).toBe('all')
+  expect(
+    screen.getByRole('heading', { name: 'Robotics Research' }),
+  ).toBeTruthy()
+})
+
+
+it('resets view preferences when invalid workspace data is reset', async () => {
+  const user = userEvent.setup()
+  const storage = new MemoryStore()
+  storage.setItem('workspace-app.workspace', '{not-json')
+  saveViewPreferences(storage, {
+    ...createDefaultViewPreferences(),
+    query: 'stale query',
+    status: 'done',
+    sort: 'priority',
+  })
+
+  render(
+    <BrowserApp
+      storage={storage}
+      runtime={{
+        nextId: () => 'unused-id',
+        now: () => '2026-09-03T15:30:00.000Z',
+      }}
+    />,
+  )
+
+  await user.click(
+    screen.getByRole('button', { name: 'Reset saved workspace' }),
+  )
+
+  expect(loadViewPreferences(storage)).toEqual(createDefaultViewPreferences())
+  expect((screen.getByLabelText('Search tasks') as HTMLInputElement).value).toBe(
+    '',
+  )
+  expect((screen.getByLabelText('Sort tasks') as HTMLSelectElement).value).toBe(
+    'created',
+  )
 })

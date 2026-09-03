@@ -233,3 +233,21 @@ Only import a type through another layer when that layer intentionally exports
 it as part of its public API. This keeps dependency direction explicit and lets
 the production TypeScript build catch accidental boundary assumptions that
 transpile-only tests may not.
+
+
+## Disposable preferences vs durable workspace data
+
+Treat the two browser persistence documents differently:
+
+- view preferences are non-critical UI state. Read failures, malformed values,
+  unsupported versions, and write failures must not prevent the workspace from
+  remaining usable;
+- workspace projects/tasks are durable domain data. Reject duplicate entity IDs,
+  invalid relationships, invalid metadata, and malformed creation timestamps.
+
+When saved project focus references a project that no longer exists, normalize
+it to `all` and attempt to persist the repair. If that repair write fails, keep
+the normalized in-memory view anyway.
+
+Resetting invalid workspace data also resets view preferences so recovery does
+not immediately reapply stale filters or focus.

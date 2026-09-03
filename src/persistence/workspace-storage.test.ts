@@ -303,3 +303,125 @@ it('loads valid optional due dates and descriptions', () => {
     description: 'Prepare the calibration procedure.',
   })
 })
+
+
+it('rejects duplicate persisted project ids', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: [
+            {
+              id: 'project-1',
+              name: 'Robotics Research',
+              createdAt: '2026-09-03T15:40:00.000Z',
+            },
+            {
+              id: 'project-1',
+              name: 'Field Tests',
+              createdAt: '2026-09-03T15:41:00.000Z',
+            },
+          ],
+          tasks: [],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+})
+
+
+it('rejects duplicate persisted task ids', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: [
+            {
+              id: 'project-1',
+              name: 'Robotics Research',
+              createdAt: '2026-09-03T15:50:00.000Z',
+            },
+          ],
+          tasks: [
+            {
+              id: 'task-1',
+              projectId: 'project-1',
+              title: 'Draft experiment plan',
+              status: 'todo',
+              priority: 'normal',
+              createdAt: '2026-09-03T15:51:00.000Z',
+            },
+            {
+              id: 'task-1',
+              projectId: 'project-1',
+              title: 'Review safety checklist',
+              status: 'todo',
+              priority: 'normal',
+              createdAt: '2026-09-03T15:52:00.000Z',
+            },
+          ],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+})
+
+
+it('rejects an invalid persisted project creation timestamp', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: [
+            {
+              id: 'project-1',
+              name: 'Robotics Research',
+              createdAt: 'not-a-timestamp',
+            },
+          ],
+          tasks: [],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+})
+
+it('rejects an invalid persisted task creation timestamp', () => {
+  const store: KeyValueStore = {
+    getItem: () =>
+      JSON.stringify({
+        version: 1,
+        workspace: {
+          projects: [
+            {
+              id: 'project-1',
+              name: 'Robotics Research',
+              createdAt: '2026-09-03T16:00:00.000Z',
+            },
+          ],
+          tasks: [
+            {
+              id: 'task-1',
+              projectId: 'project-1',
+              title: 'Draft experiment plan',
+              status: 'todo',
+              priority: 'normal',
+              createdAt: '2026-02-31T16:01:00.000Z',
+            },
+          ],
+        },
+      }),
+    setItem: () => undefined,
+  }
+
+  expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+})

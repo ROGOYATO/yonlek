@@ -6,14 +6,14 @@ The current implementation is intentionally small. It is being developed as a se
 
 ## Current checkpoint
 
-Checkpoint represented by this source state:
+User-confirmed starting checkpoint for this batch:
 
-- starting commit for TDD 061-068: `df1b4ff` (`TDD 054-060: add project focus and workspace summaries`)
-- TDD state: cycle 068 GREEN
-- tests: 102 passing
-- production build: passing after the `ViewPreferences` type-import correction
+- branch: `main`
+- commit: `5689bf1` (`TDD 061-068: persist workspace view preferences`)
+- TDD state: cycle 075 GREEN
+- tests: 110 passing
+- production build: passing
 - lint: 0 warnings, 0 errors
-- workspace-data schema: unchanged by view-preference persistence
 
 ## Implemented behavior
 
@@ -192,6 +192,20 @@ Type ownership:
 The TDD 068 build correction is the reference case: `ViewPreferences` is
 defined by `domain/view-preferences.ts`; `view-preferences-storage.ts` consumes
 it but does not re-export it.
+
+
+Persistence reliability:
+
+- view-preference reads and writes are best-effort; storage failures fall back
+  to defaults or keep the current UI usable;
+- stale saved project focus is repaired to `All projects` at startup;
+- resetting invalid workspace data also resets view preferences;
+- durable workspace loading rejects duplicate project IDs, duplicate task IDs,
+  and invalid `createdAt` ISO instants.
+
+The asymmetry is intentional: preferences are disposable UI state, while
+workspace entities are durable data whose identity and timestamps must remain
+internally consistent.
 
 ## Hosting and backend status
 

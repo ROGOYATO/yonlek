@@ -272,3 +272,28 @@ reruns the production build, full `npm run check`, and diff gates before commit.
 
 Durable rule: type ownership follows the defining module unless another
 boundary intentionally re-exports the type as public API.
+
+
+## Cycles 069-075
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 069 | Preference storage read failure falls back to defaults | GREEN |
+| 070 | Preference write failure does not block UI view changes | GREEN |
+| 071 | Missing saved project focus is repaired to All projects at startup | GREEN |
+| 072 | Resetting invalid workspace data also resets view preferences | GREEN |
+| 073 | Duplicate persisted project IDs are rejected | GREEN |
+| 074 | Duplicate persisted task IDs are rejected | GREEN |
+| 075 | Persisted project/task creation timestamps must be canonical ISO instants | GREEN |
+
+Expected successful checkpoint:
+
+```text
+Tests: 110 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+```
+
+The persistence policy is intentionally asymmetric: view preferences degrade to
+defaults or best-effort saves, while durable workspace data fails closed when
+identity or timestamp invariants are invalid.

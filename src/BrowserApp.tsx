@@ -5,7 +5,11 @@ import {
   type WorkspaceRuntime,
 } from './application/workspace-commands'
 import { createWorkspaceStore } from './application/workspace-store'
-import type { ViewPreferences } from './domain/view-preferences'
+import {
+  createDefaultViewPreferences,
+  updateViewPreferences,
+  type ViewPreferences,
+} from './domain/view-preferences'
 import {
   loadViewPreferences,
   saveViewPreferences,
@@ -24,6 +28,17 @@ const defaultRuntime: WorkspaceRuntime = {
   now: () => new Date().toISOString(),
 }
 
+function persistViewPreferences(
+  storage: KeyValueStore,
+  preferences: ViewPreferences,
+): void {
+  try {
+    saveViewPreferences(storage, preferences)
+  } catch {
+    // View preferences are non-critical. Keep the current UI usable.
+  }
+}
+
 function createBrowserApplication(
   storage: KeyValueStore,
   runtime: WorkspaceRuntime,
@@ -31,7 +46,21 @@ function createBrowserApplication(
   try {
     const store = createWorkspaceStore(storage)
     const commands = createWorkspaceCommands(store, runtime)
-    const viewPreferences = loadViewPreferences(storage)
+    const savedViewPreferences = loadViewPreferences(storage)
+    const projectFocusExists =
+      savedViewPreferences.projectView === 'all' ||
+      store
+        .getState()
+        .projects.some(
+          (project) => project.id === savedViewPreferences.projectView,
+        )
+    const viewPreferences = projectFocusExists
+      ? savedViewPreferences
+      : updateViewPreferences(savedViewPreferences, { projectView: 'all' })
+
+    if (viewPreferences !== savedViewPreferences) {
+      persistViewPreferences(storage, viewPreferences)
+    }
 
     return { store, commands, viewPreferences, error: null }
   } catch {
@@ -65,6 +94,7 @@ export function BrowserApp({
           type="button"
           onClick={() => {
             saveWorkspace(storage, emptyWorkspace)
+            persistViewPreferences(storage, createDefaultViewPreferences())
             setApplication(createBrowserApplication(storage, runtime))
           }}
         >
@@ -80,7 +110,7 @@ export function BrowserApp({
       commands={application.commands}
       initialViewPreferences={application.viewPreferences as ViewPreferences}
       onViewPreferencesChange={(preferences) => {
-        saveViewPreferences(storage, preferences)
+        persistViewPreferences(storage, preferences)
       }}
     />
   )

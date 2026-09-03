@@ -23,6 +23,20 @@ function invalidStorage(): never {
 }
 
 
+function isIsoInstant(value: unknown): value is string {
+  if (typeof value !== 'string') {
+    return false
+  }
+
+  const instant = new Date(value)
+
+  return (
+    !Number.isNaN(instant.getTime()) &&
+    instant.toISOString() === value
+  )
+}
+
+
 function isValidProject(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -30,7 +44,7 @@ function isValidProject(value: unknown): boolean {
     value.id.trim().length > 0 &&
     typeof value.name === 'string' &&
     value.name.trim().length > 0 &&
-    typeof value.createdAt === 'string'
+    isIsoInstant(value.createdAt)
   )
 }
 
@@ -50,7 +64,7 @@ function isValidTask(value: unknown): boolean {
     (value.priority !== 'low' &&
       value.priority !== 'normal' &&
       value.priority !== 'high') ||
-    typeof value.createdAt !== 'string' ||
+    !isIsoInstant(value.createdAt) ||
     (value.description !== undefined &&
       typeof value.description !== 'string')
   ) {
@@ -115,6 +129,18 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   const projectIds = new Set(
     workspace.projects.map((project) => (project as { id: string }).id),
   )
+
+  if (projectIds.size !== workspace.projects.length) {
+    invalidStorage()
+  }
+
+  const taskIds = new Set(
+    workspace.tasks.map((task) => (task as { id: string }).id),
+  )
+
+  if (taskIds.size !== workspace.tasks.length) {
+    invalidStorage()
+  }
 
   if (
     workspace.tasks.some(
