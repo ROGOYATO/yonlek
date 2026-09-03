@@ -46,6 +46,9 @@ export function WorkspaceRoot({
       onChangeTaskPriority={(taskId, priority) => {
         commands.changeTaskPriority(taskId, priority)
       }}
+      onChangeTaskDueDate={(taskId, dueDate) => {
+        commands.changeTaskDueDate(taskId, dueDate)
+      }}
     />
   )
 }

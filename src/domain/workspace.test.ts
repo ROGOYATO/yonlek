@@ -142,3 +142,20 @@ it('renames a project without mutating the previous state', () => {
   expect(next.projects[0]?.name).toBe('Autonomy Lab')
   expect(state.projects[0]?.name).toBe('Robotics Research')
 })
+
+
+it('changes a task due date without mutating the previous state', () => {
+  const state = {
+    projects: [project],
+    tasks: [task],
+  }
+
+  const next = workspaceReducer(state, {
+    type: 'task/dueDateChanged',
+    taskId: task.id,
+    dueDate: '2026-09-12',
+  } as never)
+
+  expect(next.tasks[0]?.dueDate).toBe('2026-09-12')
+  expect(state.tasks[0]).not.toHaveProperty('dueDate')
+})

@@ -77,3 +77,51 @@ Lint: 0 warnings, 0 errors
 Workflow maintenance 003 adds exact partial-state validation for safe resume
 bundles. Cycle 022 was moved to a new test file so the historical BOM in
 `src/domain/project.test.ts` remains untouched.
+
+
+## Cycles 031-038
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 031 | Optional task due date domain behavior and calendar-date validation | GREEN |
+| 032 | Workspace reducer task due-date change | GREEN |
+| 033 | Task due-date application command | GREEN |
+| 034 | Set and clear task due date through the UI | GREEN |
+| 035 | Pure due-date-presence filtering | GREEN |
+| 036 | Due-date filter UI | GREEN |
+| 037 | Pure immutable task sorting | GREEN |
+| 038 | Task sort UI | GREEN |
+
+User-confirmed behavior checkpoint before the build-boundary correction:
+
+```text
+Tests: 59 passed
+TDD 031-038 focused GREENs: passed
+Lint: passed
+Build: stopped with TS2882 on the new ./styles.css side-effect import
+Commit: not created
+```
+
+Configuration correction after cycle 038:
+
+- add `src/vite-env.d.ts` with the Vite client type reference;
+- do not change a behavior test;
+- rerun the production build, full `npm run check`, and `git diff --check`;
+- commit only after those gates pass.
+
+The post-step adds presentation-only CSS and imports it from the browser entrypoint. No dependency is added.
+
+
+## Bundle workflow corrections recorded through cycle 038
+
+| Maintenance | Correction |
+| --- | --- |
+| runner v2 | UTF-8 console output and post-cycle maintenance support |
+| runner v3 | exact dirty-state and checksum validation for resume bundles |
+| runner v4 | expected RED stderr/non-zero exits no longer abort PowerShell before RED validation |
+| runner v5 | guarded content transforms replace BOM/CRLF-sensitive source patches |
+| runner v6 | normalized-content resume hashes and canonical LF guarded writes |
+| runner v7 | optional manifest collections are null-safe; clean bundles use explicit empty checksum arrays |
+| build fix after 038 | Vite client type declaration added for the CSS side-effect import |
+
+Important operational rule: a failed RED is expected; an unexpected RED, failed GREEN, failed diff check, lint failure, test failure, or build failure stops the batch. Stopped state is preserved and resumed from exact Git state rather than reset.

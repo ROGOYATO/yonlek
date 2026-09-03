@@ -42,3 +42,28 @@ describe('filterTasks', () => {
     expect(result).toEqual([review])
   })
 })
+
+
+it('filters tasks that have a due date', () => {
+  const scheduled = { ...draft, dueDate: '2026-09-12' }
+  const result = filterTasks([scheduled, review], {
+    query: '',
+    status: 'all',
+    priority: 'all',
+    dueDate: 'withDueDate',
+  })
+
+  expect(result).toEqual([scheduled])
+})
+
+it('filters tasks that do not have a due date', () => {
+  const scheduled = { ...draft, dueDate: '2026-09-12' }
+  const result = filterTasks([scheduled, review], {
+    query: '',
+    status: 'all',
+    priority: 'all',
+    dueDate: 'withoutDueDate',
+  })
+
+  expect(result).toEqual([review])
+})

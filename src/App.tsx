@@ -1,6 +1,10 @@
 import { useState, type FormEvent } from 'react'
 
-import { filterTasks } from './domain/task-filter'
+import {
+  filterTasks,
+  type TaskDueDateFilter,
+} from './domain/task-filter'
+import { sortTasks, type TaskSort } from './domain/task-sort'
 import type { TaskPriority, TaskStatus } from './domain/task'
 import { emptyWorkspace, type WorkspaceState } from './domain/workspace'
 
@@ -14,6 +18,7 @@ export interface AppProps {
   onDeleteTask?: (taskId: string) => void
   onChangeTaskStatus?: (taskId: string, status: TaskStatus) => void
   onChangeTaskPriority?: (taskId: string, priority: TaskPriority) => void
+  onChangeTaskDueDate?: (taskId: string, dueDate: string | null) => void
 }
 
 function errorMessage(error: unknown): string {
@@ -30,6 +35,7 @@ export function App({
   onDeleteTask,
   onChangeTaskStatus,
   onChangeTaskPriority,
+  onChangeTaskDueDate,
 }: AppProps) {
   const [projectName, setProjectName] = useState('')
   const [projectEdits, setProjectEdits] = useState<Record<string, string>>({})
@@ -38,6 +44,8 @@ export function App({
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all')
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all')
+  const [dueDateFilter, setDueDateFilter] = useState<TaskDueDateFilter>('all')
+  const [taskSort, setTaskSort] = useState<TaskSort>('created')
   const [error, setError] = useState<string | null>(null)
 
   function submitProject(event: FormEvent<HTMLFormElement>) {
@@ -97,12 +105,41 @@ export function App({
         <option value="high">High</option>
       </select>
 
+
+
+      <label htmlFor="task-due-date-filter">Filter by due date</label>
+      <select
+        id="task-due-date-filter"
+        value={dueDateFilter}
+        onChange={(event) =>
+          setDueDateFilter(event.target.value as TaskDueDateFilter)
+        }
+      >
+        <option value="all">All due dates</option>
+        <option value="withDueDate">With due date</option>
+        <option value="withoutDueDate">Without due date</option>
+      </select>
+
+
+
+      <label htmlFor="task-sort">Sort tasks</label>
+      <select
+        id="task-sort"
+        value={taskSort}
+        onChange={(event) => setTaskSort(event.target.value as TaskSort)}
+      >
+        <option value="created">Created</option>
+        <option value="title">Title</option>
+        <option value="dueDate">Due date</option>
+      </select>
+
       <button
         type="button"
         onClick={() => {
           setSearchQuery('')
           setStatusFilter('all')
           setPriorityFilter('all')
+          setDueDateFilter('all')
         }}
       >
         Clear task filters
@@ -127,11 +164,15 @@ export function App({
           const projectTasks = state.tasks.filter(
             (task) => task.projectId === project.id,
           )
-          const tasks = filterTasks(projectTasks, {
-            query: searchQuery,
-            status: statusFilter,
-            priority: priorityFilter,
-          })
+          const tasks = sortTasks(
+            filterTasks(projectTasks, {
+              query: searchQuery,
+              status: statusFilter,
+              priority: priorityFilter,
+              dueDate: dueDateFilter,
+            }),
+            taskSort,
+          )
           const taskTitle = taskTitles[project.id] ?? ''
           const editedProjectName = projectEdits[project.id] ?? project.name
 
@@ -308,6 +349,27 @@ export function App({
                               <option value="normal">Normal</option>
                               <option value="high">High</option>
                             </select>
+                          </>
+                        ) : null}
+
+
+
+                        {onChangeTaskDueDate ? (
+                          <>
+                            <label htmlFor={`task-due-date-${task.id}`}>
+                              Due date for {task.title}
+                            </label>
+                            <input
+                              id={`task-due-date-${task.id}`}
+                              type="date"
+                              value={task.dueDate ?? ''}
+                              onChange={(event) =>
+                                onChangeTaskDueDate(
+                                  task.id,
+                                  event.target.value || null,
+                                )
+                              }
+                            />
                           </>
                         ) : null}
 

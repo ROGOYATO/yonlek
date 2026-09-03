@@ -108,3 +108,24 @@ describe('project rename command', () => {
     expect(store.getState().projects[0]?.name).toBe('Autonomy Lab')
   })
 })
+
+
+describe('task due date command', () => {
+  it('sets and clears a task due date through the workspace store', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-03T05:05:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+
+    commands.changeTaskDueDate(task.id, '2026-09-12')
+    expect(store.getState().tasks[0]?.dueDate).toBe('2026-09-12')
+
+    commands.changeTaskDueDate(task.id, null)
+    expect(store.getState().tasks[0]).not.toHaveProperty('dueDate')
+  })
+})

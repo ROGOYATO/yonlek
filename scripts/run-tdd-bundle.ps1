@@ -312,7 +312,7 @@ try {
         }
     }
 
-    foreach ($entry in @($manifest.expectedFileSha256)) {
+    foreach ($entry in @($manifest.expectedFileSha256 | Where-Object { $null -ne $_ })) {
         $relativePath = [string]$entry.path
         $expectedSha = ([string]$entry.sha256).ToLowerInvariant()
         $candidate = Join-Path $Repo $relativePath
@@ -331,7 +331,7 @@ try {
         }
     }
 
-    foreach ($entry in @($manifest.expectedNormalizedFileSha256)) {
+    foreach ($entry in @($manifest.expectedNormalizedFileSha256 | Where-Object { $null -ne $_ })) {
         $relativePath = [string]$entry.path
         $expectedSha = ([string]$entry.sha256).ToLowerInvariant()
         $candidate = Join-Path $Repo $relativePath
@@ -372,7 +372,7 @@ try {
     Write-BundleLog "HEAD: $head"
     Write-BundleLog "Log: $script:LogPath"
 
-    foreach ($step in @($manifest.maintenanceSteps)) {
+    foreach ($step in @($manifest.maintenanceSteps | Where-Object { $null -ne $_ })) {
         Write-BundleLog ""
         Write-BundleLog "##### MAINTENANCE $($step.id) #####"
 
@@ -393,7 +393,7 @@ try {
         }
     }
 
-    foreach ($cycle in @($manifest.cycles)) {
+    foreach ($cycle in @($manifest.cycles | Where-Object { $null -ne $_ })) {
         Write-BundleLog ""
         Write-BundleLog "##### TDD $($cycle.id) RED #####"
 
@@ -444,7 +444,7 @@ try {
     }
 
 
-    foreach ($step in @($manifest.postSteps)) {
+    foreach ($step in @($manifest.postSteps | Where-Object { $null -ne $_ })) {
         Write-BundleLog ""
         Write-BundleLog "##### POST $($step.id) #####"
 
@@ -465,7 +465,7 @@ try {
         }
     }
 
-    foreach ($command in @($manifest.finalCommands)) {
+    foreach ($command in @($manifest.finalCommands | Where-Object { $null -ne $_ })) {
         [void](Invoke-ManifestCommand `
             -Command $command `
             -Label "Final - $($command.label)")

@@ -111,3 +111,37 @@ earlier stopped run. In that case the manifest must list the exact expected
 
 Do not disable the clean-tree guard generally. Resume exceptions must be pinned
 to the exact partial state they are designed to continue from.
+
+
+## Presentation-only post-steps
+
+CSS and other presentation-only changes may be applied after the behavioral TDD
+cycles are green. They must not add JavaScript behavior or alter a behavior test.
+The final lint, test, build, and diff gates still apply.
+
+
+## Bundle implementation rules learned on Windows
+
+These are required for future generated bundles:
+
+1. **RED semantics:** non-zero exit is required. The runner must also match stable test/file identifiers so an unrelated failure cannot count as RED.
+2. **GREEN semantics:** zero exit is required. Never continue after a failed focused GREEN.
+3. **Native stderr:** expected Vitest stderr during RED must be captured as output, not promoted to a terminating PowerShell exception.
+4. **Guarded edits:** prefer guarded file transforms for existing source files. Compare normalized text SHA-256, ignoring only BOM and CR/LF representation; write canonical LF and preserve an existing UTF-8 BOM only when necessary.
+5. **Resume state:** do not reset a stopped batch. A resume manifest must pin branch, HEAD, exact `git status --porcelain` entries, and hashes for the partial files it expects.
+6. **Manifest optionals:** omitted optional collections must be treated as empty. Prefer explicitly writing `[]` for `expectedStatus`, `expectedFileSha256`, and `expectedNormalizedFileSha256` on clean-start bundles.
+7. **Post-steps:** documentation and CSS may run only after behavioral cycles are GREEN. They still must pass lint, tests, production build, and `git diff --check`.
+8. **Vite CSS typing:** if the browser entry imports CSS, keep `src/vite-env.d.ts` with `/// <reference types="vite/client" />`; otherwise TypeScript 6 with the current config can reject the side-effect CSS import with TS2882.
+9. **Logs and terminal:** write logs to `.tdd-logs/`, never call `exit`, and never use destructive cleanup commands.
+10. **Automatic commit:** commit only after focused GREENs and all final gates pass. A stopped batch remains uncommitted.
+
+### What to send after a stop
+
+Normally send the bundle log. If a resume precondition itself fails, also send:
+
+```powershell
+git rev-parse HEAD
+git status --short
+```
+
+Do not manually apply the next GREEN patch. The resume bundle should encode the exact continuation.

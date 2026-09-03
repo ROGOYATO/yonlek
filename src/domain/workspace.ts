@@ -1,5 +1,11 @@
 import { renameProject, type Project } from './project'
-import { renameTask, type Task, type TaskPriority, type TaskStatus } from './task'
+import {
+  renameTask,
+  setTaskDueDate,
+  type Task,
+  type TaskPriority,
+  type TaskStatus,
+} from './task'
 
 export interface WorkspaceState {
   projects: Project[]
@@ -19,6 +25,7 @@ export type WorkspaceAction =
   | { type: 'task/statusChanged'; taskId: string; status: TaskStatus }
   | { type: 'task/titleChanged'; taskId: string; title: string }
   | { type: 'task/priorityChanged'; taskId: string; priority: TaskPriority }
+  | { type: 'task/dueDateChanged'; taskId: string; dueDate: string | null }
   | { type: 'task/deleted'; taskId: string }
 
 export function workspaceReducer(
@@ -90,6 +97,16 @@ export function workspaceReducer(
         tasks: state.tasks.map((task) =>
           task.id === action.taskId
             ? { ...task, priority: action.priority }
+            : task,
+        ),
+      }
+
+    case 'task/dueDateChanged':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? setTaskDueDate(task, action.dueDate)
             : task,
         ),
       }

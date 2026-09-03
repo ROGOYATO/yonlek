@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
@@ -335,5 +335,69 @@ describe('WorkspaceRoot clear task filters', () => {
     expect(
       (screen.getByLabelText('Filter by priority') as HTMLSelectElement).value,
     ).toBe('all')
+  })
+})
+
+
+describe('WorkspaceRoot task due date', () => {
+  it('lets a user set and clear a task due date', () => {
+    const { store, commands } = createTestApplication()
+    const project = commands.addProject('Robotics Research')
+    commands.addTask(project.id, 'Draft experiment plan')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    const input = screen.getByLabelText(
+      'Due date for Draft experiment plan',
+    ) as HTMLInputElement
+
+    fireEvent.change(input, { target: { value: '2026-09-12' } })
+    expect(store.getState().tasks[0]?.dueDate).toBe('2026-09-12')
+    expect(input.value).toBe('2026-09-12')
+
+    fireEvent.change(input, { target: { value: '' } })
+    expect(store.getState().tasks[0]).not.toHaveProperty('dueDate')
+    expect(input.value).toBe('')
+  })
+})
+
+
+describe('WorkspaceRoot due date filter', () => {
+  it('filters visible tasks by whether they have a due date', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const project = commands.addProject('Robotics Research')
+    const unscheduled = commands.addTask(project.id, 'Draft experiment plan')
+    const scheduled = commands.addTask(project.id, 'Review safety checklist')
+    commands.changeTaskDueDate(scheduled.id, '2026-09-12')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.selectOptions(
+      screen.getByLabelText('Filter by due date'),
+      'withDueDate',
+    )
+
+    expect(screen.getByText(scheduled.title)).toBeTruthy()
+    expect(screen.queryByText(unscheduled.title)).toBeNull()
+  })
+})
+
+
+describe('WorkspaceRoot task sorting', () => {
+  it('sorts visible tasks by title', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const project = commands.addProject('Robotics Research')
+    commands.addTask(project.id, 'Zebra task')
+    commands.addTask(project.id, 'Alpha task')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.selectOptions(screen.getByLabelText('Sort tasks'), 'title')
+
+    const items = screen.getAllByRole('listitem')
+    expect(items[0]?.textContent).toContain('Alpha task')
+    expect(items[1]?.textContent).toContain('Zebra task')
   })
 })
