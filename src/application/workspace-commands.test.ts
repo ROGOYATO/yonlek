@@ -129,3 +129,29 @@ describe('task due date command', () => {
     expect(store.getState().tasks[0]).not.toHaveProperty('dueDate')
   })
 })
+
+
+describe('task description command', () => {
+  it('sets and clears a task description through the workspace store', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-03T05:25:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+
+    commands.changeTaskDescription(
+      task.id,
+      'Prepare the camera calibration procedure.',
+    )
+    expect(store.getState().tasks[0]?.description).toBe(
+      'Prepare the camera calibration procedure.',
+    )
+
+    commands.changeTaskDescription(task.id, null)
+    expect(store.getState().tasks[0]).not.toHaveProperty('description')
+  })
+})

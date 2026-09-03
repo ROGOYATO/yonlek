@@ -1,6 +1,6 @@
 import type { Task } from './task'
 
-export type TaskSort = 'created' | 'title' | 'dueDate'
+export type TaskSort = 'created' | 'title' | 'dueDate' | 'priority'
 
 export function sortTasks(tasks: Task[], sort: TaskSort): Task[] {
   return [...tasks].sort((left, right) => {
@@ -8,6 +8,19 @@ export function sortTasks(tasks: Task[], sort: TaskSort): Task[] {
       return left.title.localeCompare(right.title, undefined, {
         sensitivity: 'base',
       })
+    }
+
+    if (sort === 'priority') {
+      const rank = {
+        high: 0,
+        normal: 1,
+        low: 2,
+      } as const
+      const priorityOrder = rank[left.priority] - rank[right.priority]
+
+      return priorityOrder !== 0
+        ? priorityOrder
+        : left.createdAt.localeCompare(right.createdAt)
     }
 
     if (sort === 'dueDate') {

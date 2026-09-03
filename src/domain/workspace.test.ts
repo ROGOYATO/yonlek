@@ -159,3 +159,22 @@ it('changes a task due date without mutating the previous state', () => {
   expect(next.tasks[0]?.dueDate).toBe('2026-09-12')
   expect(state.tasks[0]).not.toHaveProperty('dueDate')
 })
+
+
+it('changes a task description without mutating the previous state', () => {
+  const state = {
+    projects: [project],
+    tasks: [task],
+  }
+
+  const next = workspaceReducer(state, {
+    type: 'task/descriptionChanged',
+    taskId: task.id,
+    description: '  Prepare the camera calibration procedure.  ',
+  } as never)
+
+  expect(next.tasks[0]?.description).toBe(
+    'Prepare the camera calibration procedure.',
+  )
+  expect(state.tasks[0]).not.toHaveProperty('description')
+})

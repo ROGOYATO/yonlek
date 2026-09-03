@@ -49,6 +49,9 @@ export function WorkspaceRoot({
       onChangeTaskDueDate={(taskId, dueDate) => {
         commands.changeTaskDueDate(taskId, dueDate)
       }}
+      onChangeTaskDescription={(taskId, description) => {
+        commands.changeTaskDescription(taskId, description)
+      }}
     />
   )
 }

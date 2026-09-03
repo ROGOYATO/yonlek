@@ -55,3 +55,30 @@ describe('sortTasks', () => {
     ).toEqual(['task-2', 'task-1', 'task-3'])
   })
 })
+
+
+it('sorts high priority before normal and low without mutating the input', () => {
+  const low = { ...zebra, priority: 'low' as const }
+  const normal = { ...alpha, priority: 'normal' as const }
+  const high = {
+    ...createTask({
+      id: 'task-3',
+      projectId: 'project-1',
+      title: 'High priority task',
+      now: '2026-09-03T05:20:00.000Z',
+    }),
+    priority: 'high' as const,
+  }
+  const tasks = [low, normal, high]
+
+  expect(sortTasks(tasks, 'priority').map((task) => task.id)).toEqual([
+    'task-3',
+    'task-2',
+    'task-1',
+  ])
+  expect(tasks.map((task) => task.id)).toEqual([
+    'task-1',
+    'task-2',
+    'task-3',
+  ])
+})

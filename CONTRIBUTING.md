@@ -145,3 +145,11 @@ git status --short
 ```
 
 Do not manually apply the next GREEN patch. The resume bundle should encode the exact continuation.
+
+
+## Vertical integration test rule
+
+When one minimal implementation naturally satisfies both a domain test and its
+browser interaction, put both expectations in the same RED cycle. Do not invent
+a later RED that would already pass after the domain GREEN. Description search
+in TDD 043 is the reference example.

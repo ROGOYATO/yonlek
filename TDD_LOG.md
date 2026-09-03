@@ -125,3 +125,29 @@ The post-step adds presentation-only CSS and imports it from the browser entrypo
 | build fix after 038 | Vite client type declaration added for the CSS side-effect import |
 
 Important operational rule: a failed RED is expected; an unexpected RED, failed GREEN, failed diff check, lint failure, test failure, or build failure stops the batch. Stopped state is preserved and resumed from exact Git state rather than reset.
+
+
+## Cycles 039-045
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 039 | Optional task description normalization and clearing | GREEN |
+| 040 | Workspace reducer task-description change without mutation | GREEN |
+| 041 | Task-description application command | GREEN |
+| 042 | Set and clear task descriptions through the UI | GREEN |
+| 043 | Search task titles and descriptions at domain and UI seams | GREEN |
+| 044 | Immutable priority sorting: high, normal, low | GREEN |
+| 045 | Priority sort UI | GREEN |
+
+Expected successful checkpoint:
+
+```text
+Tests: 69 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+```
+
+TDD 043 intentionally places the domain and browser description-search
+expectations in one RED cycle because one filter implementation satisfies both.
+A separate later browser RED would already have been GREEN and would violate the
+test-first sequencing rule.

@@ -67,3 +67,20 @@ it('filters tasks that do not have a due date', () => {
 
   expect(result).toEqual([review])
 })
+
+
+it('searches task descriptions as well as titles', () => {
+  const described = {
+    ...draft,
+    description: 'Prepare the camera calibration procedure.',
+  }
+
+  const result = filterTasks([described, review], {
+    query: 'calibration',
+    status: 'all',
+    priority: 'all',
+    dueDate: 'all',
+  })
+
+  expect(result).toEqual([described])
+})

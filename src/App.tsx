@@ -19,6 +19,7 @@ export interface AppProps {
   onChangeTaskStatus?: (taskId: string, status: TaskStatus) => void
   onChangeTaskPriority?: (taskId: string, priority: TaskPriority) => void
   onChangeTaskDueDate?: (taskId: string, dueDate: string | null) => void
+  onChangeTaskDescription?: (taskId: string, description: string | null) => void
 }
 
 function errorMessage(error: unknown): string {
@@ -36,11 +37,13 @@ export function App({
   onChangeTaskStatus,
   onChangeTaskPriority,
   onChangeTaskDueDate,
+  onChangeTaskDescription,
 }: AppProps) {
   const [projectName, setProjectName] = useState('')
   const [projectEdits, setProjectEdits] = useState<Record<string, string>>({})
   const [taskTitles, setTaskTitles] = useState<Record<string, string>>({})
   const [taskEdits, setTaskEdits] = useState<Record<string, string>>({})
+  const [taskDescriptions, setTaskDescriptions] = useState<Record<string, string>>({})
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all')
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all')
@@ -131,6 +134,7 @@ export function App({
         <option value="created">Created</option>
         <option value="title">Title</option>
         <option value="dueDate">Due date</option>
+        <option value="priority">Priority</option>
       </select>
 
       <button
@@ -266,10 +270,46 @@ export function App({
                 <ul>
                   {tasks.map((task) => {
                     const editedTitle = taskEdits[task.id] ?? task.title
+                    const editedDescription = taskDescriptions[task.id] ?? task.description ?? ''
 
                     return (
                       <li key={task.id}>
                         <span>{task.title}</span>
+
+                        {onChangeTaskDescription ? (
+                          <form
+                            onSubmit={(event) => {
+                              event.preventDefault()
+
+                              onChangeTaskDescription(
+                                task.id,
+                                editedDescription || null,
+                              )
+                              setTaskDescriptions((current) => {
+                                const next = { ...current }
+                                delete next[task.id]
+                                return next
+                              })
+                            }}
+                          >
+                            <label htmlFor={`task-description-${task.id}`}>
+                              Description for {task.title}
+                            </label>
+                            <textarea
+                              id={`task-description-${task.id}`}
+                              value={editedDescription}
+                              onChange={(event) =>
+                                setTaskDescriptions((current) => ({
+                                  ...current,
+                                  [task.id]: event.target.value,
+                                }))
+                              }
+                            />
+                            <button type="submit">
+                              Save description for {task.title}
+                            </button>
+                          </form>
+                        ) : null}
 
                         {onRenameTask ? (
                           <form

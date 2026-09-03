@@ -1,6 +1,7 @@
 import { renameProject, type Project } from './project'
 import {
   renameTask,
+  setTaskDescription,
   setTaskDueDate,
   type Task,
   type TaskPriority,
@@ -26,6 +27,7 @@ export type WorkspaceAction =
   | { type: 'task/titleChanged'; taskId: string; title: string }
   | { type: 'task/priorityChanged'; taskId: string; priority: TaskPriority }
   | { type: 'task/dueDateChanged'; taskId: string; dueDate: string | null }
+  | { type: 'task/descriptionChanged'; taskId: string; description: string | null }
   | { type: 'task/deleted'; taskId: string }
 
 export function workspaceReducer(
@@ -107,6 +109,16 @@ export function workspaceReducer(
         tasks: state.tasks.map((task) =>
           task.id === action.taskId
             ? setTaskDueDate(task, action.dueDate)
+            : task,
+        ),
+      }
+
+    case 'task/descriptionChanged':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? setTaskDescription(task, action.description)
             : task,
         ),
       }

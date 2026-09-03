@@ -21,7 +21,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -56,7 +57,8 @@ main > button {
 }
 
 input,
-select {
+select,
+textarea {
   width: min(100%, 320px);
   padding: 9px 11px;
   border: 1px solid #c9d0da;
@@ -97,7 +99,8 @@ form > label {
   font-weight: 700;
 }
 
-form > input {
+form > input,
+form > textarea {
   width: 100%;
 }
 
@@ -160,7 +163,8 @@ li > label {
 }
 
 li > input,
-li > select {
+li > select,
+li > textarea {
   width: 100%;
 }
 
@@ -188,4 +192,9 @@ li > select {
   form > input {
     width: 100%;
   }
+}
+
+textarea {
+  min-height: 88px;
+  resize: vertical;
 }

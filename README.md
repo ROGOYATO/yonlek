@@ -9,9 +9,9 @@ The current implementation is intentionally small. It is being developed as a se
 Live checkpoint before the workflow update:
 
 - branch: `main`
-- starting commit for this batch: `d153827` (`TDD 022-030: add project rename and task filters`)
-- TDD state: cycle 038 GREEN
-- tests: 59 passing
+- current commit before this batch: `f0be272` (`TDD 031-038: add due dates and task sorting`)
+- TDD state: cycle 045 GREEN
+- tests: 69 passing
 - production build: passing after the Vite client type declaration correction
 - lint: 0 warnings, 0 errors
 
@@ -32,10 +32,11 @@ Tasks:
 - change task status between `todo`, `doing`, and `done`;
 - change priority between `low`, `normal`, and `high`;
 - set or clear an optional calendar due date;
+- set or clear an optional task description;
 - delete a task without deleting its project;
-- search task titles;
+- search task titles and descriptions;
 - filter tasks by status, priority, and due-date presence;
-- sort tasks by creation time, title, or due date;
+- sort tasks by creation time, title, due date, or priority;
 - clear all task filters together.
 
 Application:

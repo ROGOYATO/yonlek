@@ -15,7 +15,9 @@ export function filterTasks(tasks: Task[], filter: TaskFilter): Task[] {
 
   return tasks.filter((task) => {
     const matchesQuery =
-      query.length === 0 || task.title.toLowerCase().includes(query)
+      query.length === 0 ||
+      task.title.toLowerCase().includes(query) ||
+      task.description?.toLowerCase().includes(query) === true
     const matchesStatus =
       filter.status === 'all' || task.status === filter.status
     const matchesPriority =

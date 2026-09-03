@@ -19,6 +19,7 @@ export interface WorkspaceCommands {
   changeTaskStatus(taskId: string, status: TaskStatus): void
   changeTaskPriority(taskId: string, priority: TaskPriority): void
   changeTaskDueDate(taskId: string, dueDate: string | null): void
+  changeTaskDescription(taskId: string, description: string | null): void
   deleteTask(taskId: string): void
   deleteProject(projectId: string): void
 }
@@ -96,6 +97,14 @@ export function createWorkspaceCommands(
         type: 'task/dueDateChanged',
         taskId,
         dueDate,
+      })
+    },
+
+    changeTaskDescription(taskId, description) {
+      store.dispatch({
+        type: 'task/descriptionChanged',
+        taskId,
+        description,
       })
     },
 

@@ -9,6 +9,7 @@ export interface Task {
   priority: TaskPriority
   createdAt: string
   dueDate?: string
+  description?: string
 }
 
 export interface CreateTaskInput {
@@ -87,5 +88,24 @@ export function setTaskDueDate(
   return {
     ...task,
     dueDate: normalizedDueDate,
+  }
+}
+
+
+export function setTaskDescription(
+  task: Task,
+  description: string | null,
+): Task {
+  const normalizedDescription = description?.trim() ?? ''
+
+  if (!normalizedDescription) {
+    const next = { ...task }
+    delete next.description
+    return next
+  }
+
+  return {
+    ...task,
+    description: normalizedDescription,
   }
 }

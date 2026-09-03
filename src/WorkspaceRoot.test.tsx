@@ -401,3 +401,93 @@ describe('WorkspaceRoot task sorting', () => {
     expect(items[1]?.textContent).toContain('Zebra task')
   })
 })
+
+
+describe('WorkspaceRoot task description', () => {
+  it('lets a user set and clear a task description', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const project = commands.addProject('Robotics Research')
+    commands.addTask(project.id, 'Draft experiment plan')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    const input = screen.getByLabelText(
+      'Description for Draft experiment plan',
+    )
+    await user.type(input, 'Prepare the camera calibration procedure.')
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Save description for Draft experiment plan',
+      }),
+    )
+
+    expect(store.getState().tasks[0]?.description).toBe(
+      'Prepare the camera calibration procedure.',
+    )
+    expect(
+      screen.getByText('Prepare the camera calibration procedure.'),
+    ).toBeTruthy()
+
+    await user.clear(
+      screen.getByLabelText('Description for Draft experiment plan'),
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Save description for Draft experiment plan',
+      }),
+    )
+
+    expect(store.getState().tasks[0]).not.toHaveProperty('description')
+  })
+})
+
+
+describe('WorkspaceRoot description search', () => {
+  it('finds a task when the query only appears in its description', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+    commands.changeTaskDescription(
+      task.id,
+      'Prepare the camera calibration procedure.',
+    )
+    commands.addTask(project.id, 'Review safety checklist')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.type(screen.getByLabelText('Search tasks'), 'calibration')
+
+    expect(screen.getByText('Draft experiment plan')).toBeTruthy()
+    expect(screen.queryByText('Review safety checklist')).toBeNull()
+  })
+})
+
+
+describe('WorkspaceRoot priority sorting', () => {
+  it('sorts visible tasks by priority', async () => {
+    const user = userEvent.setup()
+    const { store, commands } = createTestApplication()
+    const project = commands.addProject('Robotics Research')
+    const low = commands.addTask(project.id, 'Low priority task')
+    commands.changeTaskPriority(low.id, 'low')
+    const high = commands.addTask(project.id, 'High priority task')
+    commands.changeTaskPriority(high.id, 'high')
+    const normal = commands.addTask(project.id, 'Normal priority task')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.selectOptions(screen.getByLabelText('Sort tasks'), 'priority')
+
+    const items = screen.getAllByRole('listitem')
+    expect(items[0]?.textContent).toContain('High priority task')
+    expect(items[1]?.textContent).toContain('Normal priority task')
+    expect(items[2]?.textContent).toContain('Low priority task')
+    expect(store.getState().tasks.map((task) => task.id)).toEqual([
+      low.id,
+      high.id,
+      normal.id,
+    ])
+  })
+})
