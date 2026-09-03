@@ -1,0 +1,25 @@
+﻿export interface Project {
+  id: string
+  name: string
+  createdAt: string
+}
+
+export interface CreateProjectInput {
+  id: string
+  name: string
+  now: string
+}
+
+export function createProject(input: CreateProjectInput): Project {
+  const name = input.name.trim()
+
+  if (!name) {
+    throw new Error('Project name is required')
+  }
+
+  return {
+    id: input.id,
+    name,
+    createdAt: input.now,
+  }
+}
