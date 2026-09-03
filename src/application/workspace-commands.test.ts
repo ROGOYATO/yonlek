@@ -43,3 +43,51 @@ describe('workspace commands', () => {
     expect(loadWorkspace(storage)).toEqual(store.getState())
   })
 })
+
+
+describe('workspace mutation commands', () => {
+  it('updates task title, status, and priority', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-03T03:30:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+
+    commands.renameTask(task.id, '  Review experiment plan  ')
+    commands.changeTaskStatus(task.id, 'doing')
+    commands.changeTaskPriority(task.id, 'high')
+
+    expect(store.getState().tasks[0]).toMatchObject({
+      title: 'Review experiment plan',
+      status: 'doing',
+      priority: 'high',
+    })
+  })
+
+  it('deletes tasks and projects through the store', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1', 'task-2']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-03T03:35:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const firstTask = commands.addTask(project.id, 'First task')
+    commands.addTask(project.id, 'Second task')
+
+    commands.deleteTask(firstTask.id)
+
+    expect(store.getState().tasks.map((task) => task.title)).toEqual([
+      'Second task',
+    ])
+
+    commands.deleteProject(project.id)
+
+    expect(store.getState()).toEqual({ projects: [], tasks: [] })
+  })
+})

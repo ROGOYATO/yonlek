@@ -1,5 +1,9 @@
 import { createProject } from '../domain/project'
-import { createTask } from '../domain/task'
+import {
+  createTask,
+  type TaskPriority,
+  type TaskStatus,
+} from '../domain/task'
 import type { WorkspaceStore } from './workspace-store'
 
 export interface WorkspaceRuntime {
@@ -10,6 +14,11 @@ export interface WorkspaceRuntime {
 export interface WorkspaceCommands {
   addProject(name: string): ReturnType<typeof createProject>
   addTask(projectId: string, title: string): ReturnType<typeof createTask>
+  renameTask(taskId: string, title: string): void
+  changeTaskStatus(taskId: string, status: TaskStatus): void
+  changeTaskPriority(taskId: string, priority: TaskPriority): void
+  deleteTask(taskId: string): void
+  deleteProject(projectId: string): void
 }
 
 export function createWorkspaceCommands(
@@ -46,6 +55,44 @@ export function createWorkspaceCommands(
       })
 
       return task
+    },
+
+    renameTask(taskId, title) {
+      store.dispatch({
+        type: 'task/titleChanged',
+        taskId,
+        title,
+      })
+    },
+
+    changeTaskStatus(taskId, status) {
+      store.dispatch({
+        type: 'task/statusChanged',
+        taskId,
+        status,
+      })
+    },
+
+    changeTaskPriority(taskId, priority) {
+      store.dispatch({
+        type: 'task/priorityChanged',
+        taskId,
+        priority,
+      })
+    },
+
+    deleteTask(taskId) {
+      store.dispatch({
+        type: 'task/deleted',
+        taskId,
+      })
+    },
+
+    deleteProject(projectId) {
+      store.dispatch({
+        type: 'project/deleted',
+        projectId,
+      })
     },
   }
 }

@@ -28,6 +28,21 @@ export function WorkspaceRoot({
       onCreateTask={(projectId, title) => {
         commands.addTask(projectId, title)
       }}
+      onDeleteProject={(projectId) => {
+        commands.deleteProject(projectId)
+      }}
+      onRenameTask={(taskId, title) => {
+        commands.renameTask(taskId, title)
+      }}
+      onDeleteTask={(taskId) => {
+        commands.deleteTask(taskId)
+      }}
+      onChangeTaskStatus={(taskId, status) => {
+        commands.changeTaskStatus(taskId, status)
+      }}
+      onChangeTaskPriority={(taskId, priority) => {
+        commands.changeTaskPriority(taskId, priority)
+      }}
     />
   )
 }
