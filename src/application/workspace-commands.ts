@@ -65,6 +65,8 @@ export interface WorkspaceCommands {
   addTask(projectId: string, title: string, listId?: string): ReturnType<typeof createTask>
   addSubtask(parentTaskId: string, title: string): ReturnType<typeof createSubtask>
   duplicateTask(taskId: string): ReturnType<typeof duplicateTaskDomain>
+  archiveTask(taskId: string): void
+  restoreTask(taskId: string): void
   renameProject(projectId: string, name: string): void
   changeProjectDescription(projectId: string, description: string | null): void
   renameTask(taskId: string, title: string): void
@@ -466,6 +468,38 @@ export function createWorkspaceCommands(
       })
 
       return task
+    },
+
+
+    archiveTask(taskId) {
+      const exists = store
+        .getState()
+        .tasks.some((task) => task.id === taskId)
+
+      if (!exists) {
+        throw new Error('Cannot archive a missing task')
+      }
+
+      store.dispatch({
+        type: 'task/archived',
+        taskId,
+        archivedAt: runtime.now(),
+      })
+    },
+
+    restoreTask(taskId) {
+      const exists = store
+        .getState()
+        .tasks.some((task) => task.id === taskId)
+
+      if (!exists) {
+        throw new Error('Cannot restore a missing task')
+      }
+
+      store.dispatch({
+        type: 'task/restored',
+        taskId,
+      })
     },
 
     renameProject(projectId, name) {

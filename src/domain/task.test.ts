@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { createTask, duplicateTask, renameTask, type Task } from './task'
+import {
+  archiveTask,
+  createTask,
+  duplicateTask,
+  renameTask,
+  restoreTask,
+  type Task,
+} from './task'
 
 describe('createTask', () => {
   it('creates a task in the supplied project with normalized title and defaults', () => {
@@ -95,5 +102,29 @@ describe('duplicateTask', () => {
     expect(duplicate.tagIds).not.toBe(source.tagIds)
     expect(duplicate.assigneeIds).not.toBe(source.assigneeIds)
     expect(duplicate.customFieldValues).not.toBe(source.customFieldValues)
+  })
+})
+
+
+describe('task archive lifecycle', () => {
+  it('archives and restores a task without mutating the source object', () => {
+    const source = createTask({
+      id: 'task-1',
+      projectId: 'project-1',
+      title: 'Draft experiment plan',
+      now: '2026-09-04T18:00:00.000Z',
+    })
+
+    const archived = archiveTask(source, '2026-09-04T18:05:00.000Z')
+    const restored = restoreTask(archived)
+
+    expect(archived).toEqual({
+      ...source,
+      archivedAt: '2026-09-04T18:05:00.000Z',
+    })
+    expect(source).not.toHaveProperty('archivedAt')
+    expect(archived).not.toBe(source)
+    expect(restored).toEqual(source)
+    expect(restored).not.toBe(archived)
   })
 })

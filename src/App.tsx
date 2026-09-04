@@ -58,6 +58,8 @@ export interface AppProps {
   onCreateTask?: (projectId: string, title: string, listId?: string) => void
   onCreateSubtask?: (parentTaskId: string, title: string) => void
   onDuplicateTask?: (taskId: string) => void
+  onArchiveTask?: (taskId: string) => void
+  onRestoreTask?: (taskId: string) => void
   onDeleteProject?: (projectId: string) => void
   onRenameTask?: (taskId: string, title: string) => void
   onDeleteTask?: (taskId: string) => void
@@ -113,6 +115,8 @@ export function App({
   onCreateTask,
   onCreateSubtask,
   onDuplicateTask,
+  onArchiveTask,
+  onRestoreTask,
   onDeleteProject,
   onRenameTask,
   onDeleteTask,
@@ -262,7 +266,23 @@ export function App({
   const tags = state.tags ?? []
   const areas = state.areas ?? []
   const lists = state.lists ?? []
-  const workspaceSummary = summarizeTasks(state.tasks)
+  const activeTasks = state.tasks.filter(
+    (task) => task.archivedAt === undefined,
+  )
+  const archivedTasks = state.tasks.filter(
+    (task) => task.archivedAt !== undefined,
+  )
+  const archivedTaskRoots = archivedTasks.filter((task) => {
+    if (task.parentTaskId === undefined) {
+      return true
+    }
+
+    const parent = state.tasks.find(
+      (candidate) => candidate.id === task.parentTaskId,
+    )
+    return parent?.archivedAt === undefined
+  })
+  const workspaceSummary = summarizeTasks(activeTasks)
   const projectLabel = state.projects.length === 1 ? 'project' : 'projects'
   const taskLabel = workspaceSummary.total === 1 ? 'task' : 'tasks'
 
@@ -292,7 +312,7 @@ export function App({
       >
         <option value="all">All projects</option>
         {state.projects.map((project) => {
-          const taskCount = state.tasks.filter(
+          const taskCount = activeTasks.filter(
             (task) => task.projectId === project.id,
           ).length
 
@@ -763,7 +783,7 @@ export function App({
           const projectLists = lists.filter(
             (list) => list.projectId === project.id,
           )
-          const projectTasks = state.tasks.filter(
+          const projectTasks = activeTasks.filter(
             (task) => task.projectId === project.id,
           )
           const tasks = sortTasks(
@@ -1130,7 +1150,7 @@ export function App({
                     const completedChecklistCount = checklist.filter(
                       (item) => item.completed,
                     ).length
-                    const immediateSubtaskCount = state.tasks.filter(
+                    const immediateSubtaskCount = activeTasks.filter(
                       (candidate) => candidate.parentTaskId === task.id,
                     ).length
                     const relationshipType =
@@ -1171,7 +1191,7 @@ export function App({
                             : 'subtasks'}
                         </span>
                         {onCreateTaskRelationship &&
-                        state.tasks.length > 1 ? (
+                        activeTasks.length > 1 ? (
                           <section>
                             <h4>Relationships for {task.title}</h4>
                             <span
@@ -1236,7 +1256,7 @@ export function App({
                                 }
                               >
                                 <option value="">Select task</option>
-                                {state.tasks
+                                {activeTasks
                                   .filter(
                                     (candidate) =>
                                       candidate.id !== task.id,
@@ -1871,6 +1891,14 @@ export function App({
                             Duplicate task {task.title}
                           </button>
                         ) : null}
+                        {onArchiveTask ? (
+                          <button
+                            type="button"
+                            onClick={() => onArchiveTask(task.id)}
+                          >
+                            Archive task {task.title}
+                          </button>
+                        ) : null}
                         {onDeleteTask ? (
                           <button
                             type="button"
@@ -1888,6 +1916,28 @@ export function App({
           )
         })
       )}
+
+
+      {archivedTaskRoots.length > 0 ? (
+        <section>
+          <h2>Archived tasks</h2>
+          <ul>
+            {archivedTaskRoots.map((task) => (
+              <li key={task.id}>
+                <span>{task.title}</span>
+                {onRestoreTask ? (
+                  <button
+                    type="button"
+                    onClick={() => onRestoreTask(task.id)}
+                  >
+                    Restore task {task.title}
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </main>
   )
 }

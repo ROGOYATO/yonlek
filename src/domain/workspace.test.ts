@@ -1677,3 +1677,66 @@ describe('dependency graph integrity', () => {
     ).toThrow('A task cannot relate to itself')
   })
 })
+
+
+describe('task archive workspace lifecycle', () => {
+  it('archives and restores a task subtree without deleting relationships', () => {
+    const parent = createTask({
+      id: 'archive-parent',
+      projectId: project.id,
+      title: 'Parent task',
+      now: '2026-09-04T18:10:00.000Z',
+    })
+    const child = {
+      ...createTask({
+        id: 'archive-child',
+        projectId: project.id,
+        title: 'Child task',
+        now: '2026-09-04T18:11:00.000Z',
+      }),
+      parentTaskId: parent.id,
+    }
+    const other = createTask({
+      id: 'archive-other',
+      projectId: project.id,
+      title: 'Other task',
+      now: '2026-09-04T18:12:00.000Z',
+    })
+    const relationship = {
+      id: 'archive-relationship',
+      type: 'related' as const,
+      sourceTaskId: parent.id,
+      targetTaskId: other.id,
+      createdAt: '2026-09-04T18:13:00.000Z',
+    }
+    const state = {
+      relationships: [relationship],
+      projects: [project],
+      tasks: [parent, child, other],
+    }
+
+    const archived = workspaceReducer(state, {
+      type: 'task/archived',
+      taskId: parent.id,
+      archivedAt: '2026-09-04T18:14:00.000Z',
+    } as never)
+
+    expect(archived.tasks[0]?.archivedAt).toBe(
+      '2026-09-04T18:14:00.000Z',
+    )
+    expect(archived.tasks[1]?.archivedAt).toBe(
+      '2026-09-04T18:14:00.000Z',
+    )
+    expect(archived.tasks[2]).not.toHaveProperty('archivedAt')
+    expect(archived.relationships).toEqual([relationship])
+
+    const restored = workspaceReducer(archived, {
+      type: 'task/restored',
+      taskId: parent.id,
+    } as never)
+
+    expect(restored.tasks[0]).not.toHaveProperty('archivedAt')
+    expect(restored.tasks[1]).not.toHaveProperty('archivedAt')
+    expect(restored.relationships).toEqual([relationship])
+  })
+})

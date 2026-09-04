@@ -81,11 +81,19 @@ owned by the deleted Project or data that points to one of its deleted Tasks.
 - [x] Rename
 - [x] Delete
 - [x] Duplicate
-- [ ] Archive and restore
+- [x] Archive and restore
 
 Task duplication creates one new Task identity. It copies Task-owned values and
 nested containers, but it does not copy child Tasks or workspace-level
 relationship edges.
+
+Task archive is reversible and uses optional `archivedAt` state on the Task.
+Archiving a parent archives its full Subtask subtree with the same timestamp.
+Restoring that parent restores the subtree. Archived Tasks remain in workspace
+state and persistence, keep their relationships and Task-local data, and are
+excluded from normal Task counts, filters, sorting, and Project Task lists. The
+archive surface shows archived roots so a cascaded child is not independently
+restored under an archived parent through the UI.
 
 ### Core fields
 

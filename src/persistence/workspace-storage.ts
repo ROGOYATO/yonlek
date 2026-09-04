@@ -161,6 +161,7 @@ function isValidTask(value: unknown): boolean {
       value.priority !== 'normal' &&
       value.priority !== 'high') ||
     !isIsoInstant(value.createdAt) ||
+    (value.archivedAt !== undefined && !isIsoInstant(value.archivedAt)) ||
     (value.description !== undefined &&
       typeof value.description !== 'string') ||
     (value.listId !== undefined &&

@@ -1581,3 +1581,62 @@ describe('task relationship persistence', () => {
     )
   })
 })
+
+
+describe('archived task persistence', () => {
+  it('preserves valid archive timestamps and rejects invalid ones', () => {
+    const project = createProject({
+      id: 'project-1',
+      name: 'Robotics Research',
+      now: '2026-09-04T18:19:00.000Z',
+    })
+    const task = createTask({
+      id: 'task-1',
+      projectId: project.id,
+      title: 'Draft experiment plan',
+      now: '2026-09-04T18:19:30.000Z',
+    })
+
+    const validStore: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            projects: [project],
+            tasks: [
+              {
+                ...task,
+                archivedAt: '2026-09-04T18:20:00.000Z',
+              },
+            ],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(loadWorkspace(validStore).tasks[0]?.archivedAt).toBe(
+      '2026-09-04T18:20:00.000Z',
+    )
+
+    const invalidStore: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            projects: [project],
+            tasks: [
+              {
+                ...task,
+                archivedAt: 'not-an-instant',
+              },
+            ],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(invalidStore)).toThrow(
+      'Workspace storage is invalid',
+    )
+  })
+})

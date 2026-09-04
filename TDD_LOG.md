@@ -874,3 +874,126 @@ The next resume keeps executable PowerShell source ASCII-only. Its preflight
 checks raw script bytes for values above `0x7F` and then runs the normal parser
 check. Unicode documentation assertions use ASCII substrings unless the exact
 code point is itself part of the contract.
+
+## TDD 148 - Task archive value semantics
+
+**RED**
+
+Add a Task-domain test that calls `archiveTask` and `restoreTask` through their
+exported functions. It requires a new immutable Task object on each transition,
+`archivedAt` on archive, no mutation of the source Task, and exact restoration
+of the original Task value.
+
+Expected RED marker: `archiveTask` is missing.
+
+**GREEN**
+
+Add optional `Task.archivedAt`, `archiveTask`, and `restoreTask`. No storage or
+UI behavior is added in this cycle.
+
+## TDD 149 - Workspace subtree archive and restore
+
+**RED**
+
+Add a reducer-level test with a parent Task, child Subtask, unrelated Task, and
+an existing relationship edge. Archiving the parent must archive the parent and
+child with one timestamp while leaving the unrelated Task and relationship
+unchanged. Restoring the parent must restore the subtree without deleting the
+relationship.
+
+**GREEN**
+
+Add `task/archived` and `task/restored` actions. Use one Task-subtree collector
+for archive, restore, and existing cascading Task deletion so the descendant
+boundary is defined once.
+
+## TDD 150 - Archived Task persistence validation
+
+**RED**
+
+Add a storage-boundary test that accepts a valid ISO `archivedAt` timestamp but
+rejects an invalid archive timestamp with the existing `Workspace storage is
+invalid` contract.
+
+**GREEN**
+
+Validate optional `archivedAt` in version-1 Task records. Do not bump the storage
+version because the field is additive and older version-1 documents remain
+valid.
+
+### TDD 150 repair after invalid RED
+
+The first live TDD 150 RED was invalid. The new persistence test referenced
+`project` and `task` outside their scope, so Vitest failed with
+`ReferenceError: project is not defined` before archive timestamp validation was
+exercised. The original runner incorrectly accepted that RED because it matched
+only the suite and test names. It then applied the storage validator, and GREEN
+failed with the same fixture error.
+
+The test correction was approved before modification. The repair keeps the
+assertions unchanged and defines local Project and Task fixtures using the
+existing `createProject` and `createTask` imports. To restore strict test-first
+evidence, the resume writes `workspace-storage.ts` back to its exact pre-TDD-150
+content through a normalized-hash guard, runs the corrected test, and requires
+Vitest's assertion that the invalid archive timestamp did not throw. Runtime,
+syntax, transform, and undefined-variable failures are explicitly rejected.
+Only after that valid RED does the resume reapply the `archivedAt` validator and
+require GREEN.
+
+This is also a runner-quality rule: RED validation must identify the failure
+cause, not merely prove that a named test failed.
+
+### TDD 150 repaired RED marker transport stop
+
+The corrected live test then reached the intended assertion and Vitest visibly
+reported `AssertionError: expected [Function] to throw an error`. The first
+resume still stopped because its RED gate searched unsanitized captured output
+with a raw string comparison. Vitest terminal coloring can place ANSI control
+sequences inside otherwise contiguous visible text, so the displayed marker and
+the captured byte sequence are not necessarily identical.
+
+The next resume keeps raw RED output for the terminal and transcript, disables
+color for the captured subprocess where possible, strips ANSI CSI sequences for
+machine comparison, and applies required/rejected markers only to that
+normalized copy. This is a runner correction only. The approved persistence test
+and pre-GREEN storage source remain unchanged.
+
+## TDD 151 - Persisted archive commands
+
+**RED**
+
+Add a `WorkspaceCommands` test that archives a parent Task through the injected
+runtime clock, verifies the child Subtask receives the same timestamp, verifies
+persistence, restores the parent, and verifies the restored state is persisted.
+
+Expected RED marker: `archiveTask is not a function`.
+
+**GREEN**
+
+Add `archiveTask(taskId)` and `restoreTask(taskId)` commands. The command boundary
+rejects missing Tasks; archive supplies `runtime.now()` and both commands reuse
+the reducer/store persistence path.
+
+## TDD 152 - Task archive and restore UI
+
+**RED**
+
+Add a rendered `WorkspaceRoot` interaction test. A user archives a Task from its
+active controls, sees active workspace counts drop, restores it from the archive
+surface, and sees the Task return to active controls and counts.
+
+Expected RED marker: `Archive task Draft experiment plan`.
+
+**GREEN**
+
+Wire archive/restore commands through `WorkspaceRoot`. Normal Task lists and
+summaries operate on active Tasks only. Render an `Archived tasks` section for
+archived roots with semantic `Restore task <title>` buttons.
+
+## Prepared verification target after TDD 152
+
+This batch starts from clean `main` at `1777db5`. Five new behavior tests are
+prepared, so the expected full-suite count is 310 if the live repository test
+inventory is otherwise unchanged. The bundle must still treat the live runner
+output as authoritative and must not commit unless focused GREENs, lint, the
+full test suite, production build, and diff checks all pass.

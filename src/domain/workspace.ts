@@ -25,8 +25,10 @@ import {
   type Project,
 } from './project'
 import {
+  archiveTask,
   moveTaskToProject,
   renameTask,
+  restoreTask,
   setTaskDescription,
   setTaskList,
   setTaskDueDate,
@@ -80,6 +82,8 @@ export type WorkspaceAction =
   | { type: 'project/areaChanged'; projectId: string; areaId: string | null }
   | { type: 'project/moved'; projectId: string; direction: MoveDirection }
   | { type: 'task/added'; task: Task }
+  | { type: 'task/archived'; taskId: string; archivedAt: string }
+  | { type: 'task/restored'; taskId: string }
   | { type: 'task/statusChanged'; taskId: string; status: TaskStatus }
   | { type: 'task/titleChanged'; taskId: string; title: string }
   | { type: 'task/priorityChanged'; taskId: string; priority: TaskPriority }
@@ -99,6 +103,29 @@ export type WorkspaceAction =
   | { type: 'task/checklistItemDeleted'; taskId: string; itemId: string }
   | { type: 'task/checklistItemMoved'; taskId: string; itemId: string; direction: MoveDirection }
   | { type: 'task/deleted'; taskId: string }
+
+
+function collectTaskSubtreeIds(tasks: Task[], rootTaskId: string): Set<string> {
+  const taskIds = new Set([rootTaskId])
+  let changed = true
+
+  while (changed) {
+    changed = false
+
+    for (const task of tasks) {
+      if (
+        task.parentTaskId !== undefined &&
+        taskIds.has(task.parentTaskId) &&
+        !taskIds.has(task.id)
+      ) {
+        taskIds.add(task.id)
+        changed = true
+      }
+    }
+  }
+
+  return taskIds
+}
 
 function createsDependencyCycle(
   relationships: TaskRelationship[],
@@ -610,6 +637,31 @@ export function workspaceReducer(
       }
     }
 
+
+    case 'task/archived': {
+      const archivedIds = collectTaskSubtreeIds(state.tasks, action.taskId)
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          archivedIds.has(task.id)
+            ? archiveTask(task, action.archivedAt)
+            : task,
+        ),
+      }
+    }
+
+    case 'task/restored': {
+      const restoredIds = collectTaskSubtreeIds(state.tasks, action.taskId)
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          restoredIds.has(task.id) ? restoreTask(task) : task,
+        ),
+      }
+    }
+
     case 'task/statusChanged':
       return {
         ...state,
@@ -1043,23 +1095,7 @@ export function workspaceReducer(
       }
 
     case 'task/deleted': {
-      const deletedIds = new Set([action.taskId])
-
-      let changed = true
-      while (changed) {
-        changed = false
-
-        for (const task of state.tasks) {
-          if (
-            task.parentTaskId !== undefined &&
-            deletedIds.has(task.parentTaskId) &&
-            !deletedIds.has(task.id)
-          ) {
-            deletedIds.add(task.id)
-            changed = true
-          }
-        }
-      }
+      const deletedIds = collectTaskSubtreeIds(state.tasks, action.taskId)
 
       const relationships = (state.relationships ?? []).filter(
         (relationship) =>

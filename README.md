@@ -84,7 +84,7 @@ A Subtask is a normal Task with `parentTaskId`.
 
 Current Task behavior includes:
 
-- create, rename, delete, and duplicate;
+- create, rename, delete, duplicate, archive, and restore;
 - `todo`, `doing`, and `done` status;
 - `low`, `normal`, and `high` priority;
 - optional due date and description;
@@ -155,6 +155,33 @@ It deliberately does not copy:
 
 Those records do not belong to the Task object being copied. Copying them would
 change the workspace graph instead of copying only one Task.
+
+## Task archive and restore contract
+
+TDD 148-152 adds reversible Task archive behavior.
+
+Archiving a Task:
+
+- keeps the Task in `WorkspaceState.tasks` instead of deleting it;
+- records `archivedAt` using the injected runtime clock;
+- applies the same archive timestamp to every descendant Subtask;
+- retains Checklists, Tags, assignees, Custom Field values, and relationship
+  edges;
+- removes the archived subtree from normal workspace and Project Task counts,
+  search/filter/sort results, and active Task controls.
+
+Restoring an archived root removes `archivedAt` from that Task and its archived
+Subtask subtree. The archive UI lists archived roots rather than every cascaded
+descendant, which prevents a child from being restored through the UI while its
+parent remains archived.
+
+Archive is intentionally different from delete. Delete removes the Task subtree
+and relationship edges that point to it. Archive preserves the graph so the
+same Task identities can return on restore.
+
+The storage document remains version 1 because `archivedAt` is an optional Task
+field. Older version-1 workspaces remain valid. The loader validates any stored
+`archivedAt` value as an ISO instant before exposing it to the application.
 
 ## Persistence and recovery
 

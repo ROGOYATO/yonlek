@@ -226,6 +226,26 @@ browser interaction, put both expectations in the same RED cycle. Do not invent
 a later RED that would already pass after the domain GREEN. Description search
 in TDD 043 is the reference example.
 
+## Task archive lifecycle rule
+
+Task archive is reversible state, not deletion.
+
+- represent archive with optional `Task.archivedAt`;
+- use the injected runtime clock at the command boundary;
+- archive and restore the full Subtask subtree so active UI state never leaves a
+  visible child under an archived parent;
+- retain workspace-level Task relationship edges during archive and restore;
+- exclude archived Tasks from normal counts, filters, sorts, Project Task lists,
+  and active relationship-target choices;
+- expose archived roots for restore instead of exposing every cascaded child as
+  an independent restore action;
+- keep version-1 storage backward compatible by treating `archivedAt` as
+  optional, while validating it as an ISO instant when present.
+
+A future archive design that needs partial-subtree restore or independent
+archive history should introduce an explicit model for that behavior rather
+than overloading the current timestamp contract.
+
 ## Persistence boundary rules
 
 Persisted browser data is untrusted input. Validate the versioned document,
@@ -792,3 +812,40 @@ the workspace graph, not fields owned by the Task being duplicated.
 
 TDD 145 proves the copy semantics, TDD 146 proves persistence through the
 command boundary, and TDD 147 proves the accessible UI control.
+
+## RED failure-cause guards
+
+A RED gate must prove why the new test failed. Matching only the test suite or
+test title is not enough because those strings also appear when the test fails
+for an unrelated fixture, runtime, import, or syntax error.
+
+When a bundle expects one specific RED reason:
+
+- require a marker from the intended assertion or missing public behavior;
+- reject known accidental failure classes such as `ReferenceError`, syntax
+  errors, transform errors, and undefined fixture variables when they are not
+  the intended seam;
+- do not apply the GREEN production payload until the RED reason is confirmed;
+- if an invalid RED was already followed by production code, restore the exact
+  pre-GREEN source through guarded file replacement, not `git reset`, then run
+  the corrected RED before reapplying GREEN.
+
+TDD 150 exposed this rule. The first archived-task persistence test referenced
+fixtures outside its scope. The old RED gate matched the test name and accepted
+the resulting `ReferenceError`, so the production validator was applied without
+valid RED evidence. The repaired sequence defines local fixtures, restores the
+pre-TDD-150 storage source through a hash-guarded replacement, requires the
+intended assertion failure, and only then reapplies the archive timestamp
+validation.
+
+Captured RED output is also a machine-readable boundary. Terminal color can add
+ANSI control sequences inside text that looks contiguous on screen. A marker
+check must therefore compare against normalized output, not the raw colored
+transport. Preserve the raw output in the terminal and log for diagnosis, but
+disable color for machine-read RED subprocesses where possible and strip ANSI
+CSI sequences before required or rejected marker checks.
+
+The first repaired TDD 150 resume exposed this distinction. Vitest visibly
+printed the intended `AssertionError: expected [Function] to throw an error`,
+but the runner compared the marker against unsanitized captured output and
+falsely reported it missing. No production change was needed for that stop.

@@ -1760,3 +1760,61 @@ describe('WorkspaceRoot task duplication', () => {
     expect(screen.getAllByText('Draft experiment plan')).toHaveLength(2)
   })
 })
+
+
+describe('WorkspaceRoot task archive lifecycle', () => {
+  it('hides an archived task from active counts and restores it from the archive', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1']
+    const timestamps = [
+      '2026-09-04T18:40:00.000Z',
+      '2026-09-04T18:41:00.000Z',
+      '2026-09-04T18:42:00.000Z',
+    ]
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => timestamps.shift() ?? 'unexpected-time',
+    })
+    const project = commands.addProject('Robotics Research')
+    commands.addTask(project.id, 'Draft experiment plan')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Archive task Draft experiment plan',
+      }),
+    )
+
+    expect(store.getState().tasks[0]?.archivedAt).toBe(
+      '2026-09-04T18:42:00.000Z',
+    )
+    expect(screen.getByText('1 project · 0 tasks · 0 done')).toBeTruthy()
+    expect(
+      screen.queryByRole('button', {
+        name: 'Archive task Draft experiment plan',
+      }),
+    ).toBeNull()
+    expect(
+      screen.getByRole('button', {
+        name: 'Restore task Draft experiment plan',
+      }),
+    ).toBeTruthy()
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Restore task Draft experiment plan',
+      }),
+    )
+
+    expect(store.getState().tasks[0]).not.toHaveProperty('archivedAt')
+    expect(screen.getByText('1 project · 1 task · 0 done')).toBeTruthy()
+    expect(
+      screen.getByRole('button', {
+        name: 'Archive task Draft experiment plan',
+      }),
+    ).toBeTruthy()
+  })
+})

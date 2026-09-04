@@ -145,6 +145,12 @@ export function WorkspaceRoot({
       onDuplicateTask={(taskId) => {
         commands.duplicateTask(taskId)
       }}
+      onArchiveTask={(taskId) => {
+        commands.archiveTask(taskId)
+      }}
+      onRestoreTask={(taskId) => {
+        commands.restoreTask(taskId)
+      }}
       onDeleteProject={(projectId) => {
         commands.deleteProject(projectId)
       }}

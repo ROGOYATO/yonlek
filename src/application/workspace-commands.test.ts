@@ -601,3 +601,47 @@ describe('task duplicate command', () => {
     expect(loadWorkspace(storage).tasks[1]).toEqual(duplicate)
   })
 })
+
+
+describe('task archive commands', () => {
+  it('archives and restores a persisted task subtree using runtime time', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-parent', 'task-child']
+    const timestamps = [
+      '2026-09-04T18:30:00.000Z',
+      '2026-09-04T18:31:00.000Z',
+      '2026-09-04T18:32:00.000Z',
+      '2026-09-04T18:33:00.000Z',
+    ]
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => timestamps.shift() ?? 'unexpected-time',
+    })
+    const project = commands.addProject('Robotics Research')
+    const parent = commands.addTask(project.id, 'Draft experiment plan')
+    const child = commands.addSubtask(parent.id, 'Calibrate camera')
+
+    commands.archiveTask(parent.id)
+
+    expect(store.getState().tasks).toEqual([
+      expect.objectContaining({
+        id: parent.id,
+        archivedAt: '2026-09-04T18:33:00.000Z',
+      }),
+      expect.objectContaining({
+        id: child.id,
+        archivedAt: '2026-09-04T18:33:00.000Z',
+      }),
+    ])
+    expect(loadWorkspace(storage).tasks[1]?.archivedAt).toBe(
+      '2026-09-04T18:33:00.000Z',
+    )
+
+    commands.restoreTask(parent.id)
+
+    expect(store.getState().tasks[0]).not.toHaveProperty('archivedAt')
+    expect(store.getState().tasks[1]).not.toHaveProperty('archivedAt')
+    expect(loadWorkspace(storage).tasks[0]).not.toHaveProperty('archivedAt')
+  })
+})

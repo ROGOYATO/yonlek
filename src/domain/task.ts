@@ -11,6 +11,7 @@ export interface Task {
   status: TaskStatus
   priority: TaskPriority
   createdAt: string
+  archivedAt?: string
   dueDate?: string
   description?: string
   listId?: string
@@ -57,6 +58,20 @@ export function createTask(input: CreateTaskInput): Task {
 
   return task
 }
+
+export function archiveTask(task: Task, archivedAt: string): Task {
+  return {
+    ...task,
+    archivedAt,
+  }
+}
+
+export function restoreTask(task: Task): Task {
+  const restored = { ...task }
+  delete restored.archivedAt
+  return restored
+}
+
 
 export interface DuplicateTaskInput {
   id: string
