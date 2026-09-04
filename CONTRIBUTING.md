@@ -36,7 +36,7 @@ Multi-cycle work should be delivered as a patch bundle with a fail-fast PowerShe
 A normal bundle contains:
 
 ```text
-workspace-app-tdd-NNN-NNN/
+yonlek-tdd-NNN-NNN/
   run-tdd.ps1
   manifest.json
   SHA256SUMS.txt
@@ -666,3 +666,16 @@ to exact-text queries or creating duplicate bare title nodes.
 
 Do not weaken filtering/title tests to accommodate control chrome that
 duplicates bare Task titles.
+
+## Task duplication
+
+Duplicate one Task through the Task domain interface, then add the result through
+the existing `task/added` workspace path. The duplicate gets a new Task ID and
+`createdAt` value while keeping the source Task's project, list, parent, status,
+priority, due date, description, checklist, tags, assignees, and Custom Field
+values.
+
+Copy Task-local arrays and records so later edits to the duplicate cannot mutate
+the source through shared references. Do not copy child Tasks or workspace-level
+Task relationships. Those are separate workspace records, not fields owned by the
+Task being duplicated.

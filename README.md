@@ -6,16 +6,18 @@ The current implementation is intentionally small. It is being developed as a se
 
 ## Current checkpoint
 
-Starting checkpoint for this batch:
+Prepared checkpoint after TDD 147:
 
 - branch: `main`
-- commit: `ce40d78` (`Maintenance: enforce zero-warning lint`)
-- TDD state: cycle 144 GREEN
-- expected suite: 302 tests
+- batch start: `44a1087` (`TDD 137-144: add task relationships`)
+- TDD state: cycle 147 GREEN
+- expected suite: 305 tests
 - lint gate: zero warnings via `oxlint . --deny-warnings`
 - Git runner: pinned to `C:\Program Files\Git\cmd\git.exe`
 
-Task relationships use durable workspace-level edges between Task IDs.
+Task duplication creates one new Task with a new ID and creation timestamp. It
+preserves the source Task data but does not copy child Tasks or workspace-level
+relationship edges.
 
 See [`FEATURES.md`](./FEATURES.md) for the maintained feature-first roadmap.
 
@@ -51,6 +53,7 @@ Tasks:
 - set or clear an optional calendar due date;
 - set or clear an optional task description;
 - delete a task without deleting its project;
+- duplicate one Task with a new identity while preserving its Task-local data;
 - search task titles and descriptions;
 - filter tasks by status, priority, and due-date presence;
 - sort tasks by creation time, title, due date, or priority;

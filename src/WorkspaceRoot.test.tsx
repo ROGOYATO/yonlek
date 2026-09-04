@@ -1720,3 +1720,43 @@ describe('WorkspaceRoot relationship summaries', () => {
     ).toBe('Blocks 1; Blocked by 0; Related 1')
   })
 })
+
+
+describe('WorkspaceRoot task duplication', () => {
+  it('lets a user duplicate a task from its task controls', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1', 'task-2']
+    const timestamps = [
+      '2026-09-04T12:50:00.000Z',
+      '2026-09-04T12:51:00.000Z',
+      '2026-09-04T12:52:00.000Z',
+    ]
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => timestamps.shift() ?? 'unexpected-time',
+    })
+    const project = commands.addProject('Robotics Research')
+    const source = commands.addTask(project.id, 'Draft experiment plan')
+    commands.changeTaskPriority(source.id, 'high')
+    commands.changeTaskDescription(source.id, 'Inspect the camera mount.')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Duplicate task Draft experiment plan',
+      }),
+    )
+
+    expect(store.getState().tasks).toHaveLength(2)
+    expect(store.getState().tasks[1]).toMatchObject({
+      id: 'task-2',
+      title: 'Draft experiment plan',
+      priority: 'high',
+      description: 'Inspect the camera mount.',
+    })
+    expect(screen.getAllByText('Draft experiment plan')).toHaveLength(2)
+  })
+})

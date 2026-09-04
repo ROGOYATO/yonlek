@@ -58,6 +58,40 @@ export function createTask(input: CreateTaskInput): Task {
   return task
 }
 
+export interface DuplicateTaskInput {
+  id: string
+  now: string
+}
+
+export function duplicateTask(
+  task: Task,
+  input: DuplicateTaskInput,
+): Task {
+  const duplicate: Task = {
+    ...task,
+    id: input.id,
+    createdAt: input.now,
+  }
+
+  if (task.checklist !== undefined) {
+    duplicate.checklist = task.checklist.map((item) => ({ ...item }))
+  }
+
+  if (task.tagIds !== undefined) {
+    duplicate.tagIds = [...task.tagIds]
+  }
+
+  if (task.assigneeIds !== undefined) {
+    duplicate.assigneeIds = [...task.assigneeIds]
+  }
+
+  if (task.customFieldValues !== undefined) {
+    duplicate.customFieldValues = { ...task.customFieldValues }
+  }
+
+  return duplicate
+}
+
 export function renameTask(task: Task, title: string): Task {
   const normalizedTitle = title.trim()
 

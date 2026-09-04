@@ -725,3 +725,26 @@ and the Blocks test reached its correct relationship summaries. No test changed.
 
 Relationship target option text is now `Target: <task title>` while the option
 value remains the Task ID.
+
+## Cycles 145-147
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 145 | Task duplication domain copy semantics | GREEN |
+| 146 | Persisted Task duplication command through existing `task/added` path | GREEN |
+| 147 | Bare-bone Duplicate Task UI control | GREEN |
+
+Prepared successful checkpoint:
+
+```text
+Expected tests: 305
+Lint: 0 warnings, 0 errors
+Build: passed
+Push: origin/main after local commit
+```
+
+The test count is an estimate; the live runner count is authoritative.
+
+Task duplication copies one Task. The duplicate receives a new ID and creation
+timestamp, keeps Task-local data, and owns separate copies of nested arrays and
+records. Child Tasks and workspace-level Task relationship edges are not copied.

@@ -566,3 +566,38 @@ describe('task relationship commands', () => {
     expect(loadWorkspace(storage)).not.toHaveProperty('relationships')
   })
 })
+
+
+describe('task duplicate command', () => {
+  it('duplicates and persists the current task using injected identity and time', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1', 'task-2']
+    const timestamps = [
+      '2026-09-04T12:40:00.000Z',
+      '2026-09-04T12:41:00.000Z',
+      '2026-09-04T12:42:00.000Z',
+    ]
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => timestamps.shift() ?? 'unexpected-time',
+    })
+    const project = commands.addProject('Robotics Research')
+    const source = commands.addTask(project.id, 'Draft experiment plan')
+    commands.changeTaskStatus(source.id, 'doing')
+    commands.changeTaskDescription(source.id, 'Inspect the camera mount.')
+
+    const duplicate = commands.duplicateTask(source.id)
+
+    expect(duplicate).toMatchObject({
+      id: 'task-2',
+      projectId: project.id,
+      title: 'Draft experiment plan',
+      status: 'doing',
+      createdAt: '2026-09-04T12:42:00.000Z',
+      description: 'Inspect the camera mount.',
+    })
+    expect(store.getState().tasks).toHaveLength(2)
+    expect(loadWorkspace(storage).tasks[1]).toEqual(duplicate)
+  })
+})

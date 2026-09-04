@@ -57,6 +57,7 @@ export interface AppProps {
   onChangeProjectDescription?: (projectId: string, description: string | null) => void
   onCreateTask?: (projectId: string, title: string, listId?: string) => void
   onCreateSubtask?: (parentTaskId: string, title: string) => void
+  onDuplicateTask?: (taskId: string) => void
   onDeleteProject?: (projectId: string) => void
   onRenameTask?: (taskId: string, title: string) => void
   onDeleteTask?: (taskId: string) => void
@@ -111,6 +112,7 @@ export function App({
   onChangeProjectDescription,
   onCreateTask,
   onCreateSubtask,
+  onDuplicateTask,
   onDeleteProject,
   onRenameTask,
   onDeleteTask,
@@ -1861,6 +1863,14 @@ export function App({
                           </>
                         ) : null}
 
+                        {onDuplicateTask ? (
+                          <button
+                            type="button"
+                            onClick={() => onDuplicateTask(task.id)}
+                          >
+                            Duplicate task {task.title}
+                          </button>
+                        ) : null}
                         {onDeleteTask ? (
                           <button
                             type="button"
