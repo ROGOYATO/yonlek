@@ -1608,3 +1608,115 @@ describe('WorkspaceRoot custom fields', () => {
     )
   })
 })
+
+describe('WorkspaceRoot task relationships', () => {
+  it('lets a user create a Blocks relationship from one task to another', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1', 'task-2', 'relationship-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T11:10:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    commands.addTask(project.id, 'Draft experiment plan')
+    commands.addTask(project.id, 'Calibrate camera')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.selectOptions(
+      screen.getByLabelText(
+        'Relationship target from Draft experiment plan',
+      ),
+      'task-2',
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Add relationship from Draft experiment plan',
+      }),
+    )
+
+    expect(screen.getByText('Blocks Calibrate camera')).toBeTruthy()
+    expect(screen.getByText('Blocked by Draft experiment plan')).toBeTruthy()
+    expect(screen.getByText('Draft experiment plan')).toBeTruthy()
+  })
+
+  it('lets a user create and delete a Related relationship', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1', 'task-2', 'relationship-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T11:11:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    commands.addTask(project.id, 'Draft experiment plan')
+    commands.addTask(project.id, 'Calibrate camera')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.selectOptions(
+      screen.getByLabelText(
+        'Relationship type from Draft experiment plan',
+      ),
+      'related',
+    )
+    await user.selectOptions(
+      screen.getByLabelText(
+        'Relationship target from Draft experiment plan',
+      ),
+      'task-2',
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Add relationship from Draft experiment plan',
+      }),
+    )
+
+    expect(screen.getAllByText(/Related to/)).toHaveLength(2)
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Delete relationship relationship-1',
+      }),
+    )
+
+    expect(store.getState()).not.toHaveProperty('relationships')
+  })
+})
+
+describe('WorkspaceRoot relationship summaries', () => {
+  it('shows Blocks Blocked-by and Related counts separately from the task title', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = [
+      'project-1',
+      'task-1',
+      'task-2',
+      'task-3',
+      'relationship-1',
+      'relationship-2',
+    ]
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T11:30:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const first = commands.addTask(project.id, 'Draft experiment plan')
+    const second = commands.addTask(project.id, 'Calibrate camera')
+    const third = commands.addTask(project.id, 'Run experiment')
+    commands.addTaskRelationship('blocks', first.id, second.id)
+    commands.addTaskRelationship('related', first.id, third.id)
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    expect(screen.getByText('Draft experiment plan')).toBeTruthy()
+    expect(
+      screen.getByLabelText(
+        'Relationship summary for Draft experiment plan',
+      ).textContent,
+    ).toBe('Blocks 1; Blocked by 0; Related 1')
+  })
+})

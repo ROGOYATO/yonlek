@@ -1432,3 +1432,248 @@ describe('task custom field values', () => {
     expect(next.tasks[0]).not.toHaveProperty('customFieldValues')
   })
 })
+
+describe('project deletion workspace metadata regression', () => {
+  it('preserves unrelated workspace-level metadata while deleting the project hierarchy', () => {
+    const area = {
+      id: 'area-1',
+      name: 'Engineering',
+      createdAt: '2026-09-04T10:20:00.000Z',
+    }
+    const tag = {
+      id: 'tag-1',
+      name: 'Safety',
+      createdAt: '2026-09-04T10:21:00.000Z',
+    }
+    const person = {
+      id: 'person-1',
+      name: 'Ada Lovelace',
+      createdAt: '2026-09-04T10:22:00.000Z',
+    }
+    const field = {
+      id: 'field-1',
+      name: 'Notes',
+      type: 'text' as const,
+      createdAt: '2026-09-04T10:23:00.000Z',
+    }
+    const list = {
+      id: 'list-1',
+      projectId: project.id,
+      name: 'Backlog',
+      createdAt: '2026-09-04T10:24:00.000Z',
+    }
+
+    const next = workspaceReducer(
+      {
+        areas: [area],
+        tags: [tag],
+        people: [person],
+        customFields: [field],
+        lists: [list],
+        projects: [project],
+        tasks: [task],
+      },
+      {
+        type: 'project/deleted',
+        projectId: project.id,
+      },
+    )
+
+    expect(next).toEqual({
+      areas: [area],
+      tags: [tag],
+      people: [person],
+      customFields: [field],
+      lists: [],
+      projects: [],
+      tasks: [],
+    })
+  })
+})
+
+describe('task relationships', () => {
+  const secondTask = createTask({
+    id: 'task-2',
+    projectId: project.id,
+    title: 'Calibrate camera',
+    now: '2026-09-04T10:40:00.000Z',
+  })
+  const blocks = {
+    id: 'relationship-1',
+    type: 'blocks' as const,
+    sourceTaskId: task.id,
+    targetTaskId: secondTask.id,
+    createdAt: '2026-09-04T10:41:00.000Z',
+  }
+
+  it('adds and deletes a relationship without changing either task', () => {
+    const state = {
+      projects: [project],
+      tasks: [task, secondTask],
+    }
+
+    const added = workspaceReducer(state, {
+      type: 'relationship/added',
+      relationship: blocks,
+    } as never)
+    const removed = workspaceReducer(added, {
+      type: 'relationship/deleted',
+      relationshipId: blocks.id,
+    } as never)
+
+    expect(added.relationships).toEqual([blocks])
+    expect(added.tasks).toEqual(state.tasks)
+    expect(removed).not.toHaveProperty('relationships')
+  })
+
+  it('rejects missing task endpoints and duplicate semantic relationships', () => {
+    const state = {
+      projects: [project],
+      tasks: [task, secondTask],
+    }
+
+    expect(() =>
+      workspaceReducer(state, {
+        type: 'relationship/added',
+        relationship: { ...blocks, targetTaskId: 'missing-task' },
+      } as never),
+    ).toThrow('Cannot relate a missing task')
+
+    expect(() =>
+      workspaceReducer(
+        { ...state, relationships: [blocks] },
+        {
+          type: 'relationship/added',
+          relationship: { ...blocks, id: 'relationship-2' },
+        } as never,
+      ),
+    ).toThrow('Cannot add a duplicate task relationship')
+  })
+
+  it('treats reversed Related endpoints as a duplicate', () => {
+    const related = {
+      ...blocks,
+      type: 'related' as const,
+    }
+
+    expect(() =>
+      workspaceReducer(
+        {
+          relationships: [related],
+          projects: [project],
+          tasks: [task, secondTask],
+        },
+        {
+          type: 'relationship/added',
+          relationship: {
+            ...related,
+            id: 'relationship-2',
+            sourceTaskId: secondTask.id,
+            targetTaskId: task.id,
+          },
+        } as never,
+      ),
+    ).toThrow('Cannot add a duplicate task relationship')
+  })
+
+  it('deleting a task cascade or project removes affected relationships', () => {
+    const child = {
+      ...secondTask,
+      id: 'task-3',
+      parentTaskId: task.id,
+    }
+    const relationship = {
+      ...blocks,
+      targetTaskId: child.id,
+    }
+    const state = {
+      relationships: [relationship],
+      projects: [project],
+      tasks: [task, child],
+    }
+
+    const afterTaskDelete = workspaceReducer(state, {
+      type: 'task/deleted',
+      taskId: task.id,
+    } as never)
+    const afterProjectDelete = workspaceReducer(state, {
+      type: 'project/deleted',
+      projectId: project.id,
+    } as never)
+
+    expect(afterTaskDelete).not.toHaveProperty('relationships')
+    expect(afterProjectDelete).not.toHaveProperty('relationships')
+  })
+})
+
+describe('dependency graph integrity', () => {
+  const secondTask = createTask({
+    id: 'task-2',
+    projectId: project.id,
+    title: 'Calibrate camera',
+    now: '2026-09-04T10:50:00.000Z',
+  })
+  const thirdTask = createTask({
+    id: 'task-3',
+    projectId: project.id,
+    title: 'Run experiment',
+    now: '2026-09-04T10:51:00.000Z',
+  })
+
+  it('rejects dependency cycles', () => {
+    const state = {
+      relationships: [
+        {
+          id: 'relationship-1',
+          type: 'blocks' as const,
+          sourceTaskId: task.id,
+          targetTaskId: secondTask.id,
+          createdAt: '2026-09-04T10:52:00.000Z',
+        },
+        {
+          id: 'relationship-2',
+          type: 'blocks' as const,
+          sourceTaskId: secondTask.id,
+          targetTaskId: thirdTask.id,
+          createdAt: '2026-09-04T10:53:00.000Z',
+        },
+      ],
+      projects: [project],
+      tasks: [task, secondTask, thirdTask],
+    }
+
+    expect(() =>
+      workspaceReducer(state, {
+        type: 'relationship/added',
+        relationship: {
+          id: 'relationship-3',
+          type: 'blocks',
+          sourceTaskId: thirdTask.id,
+          targetTaskId: task.id,
+          createdAt: '2026-09-04T10:54:00.000Z',
+        },
+      } as never),
+    ).toThrow('Cannot create a dependency cycle')
+  })
+
+  it('rejects self relationships at the reducer boundary', () => {
+    expect(() =>
+      workspaceReducer(
+        {
+          projects: [project],
+          tasks: [task],
+        },
+        {
+          type: 'relationship/added',
+          relationship: {
+            id: 'relationship-1',
+            type: 'related',
+            sourceTaskId: task.id,
+            targetTaskId: task.id,
+            createdAt: '2026-09-04T10:55:00.000Z',
+          },
+        } as never,
+      ),
+    ).toThrow('A task cannot relate to itself')
+  })
+})

@@ -667,3 +667,61 @@ Maintenance:
 - rerun the complete check and diff gates;
 - create a small maintenance commit;
 - retry non-force push only after a clean local commit.
+
+## Cycles 137-144
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 137 | Project deletion preserves newer workspace metadata | GREEN |
+| 138 | Task relationship domain and Related canonicalization | GREEN |
+| 139 | Relationship lifecycle, duplicates, and deletion cleanup | GREEN |
+| 140 | Dependency cycle and self-link rejection | GREEN |
+| 141 | Relationship application commands | GREEN |
+| 142 | Bare-bone relationship UI | GREEN |
+| 143 | Persistence validation and browser reload | GREEN |
+| 144 | Blocks / Blocked-by / Related summaries | GREEN |
+
+Prepared successful checkpoint:
+
+```text
+Expected tests: 302
+Lint: 0 warnings, 0 errors
+Build: passed
+Push: verified origin/main
+```
+
+The actual runner count is authoritative.
+
+Runner workflow from this batch forward pins Git for Windows at
+`C:\Program Files\Git\cmd\git.exe` for every Git operation.
+
+
+### TDD 141 GREEN compatibility correction
+
+The new relationship command passed, but the full command suite found an older
+Project-deletion shape regression:
+
+```text
+expected: { projects: [], tasks: [] }
+received: { areas: [], lists: [], projects: [], tasks: [] }
+```
+
+Cause: the TDD 137 metadata-preservation implementation spread the entire
+workspace state and therefore preserved already-empty optional `areas` and
+`lists`.
+
+No test changed. The reducer now preserves newer workspace metadata while
+retaining the established optional-shape behavior for Areas and Lists.
+
+
+### TDD 142 GREEN title-semantic correction
+
+The first relationship UI GREEN implementation rendered every candidate Task
+title as bare `<option>` text. Filtered-out Task titles therefore remained in
+the DOM, and exact-title queries became ambiguous.
+
+Relationship behavior itself was working: the Related relationship test passed,
+and the Blocks test reached its correct relationship summaries. No test changed.
+
+Relationship target option text is now `Target: <task title>` while the option
+value remains the Task ID.

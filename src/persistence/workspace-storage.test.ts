@@ -1375,3 +1375,209 @@ describe('custom field persistence', () => {
     expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
   })
 })
+
+describe('task relationship persistence', () => {
+  const project = {
+    id: 'project-1',
+    name: 'Robotics Research',
+    createdAt: '2026-09-04T11:20:00.000Z',
+  }
+  const first = {
+    id: 'task-1',
+    projectId: project.id,
+    title: 'Draft experiment plan',
+    status: 'todo',
+    priority: 'normal',
+    createdAt: '2026-09-04T11:21:00.000Z',
+  }
+  const second = {
+    ...first,
+    id: 'task-2',
+    title: 'Calibrate camera',
+  }
+  const relationship = {
+    id: 'relationship-1',
+    type: 'blocks',
+    sourceTaskId: first.id,
+    targetTaskId: second.id,
+    createdAt: '2026-09-04T11:22:00.000Z',
+  }
+
+  it('round-trips task relationships', () => {
+    const store = new MemoryStore()
+    const workspace = {
+      relationships: [relationship],
+      projects: [project],
+      tasks: [first, second],
+    }
+
+    saveWorkspace(store, workspace as never)
+
+    expect(loadWorkspace(store)).toEqual(workspace)
+  })
+
+  it('rejects invalid relationship records and duplicate ids', () => {
+    const invalidType: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            relationships: [{ ...relationship, type: 'unsupported' }],
+            projects: [project],
+            tasks: [first, second],
+          },
+        }),
+      setItem: () => undefined,
+    }
+    const third = {
+      ...second,
+      id: 'task-3',
+      title: 'Run experiment',
+    }
+    const duplicateId: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            relationships: [
+              relationship,
+              {
+                ...relationship,
+                sourceTaskId: second.id,
+                targetTaskId: third.id,
+              },
+            ],
+            projects: [project],
+            tasks: [first, second, third],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(invalidType)).toThrow(
+      'Workspace storage is invalid',
+    )
+    expect(() => loadWorkspace(duplicateId)).toThrow(
+      'Workspace storage is invalid',
+    )
+  })
+
+  it('rejects missing endpoints and self relationships', () => {
+    const missing: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            relationships: [
+              { ...relationship, targetTaskId: 'missing-task' },
+            ],
+            projects: [project],
+            tasks: [first, second],
+          },
+        }),
+      setItem: () => undefined,
+    }
+    const self: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            relationships: [
+              { ...relationship, targetTaskId: first.id },
+            ],
+            projects: [project],
+            tasks: [first, second],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(missing)).toThrow(
+      'Workspace storage is invalid',
+    )
+    expect(() => loadWorkspace(self)).toThrow(
+      'Workspace storage is invalid',
+    )
+  })
+
+  it('rejects duplicate Related relationships in reverse order', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            relationships: [
+              { ...relationship, type: 'related' },
+              {
+                ...relationship,
+                id: 'relationship-2',
+                type: 'related',
+                sourceTaskId: second.id,
+                targetTaskId: first.id,
+              },
+            ],
+            projects: [project],
+            tasks: [first, second],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow(
+      'Workspace storage is invalid',
+    )
+  })
+
+  it('rejects persisted dependency cycles', () => {
+    const third = { ...second, id: 'task-3', title: 'Run experiment' }
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            relationships: [
+              relationship,
+              {
+                ...relationship,
+                id: 'relationship-2',
+                sourceTaskId: second.id,
+                targetTaskId: third.id,
+              },
+              {
+                ...relationship,
+                id: 'relationship-3',
+                sourceTaskId: third.id,
+                targetTaskId: first.id,
+              },
+            ],
+            projects: [project],
+            tasks: [first, second, third],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow(
+      'Workspace storage is invalid',
+    )
+  })
+
+  it('rejects a non-array relationship collection', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            relationships: 'not-an-array',
+            projects: [project],
+            tasks: [first, second],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow(
+      'Workspace storage is invalid',
+    )
+  })
+})

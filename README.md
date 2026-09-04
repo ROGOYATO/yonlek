@@ -9,17 +9,13 @@ The current implementation is intentionally small. It is being developed as a se
 Starting checkpoint for this batch:
 
 - branch: `main`
-- commit: `b5e0d5b` (`TDD 125-130: add local People and assignees`)
-- TDD state: cycle 136 GREEN
-- expected suite: 280 tests
-- production build: passing
-- lint: 0 warnings, 0 errors
+- commit: `ce40d78` (`Maintenance: enforce zero-warning lint`)
+- TDD state: cycle 144 GREEN
+- expected suite: 302 tests
+- lint gate: zero warnings via `oxlint . --deny-warnings`
+- Git runner: pinned to `C:\Program Files\Git\cmd\git.exe`
 
-Custom Fields are workspace-level typed definitions. Tasks store only field-ID
-to value mappings.
-
-Successful bundles now push `main` to the verified `origin` remote only after
-the local commit and clean-tree gate.
+Task relationships use durable workspace-level edges between Task IDs.
 
 See [`FEATURES.md`](./FEATURES.md) for the maintained feature-first roadmap.
 
@@ -426,3 +422,23 @@ Custom Fields:
 - browser reload restores typed Task values;
 - field type mutation, select/dropdown options, date fields, formulas, and
   custom-field filtering remain later extensions.
+
+Task dependencies and relationships:
+
+- workspace-level `TaskRelationship` edges with durable IDs and timestamps;
+- `blocks` is directional: source Task blocks target Task;
+- `related` is symmetric and stored with canonical endpoint order;
+- both endpoints must reference existing Tasks;
+- self relationships and semantic duplicates are rejected;
+- dependency cycles are rejected at reducer and persistence boundaries;
+- deleting a Task, Subtask cascade, or Project cleans affected relationships;
+- bare-bone Task UI can add/remove relationships and shows Blocks / Blocked by /
+  Related semantics;
+- browser reload restores relationships;
+- relationship summaries are separate from stable Task title text.
+
+Regression fixed before this slice:
+
+Project deletion now preserves newer workspace-level optional collections such
+as Tags, People, and Custom Fields instead of reconstructing an older partial
+state shape.

@@ -7,6 +7,7 @@ import {
 import { sortTasks, type TaskSort } from './domain/task-sort'
 import { summarizeTasks } from './domain/task-summary'
 import type { MoveDirection } from './domain/manual-order'
+import type { TaskRelationshipType } from './domain/task-relationship'
 import {
   createDefaultViewPreferences,
   updateViewPreferences,
@@ -21,6 +22,8 @@ import { emptyWorkspace, type WorkspaceState } from './domain/workspace'
 
 export interface AppProps {
   state?: WorkspaceState
+  onCreateTaskRelationship?: (type: TaskRelationshipType, sourceTaskId: string, targetTaskId: string) => void
+  onDeleteTaskRelationship?: (relationshipId: string) => void
   onCreateCustomField?: (name: string, type: CustomFieldType) => void
   onRenameCustomField?: (fieldId: string, name: string) => void
   onDeleteCustomField?: (fieldId: string) => void
@@ -73,6 +76,8 @@ function errorMessage(error: unknown): string {
 
 export function App({
   state = emptyWorkspace,
+  onCreateTaskRelationship,
+  onDeleteTaskRelationship,
   onCreateCustomField,
   onRenameCustomField,
   onDeleteCustomField,
@@ -118,6 +123,12 @@ export function App({
   initialViewPreferences = createDefaultViewPreferences(),
   onViewPreferencesChange,
 }: AppProps) {
+  const [relationshipTypes, setRelationshipTypes] = useState<
+    Record<string, TaskRelationshipType>
+  >({})
+  const [relationshipTargets, setRelationshipTargets] = useState<
+    Record<string, string>
+  >({})
   const [customFieldName, setCustomFieldName] = useState('')
   const [customFieldType, setCustomFieldType] = useState<CustomFieldType>('text')
   const [customFieldEdits, setCustomFieldEdits] = useState<Record<string, string>>({})
@@ -243,6 +254,7 @@ export function App({
     }
   }
 
+  const relationships = state.relationships ?? []
   const customFields = state.customFields ?? []
   const people = state.people ?? []
   const tags = state.tags ?? []
@@ -1119,6 +1131,29 @@ export function App({
                     const immediateSubtaskCount = state.tasks.filter(
                       (candidate) => candidate.parentTaskId === task.id,
                     ).length
+                    const relationshipType =
+                      relationshipTypes[task.id] ?? 'blocks'
+                    const relationshipTarget =
+                      relationshipTargets[task.id] ?? ''
+                    const taskRelationships = relationships.filter(
+                      (relationship) =>
+                        relationship.sourceTaskId === task.id ||
+                        relationship.targetTaskId === task.id,
+                    )
+                    const blocksCount = taskRelationships.filter(
+                      (relationship) =>
+                        relationship.type === 'blocks' &&
+                        relationship.sourceTaskId === task.id,
+                    ).length
+                    const blockedByCount = taskRelationships.filter(
+                      (relationship) =>
+                        relationship.type === 'blocks' &&
+                        relationship.targetTaskId === task.id,
+                    ).length
+                    const relatedCount = taskRelationships.filter(
+                      (relationship) =>
+                        relationship.type === 'related',
+                    ).length
                     const editedTitle = taskEdits[task.id] ?? task.title
                     const editedDescription = taskDescriptions[task.id] ?? task.description ?? ''
 
@@ -1133,6 +1168,142 @@ export function App({
                             ? 'subtask'
                             : 'subtasks'}
                         </span>
+                        {onCreateTaskRelationship &&
+                        state.tasks.length > 1 ? (
+                          <section>
+                            <h4>Relationships for {task.title}</h4>
+                            <span
+                              aria-label={`Relationship summary for ${task.title}`}
+                            >
+                              Blocks {blocksCount}; Blocked by {blockedByCount};
+                              {' '}Related {relatedCount}
+                            </span>
+                            <form
+                              onSubmit={(event) => {
+                                event.preventDefault()
+
+                                try {
+                                  onCreateTaskRelationship(
+                                    relationshipType,
+                                    task.id,
+                                    relationshipTarget,
+                                  )
+                                  setRelationshipTargets((current) => ({
+                                    ...current,
+                                    [task.id]: '',
+                                  }))
+                                  setError(null)
+                                } catch (caught) {
+                                  setError(errorMessage(caught))
+                                }
+                              }}
+                            >
+                              <label
+                                htmlFor={`relationship-type-${task.id}`}
+                              >
+                                Relationship type from {task.title}
+                              </label>
+                              <select
+                                id={`relationship-type-${task.id}`}
+                                value={relationshipType}
+                                onChange={(event) =>
+                                  setRelationshipTypes((current) => ({
+                                    ...current,
+                                    [task.id]:
+                                      event.target
+                                        .value as TaskRelationshipType,
+                                  }))
+                                }
+                              >
+                                <option value="blocks">Blocks</option>
+                                <option value="related">Related</option>
+                              </select>
+                              <label
+                                htmlFor={`relationship-target-${task.id}`}
+                              >
+                                Relationship target from {task.title}
+                              </label>
+                              <select
+                                id={`relationship-target-${task.id}`}
+                                value={relationshipTarget}
+                                onChange={(event) =>
+                                  setRelationshipTargets((current) => ({
+                                    ...current,
+                                    [task.id]: event.target.value,
+                                  }))
+                                }
+                              >
+                                <option value="">Select task</option>
+                                {state.tasks
+                                  .filter(
+                                    (candidate) =>
+                                      candidate.id !== task.id,
+                                  )
+                                  .map((candidate) => (
+                                    <option
+                                      key={candidate.id}
+                                      value={candidate.id}
+                                    >
+                                      Target: {candidate.title}
+                                    </option>
+                                  ))}
+                              </select>
+                              <button type="submit">
+                                Add relationship from {task.title}
+                              </button>
+                            </form>
+
+                            {taskRelationships.length > 0 ? (
+                              <ul>
+                                {taskRelationships.map((relationship) => {
+                                  const source = state.tasks.find(
+                                    (candidate) =>
+                                      candidate.id ===
+                                      relationship.sourceTaskId,
+                                  )
+                                  const target = state.tasks.find(
+                                    (candidate) =>
+                                      candidate.id ===
+                                      relationship.targetTaskId,
+                                  )
+                                  const label =
+                                    relationship.type === 'related'
+                                      ? `Related to ${
+                                          relationship.sourceTaskId ===
+                                          task.id
+                                            ? target?.title
+                                            : source?.title
+                                        }`
+                                      : relationship.sourceTaskId ===
+                                          task.id
+                                        ? `Blocks ${target?.title}`
+                                        : `Blocked by ${source?.title}`
+
+                                  return (
+                                    <li key={relationship.id}>
+                                      <span>{label}</span>
+                                      {onDeleteTaskRelationship &&
+                                      relationship.sourceTaskId ===
+                                        task.id ? (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            onDeleteTaskRelationship(
+                                              relationship.id,
+                                            )
+                                          }
+                                        >
+                                          Delete relationship {relationship.id}
+                                        </button>
+                                      ) : null}
+                                    </li>
+                                  )
+                                })}
+                              </ul>
+                            ) : null}
+                          </section>
+                        ) : null}
+
                         {customFields.length > 0 &&
                         onChangeTaskCustomFieldValue ? (
                           <fieldset>

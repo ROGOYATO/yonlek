@@ -537,3 +537,32 @@ describe('custom field commands', () => {
     )
   })
 })
+
+describe('task relationship commands', () => {
+  it('creates and deletes a persisted Blocks relationship', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1', 'task-2', 'relationship-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T11:00:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const first = commands.addTask(project.id, 'Draft experiment plan')
+    const second = commands.addTask(project.id, 'Calibrate camera')
+
+    const relationship = commands.addTaskRelationship(
+      'blocks',
+      first.id,
+      second.id,
+    )
+
+    expect(store.getState().relationships).toEqual([relationship])
+    expect(loadWorkspace(storage).relationships).toEqual([relationship])
+
+    commands.deleteTaskRelationship(relationship.id)
+
+    expect(store.getState()).not.toHaveProperty('relationships')
+    expect(loadWorkspace(storage)).not.toHaveProperty('relationships')
+  })
+})

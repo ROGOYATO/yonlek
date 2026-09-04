@@ -8,6 +8,10 @@ import { createArea } from '../domain/area'
 import { createProject } from '../domain/project'
 import { createPerson } from '../domain/person'
 import { createTaskList } from '../domain/task-list'
+import {
+  createTaskRelationship,
+  type TaskRelationshipType,
+} from '../domain/task-relationship'
 import { createTag } from '../domain/tag'
 import {
   createSubtask,
@@ -24,6 +28,8 @@ export interface WorkspaceRuntime {
 }
 
 export interface WorkspaceCommands {
+  addTaskRelationship(type: TaskRelationshipType, sourceTaskId: string, targetTaskId: string): ReturnType<typeof createTaskRelationship>
+  deleteTaskRelationship(relationshipId: string): void
   addCustomField(name: string, type: CustomFieldType): ReturnType<typeof createCustomField>
   renameCustomField(fieldId: string, name: string): void
   deleteCustomField(fieldId: string): void
@@ -75,6 +81,30 @@ export function createWorkspaceCommands(
   runtime: WorkspaceRuntime,
 ): WorkspaceCommands {
   return {
+    addTaskRelationship(type, sourceTaskId, targetTaskId) {
+      const relationship = createTaskRelationship({
+        id: runtime.nextId(),
+        type,
+        sourceTaskId,
+        targetTaskId,
+        now: runtime.now(),
+      })
+
+      store.dispatch({
+        type: 'relationship/added',
+        relationship,
+      })
+
+      return relationship
+    },
+
+    deleteTaskRelationship(relationshipId) {
+      store.dispatch({
+        type: 'relationship/deleted',
+        relationshipId,
+      })
+    },
+
     addCustomField(name, type) {
       const field = createCustomField({
         id: runtime.nextId(),

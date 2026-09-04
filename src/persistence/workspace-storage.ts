@@ -79,6 +79,21 @@ function isValidChecklistItem(value: unknown): boolean {
 }
 
 
+function isValidTaskRelationship(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    value.id.trim().length > 0 &&
+    (value.type === 'blocks' || value.type === 'related') &&
+    typeof value.sourceTaskId === 'string' &&
+    value.sourceTaskId.trim().length > 0 &&
+    typeof value.targetTaskId === 'string' &&
+    value.targetTaskId.trim().length > 0 &&
+    isIsoInstant(value.createdAt)
+  )
+}
+
+
 function isValidCustomField(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -222,6 +237,8 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     (workspace.people !== undefined && !Array.isArray(workspace.people)) ||
     (workspace.customFields !== undefined &&
       !Array.isArray(workspace.customFields)) ||
+    (workspace.relationships !== undefined &&
+      !Array.isArray(workspace.relationships)) ||
     !Array.isArray(workspace.projects) ||
     !Array.isArray(workspace.tasks)
   ) {
@@ -233,6 +250,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   const tags = workspace.tags ?? []
   const people = workspace.people ?? []
   const customFields = workspace.customFields ?? []
+  const relationships = workspace.relationships ?? []
 
   if (
     !areas.every(isValidArea) ||
@@ -240,6 +258,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     !tags.every(isValidTag) ||
     !people.every(isValidPerson) ||
     !customFields.every(isValidCustomField) ||
+    !relationships.every(isValidTaskRelationship) ||
     !workspace.projects.every(isValidProject) ||
     !workspace.tasks.every(isValidTask)
   ) {
@@ -456,6 +475,91 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     })
   ) {
     invalidStorage()
+  }
+
+  const relationshipIds = new Set(
+    relationships.map(
+      (relationship) =>
+        (relationship as { id: string }).id,
+    ),
+  )
+
+  if (relationshipIds.size !== relationships.length) {
+    invalidStorage()
+  }
+
+  const relationshipKeys = new Set<string>()
+  for (const relationshipValue of relationships) {
+    const relationship = relationshipValue as {
+      type: 'blocks' | 'related'
+      sourceTaskId: string
+      targetTaskId: string
+    }
+
+    if (
+      relationship.sourceTaskId === relationship.targetTaskId ||
+      !taskIds.has(relationship.sourceTaskId) ||
+      !taskIds.has(relationship.targetTaskId)
+    ) {
+      invalidStorage()
+    }
+
+    const endpoints =
+      relationship.type === 'related'
+        ? [
+            relationship.sourceTaskId,
+            relationship.targetTaskId,
+          ].sort()
+        : [relationship.sourceTaskId, relationship.targetTaskId]
+    const key = `${relationship.type}:${endpoints[0]}:${endpoints[1]}`
+
+    if (relationshipKeys.has(key)) {
+      invalidStorage()
+    }
+
+    relationshipKeys.add(key)
+  }
+
+  const dependencyAdjacency = new Map<string, string[]>()
+  for (const relationshipValue of relationships) {
+    const relationship = relationshipValue as {
+      type: 'blocks' | 'related'
+      sourceTaskId: string
+      targetTaskId: string
+    }
+
+    if (relationship.type !== 'blocks') {
+      continue
+    }
+
+    const targets =
+      dependencyAdjacency.get(relationship.sourceTaskId) ?? []
+    targets.push(relationship.targetTaskId)
+    dependencyAdjacency.set(relationship.sourceTaskId, targets)
+  }
+
+  for (const taskId of taskIds) {
+    const pending = [...(dependencyAdjacency.get(taskId) ?? [])]
+    const visited = new Set<string>()
+
+    while (pending.length > 0) {
+      const current = pending.pop()
+
+      if (current === undefined) {
+        continue
+      }
+
+      if (current === taskId) {
+        invalidStorage()
+      }
+
+      if (visited.has(current)) {
+        continue
+      }
+
+      visited.add(current)
+      pending.push(...(dependencyAdjacency.get(current) ?? []))
+    }
   }
 
   const tasksById = new Map(

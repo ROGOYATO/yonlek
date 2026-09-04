@@ -756,3 +756,51 @@ it('restores persisted custom field values from browser storage', () => {
     ).value,
   ).toBe('Inspect mount')
 })
+
+it('restores persisted task relationships from browser storage', () => {
+  const storage = new MemoryStore()
+  const project = createProject({
+    id: 'project-1',
+    name: 'Robotics Research',
+    now: '2026-09-04T11:25:00.000Z',
+  })
+  const first = createTask({
+    id: 'task-1',
+    projectId: project.id,
+    title: 'Draft experiment plan',
+    now: '2026-09-04T11:26:00.000Z',
+  })
+  const second = createTask({
+    id: 'task-2',
+    projectId: project.id,
+    title: 'Calibrate camera',
+    now: '2026-09-04T11:27:00.000Z',
+  })
+
+  saveWorkspace(storage, {
+    relationships: [
+      {
+        id: 'relationship-1',
+        type: 'blocks',
+        sourceTaskId: first.id,
+        targetTaskId: second.id,
+        createdAt: '2026-09-04T11:28:00.000Z',
+      },
+    ],
+    projects: [project],
+    tasks: [first, second],
+  })
+
+  render(
+    <BrowserApp
+      storage={storage}
+      runtime={{
+        nextId: () => 'unused-id',
+        now: () => '2026-09-04T11:29:00.000Z',
+      }}
+    />,
+  )
+
+  expect(screen.getByText('Blocks Calibrate camera')).toBeTruthy()
+  expect(screen.getByText('Blocked by Draft experiment plan')).toBeTruthy()
+})

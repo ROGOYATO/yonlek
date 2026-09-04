@@ -594,3 +594,75 @@ do not weaken the test to match a lossy controlled-input implementation.
 A lint warning is a failed quality gate, not a successful check. Bundles must
 stop before commit/push when Oxlint reports any warning or error. Do not rely
 only on the default Oxlint exit code because warnings are otherwise non-fatal.
+
+## Task relationship integrity
+
+Relationships are workspace-level edges between Task IDs.
+
+Types:
+
+- `blocks`: directional source → target dependency;
+- `related`: symmetric non-dependency link.
+
+Rules:
+
+- both endpoints must exist;
+- a Task cannot relate to itself;
+- duplicate semantic relationships are rejected;
+- reversed `related` endpoints are the same relationship;
+- dependency cycles are rejected;
+- deleting Tasks, descendant cascades, or Projects removes affected edges;
+- persistence validates IDs, endpoint references, duplicate semantics,
+  canonical timestamps, and dependency acyclicity;
+- Task moves do not rewrite relationship IDs because Task identity is stable.
+
+## Project deletion state-shape regression
+
+When adding new workspace-level optional collections, project deletion must
+preserve unrelated collections. Prefer a surgical `{ ...state, ...changes }`
+update over reconstructing WorkspaceState from an older subset of fields.
+TDD 137 is the regression reference.
+
+## Windows Git executable
+
+Automated Windows runners pin:
+
+`C:\Program Files\Git\cmd\git.exe`
+
+All internal Git operations and manifest commands named `git` route to that
+executable. Do not rely on PATH because MSYS Git may appear earlier and behave
+differently for credential helpers and HTTPS transport.
+
+
+## Project deletion and optional workspace collections
+
+Project deletion must preserve unrelated workspace-level data without
+materializing optional empty collections.
+
+Compatibility rules:
+
+- preserve unrelated Tags, People, Custom Fields, and other workspace metadata;
+- if `areas` was absent or empty before deletion, do not introduce `areas: []`;
+- if `lists` was absent or empty before deletion, do not introduce `lists: []`;
+- if a non-empty List collection existed, filter it by deleted Project and
+  preserve the resulting collection even when it becomes `[]`;
+- clean relationship edges that touch Tasks removed by the Project deletion.
+
+TDD 141 exposed this boundary: the first TDD 137 preservation fix used
+`...state`, which correctly kept newer metadata but reintroduced historical
+empty `areas` / `lists` shapes. The correction is implementation-only; no test
+was weakened.
+
+
+## Relationship target selector text
+
+Task titles are stable semantic text and should remain uniquely attributable to
+the rendered Task row where exact title semantics matter.
+
+Relationship target selectors keep Task IDs as option values. Their visible
+option text is `Target: <task title>` instead of duplicating the bare Task title.
+This keeps the selector understandable without making filtered-out Tasks appear
+to exact-text queries or creating duplicate bare title nodes.
+
+Do not weaken filtering/title tests to accommodate control chrome that
+duplicates bare Task titles.

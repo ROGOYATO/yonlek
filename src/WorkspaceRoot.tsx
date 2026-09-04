@@ -29,6 +29,12 @@ export function WorkspaceRoot({
       state={state}
       initialViewPreferences={initialViewPreferences}
       onViewPreferencesChange={onViewPreferencesChange}
+      onCreateTaskRelationship={(type, sourceTaskId, targetTaskId) => {
+        commands.addTaskRelationship(type, sourceTaskId, targetTaskId)
+      }}
+      onDeleteTaskRelationship={(relationshipId) => {
+        commands.deleteTaskRelationship(relationshipId)
+      }}
       onCreateCustomField={(name, type) => {
         commands.addCustomField(name, type)
       }}

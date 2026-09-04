@@ -5,6 +5,7 @@ import {
   type ChecklistItem,
 } from './checklist'
 import { renameTaskList, type TaskList } from './task-list'
+import type { TaskRelationship } from './task-relationship'
 import {
   normalizeCustomFieldValue,
   renameCustomField,
@@ -40,6 +41,7 @@ export interface WorkspaceState {
   tags?: Tag[]
   people?: Person[]
   customFields?: CustomFieldDefinition[]
+  relationships?: TaskRelationship[]
   projects: Project[]
   tasks: Task[]
 }
@@ -69,6 +71,8 @@ export type WorkspaceAction =
   | { type: 'list/deleted'; listId: string }
   | { type: 'list/nameChanged'; listId: string; name: string }
   | { type: 'list/moved'; listId: string; direction: MoveDirection }
+  | { type: 'relationship/added'; relationship: TaskRelationship }
+  | { type: 'relationship/deleted'; relationshipId: string }
   | { type: 'project/added'; project: Project }
   | { type: 'project/deleted'; projectId: string }
   | { type: 'project/nameChanged'; projectId: string; name: string }
@@ -95,6 +99,44 @@ export type WorkspaceAction =
   | { type: 'task/checklistItemDeleted'; taskId: string; itemId: string }
   | { type: 'task/checklistItemMoved'; taskId: string; itemId: string; direction: MoveDirection }
   | { type: 'task/deleted'; taskId: string }
+
+function createsDependencyCycle(
+  relationships: TaskRelationship[],
+  sourceTaskId: string,
+  targetTaskId: string,
+): boolean {
+  const adjacency = new Map<string, string[]>()
+
+  for (const relationship of relationships) {
+    if (relationship.type !== 'blocks') {
+      continue
+    }
+
+    const targets = adjacency.get(relationship.sourceTaskId) ?? []
+    targets.push(relationship.targetTaskId)
+    adjacency.set(relationship.sourceTaskId, targets)
+  }
+
+  const pending = [targetTaskId]
+  const visited = new Set<string>()
+
+  while (pending.length > 0) {
+    const current = pending.pop()
+
+    if (current === undefined || visited.has(current)) {
+      continue
+    }
+
+    if (current === sourceTaskId) {
+      return true
+    }
+
+    visited.add(current)
+    pending.push(...(adjacency.get(current) ?? []))
+  }
+
+  return false
+}
 
 export function workspaceReducer(
   state: WorkspaceState,
@@ -341,6 +383,84 @@ export function workspaceReducer(
         }),
       }
 
+    case 'relationship/added': {
+      if (
+        action.relationship.sourceTaskId ===
+        action.relationship.targetTaskId
+      ) {
+        throw new Error('A task cannot relate to itself')
+      }
+
+      const sourceExists = state.tasks.some(
+        (task) => task.id === action.relationship.sourceTaskId,
+      )
+      const targetExists = state.tasks.some(
+        (task) => task.id === action.relationship.targetTaskId,
+      )
+
+      if (!sourceExists || !targetExists) {
+        throw new Error('Cannot relate a missing task')
+      }
+
+      const duplicate = (state.relationships ?? []).some((relationship) => {
+        if (relationship.type !== action.relationship.type) {
+          return false
+        }
+
+        if (relationship.type === 'related') {
+          return (
+            (relationship.sourceTaskId === action.relationship.sourceTaskId &&
+              relationship.targetTaskId === action.relationship.targetTaskId) ||
+            (relationship.sourceTaskId === action.relationship.targetTaskId &&
+              relationship.targetTaskId === action.relationship.sourceTaskId)
+          )
+        }
+
+        return (
+          relationship.sourceTaskId === action.relationship.sourceTaskId &&
+          relationship.targetTaskId === action.relationship.targetTaskId
+        )
+      })
+
+      if (duplicate) {
+        throw new Error('Cannot add a duplicate task relationship')
+      }
+
+      if (
+        action.relationship.type === 'blocks' &&
+        createsDependencyCycle(
+          state.relationships ?? [],
+          action.relationship.sourceTaskId,
+          action.relationship.targetTaskId,
+        )
+      ) {
+        throw new Error('Cannot create a dependency cycle')
+      }
+
+      return {
+        ...state,
+        relationships: [
+          ...(state.relationships ?? []),
+          action.relationship,
+        ],
+      }
+    }
+
+    case 'relationship/deleted': {
+      const relationships = (state.relationships ?? []).filter(
+        (relationship) => relationship.id !== action.relationshipId,
+      )
+      const next = { ...state }
+
+      if (relationships.length === 0) {
+        delete next.relationships
+      } else {
+        next.relationships = relationships
+      }
+
+      return next
+    }
+
     case 'project/added':
       return {
         ...state,
@@ -398,7 +518,18 @@ export function workspaceReducer(
       }
 
     case 'project/deleted': {
+      const deletedTaskIds = new Set(
+        state.tasks
+          .filter((task) => task.projectId === action.projectId)
+          .map((task) => task.id),
+      )
+      const relationships = (state.relationships ?? []).filter(
+        (relationship) =>
+          !deletedTaskIds.has(relationship.sourceTaskId) &&
+          !deletedTaskIds.has(relationship.targetTaskId),
+      )
       const next: WorkspaceState = {
+        ...state,
         projects: state.projects.filter(
           (project) => project.id !== action.projectId,
         ),
@@ -407,14 +538,24 @@ export function workspaceReducer(
         ),
       }
 
-      if (state.areas !== undefined && state.areas.length > 0) {
-        next.areas = state.areas
+      if (state.areas === undefined || state.areas.length === 0) {
+        delete next.areas
       }
 
-      if (state.lists !== undefined && state.lists.length > 0) {
+      if (state.lists === undefined || state.lists.length === 0) {
+        delete next.lists
+      } else {
         next.lists = state.lists.filter(
           (list) => list.projectId !== action.projectId,
         )
+      }
+
+      if (state.relationships !== undefined) {
+        if (relationships.length === 0) {
+          delete next.relationships
+        } else {
+          next.relationships = relationships
+        }
       }
 
       return next
@@ -920,10 +1061,25 @@ export function workspaceReducer(
         }
       }
 
-      return {
+      const relationships = (state.relationships ?? []).filter(
+        (relationship) =>
+          !deletedIds.has(relationship.sourceTaskId) &&
+          !deletedIds.has(relationship.targetTaskId),
+      )
+      const next: WorkspaceState = {
         ...state,
         tasks: state.tasks.filter((task) => !deletedIds.has(task.id)),
       }
+
+      if (state.relationships !== undefined) {
+        if (relationships.length === 0) {
+          delete next.relationships
+        } else {
+          next.relationships = relationships
+        }
+      }
+
+      return next
     }
   }
 }
