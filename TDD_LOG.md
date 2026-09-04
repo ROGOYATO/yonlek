@@ -646,3 +646,24 @@ controlled input could erase the space while the user was still typing
 The behavior test was correct and unchanged. The implementation now keeps a
 local text draft while the input is focused and commits the normalized value on
 blur. Number and Checkbox values remain typed at their existing boundaries.
+
+
+## Post-TDD 136 lint and push maintenance
+
+TDD 131-136 completed locally at commit `8fc915a` with 280/280 tests and a
+passing production build. The final lint invocation still emitted two warnings:
+
+- unnecessary empty fallback in a Custom Field value object spread;
+- an unused local variable in the new Custom Field UI test.
+
+The previous `oxlint .` command returned success despite warnings, so the runner
+continued to commit. Remote delivery then failed because the HTTPS remote helper
+aborted.
+
+Maintenance:
+
+- remove both lint warnings without changing behavior assertions;
+- change the lint script to `oxlint . --deny-warnings`;
+- rerun the complete check and diff gates;
+- create a small maintenance commit;
+- retry non-force push only after a clean local commit.

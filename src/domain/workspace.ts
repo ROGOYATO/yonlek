@@ -648,7 +648,7 @@ export function workspaceReducer(
           }
 
           const customFieldValues = {
-            ...(task.customFieldValues ?? {}),
+            ...task.customFieldValues,
           }
 
           if (action.value === null) {

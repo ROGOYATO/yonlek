@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "oxlint .",
+    "lint": "oxlint . --deny-warnings",
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm run lint && npm run test && npm run build"

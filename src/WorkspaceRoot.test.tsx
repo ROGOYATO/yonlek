@@ -1544,7 +1544,7 @@ describe('WorkspaceRoot custom fields', () => {
     const estimate = commands.addCustomField('Estimate', 'number')
     const reviewed = commands.addCustomField('Reviewed', 'checkbox')
     const project = commands.addProject('Robotics Research')
-    const task = commands.addTask(project.id, 'Draft experiment plan')
+    commands.addTask(project.id, 'Draft experiment plan')
 
     render(<WorkspaceRoot store={store} commands={commands} />)
 

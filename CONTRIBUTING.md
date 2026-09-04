@@ -585,3 +585,12 @@ intentional internal spaces.
 For Text Custom Fields, keep a local draft during editing and commit through the
 domain boundary on blur. Tests should assert the user-visible value contract;
 do not weaken the test to match a lossy controlled-input implementation.
+
+
+### Zero-warning lint gate
+
+`npm run lint` uses `oxlint . --deny-warnings`.
+
+A lint warning is a failed quality gate, not a successful check. Bundles must
+stop before commit/push when Oxlint reports any warning or error. Do not rely
+only on the default Oxlint exit code because warnings are otherwise non-fatal.
