@@ -41,6 +41,18 @@ export function WorkspaceRoot({
       onChangeProjectArea={(projectId, areaId) => {
         commands.changeProjectArea(projectId, areaId)
       }}
+      onCreateTaskList={(projectId, name) => {
+        commands.addTaskList(projectId, name)
+      }}
+      onRenameTaskList={(listId, name) => {
+        commands.renameTaskList(listId, name)
+      }}
+      onDeleteTaskList={(listId) => {
+        commands.deleteTaskList(listId)
+      }}
+      onChangeTaskList={(taskId, listId) => {
+        commands.changeTaskList(taskId, listId)
+      }}
       onCreateProject={(name) => {
         commands.addProject(name)
       }}
@@ -50,8 +62,8 @@ export function WorkspaceRoot({
       onChangeProjectDescription={(projectId, description) => {
         commands.changeProjectDescription(projectId, description)
       }}
-      onCreateTask={(projectId, title) => {
-        commands.addTask(projectId, title)
+      onCreateTask={(projectId, title, listId) => {
+        commands.addTask(projectId, title, listId)
       }}
       onDeleteProject={(projectId) => {
         commands.deleteProject(projectId)

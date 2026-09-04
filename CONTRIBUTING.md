@@ -347,3 +347,45 @@ RED because those names may never appear in output.
 
 TDD 086 is the reference case. The test itself was correct and remained
 unchanged; only the fail-fast runner's expected RED markers were corrected.
+
+
+## Lists and task-container integrity
+
+Lists are optional durable containers inside Projects.
+
+- A List must reference an existing Project.
+- A Task may omit `listId` for backward compatibility.
+- If a Task has `listId`, that List must exist and belong to the same Project as
+  the Task.
+- Moving a Task to another Project clears its current List assignment unless a
+  later behavior explicitly chooses a compatible target List.
+- Deleting a List preserves its Tasks and clears their `listId`.
+- Deleting a Project removes that Project's Lists and Tasks but must preserve
+  unrelated workspace layers such as Areas.
+- Version-1 storage remains backward-compatible with documents that do not
+  contain `lists`.
+
+Automated commit messages should prefer ASCII-only wording while nested
+PowerShell/Git output still displays Unicode inconsistently. This affects
+terminal display only; product files continue to use `Yönlek`.
+
+
+## Optional collection shape compatibility
+
+`areas` and `lists` remain optional fields in `WorkspaceState` for storage and
+state-shape backward compatibility.
+
+When a reducer operation has no surviving values for an optional collection
+that was already empty, it does not need to introduce that empty collection
+into a state shape that previously exposed only `projects` and `tasks`.
+
+However, reducers must preserve real unrelated data:
+
+- non-empty Areas survive Project deletion;
+- Lists belonging to other Projects survive Project deletion;
+- deleting a Project removes only that Project's Lists and Tasks.
+
+TDD 096 is the reference case. A new Project-delete implementation correctly
+preserved hierarchy data but also introduced empty `areas`/`lists` arrays into
+an older command test's exact state shape. The correction was implementation
+only; the existing behavior test was not changed.

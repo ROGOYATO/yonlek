@@ -406,3 +406,62 @@ Cannot find module './area'
 
 Durable rule: collection-time REDs use collection/file/module evidence rather
 than assertions that cannot run before import succeeds.
+
+
+## Cycles 093-100
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 093 | List create/rename domain behavior | GREEN |
+| 094 | Workspace List lifecycle and Project-delete cleanup | GREEN |
+| 095 | Task-to-List invariants and Project-move cleanup | GREEN |
+| 096 | List application commands | GREEN |
+| 097 | List management and Task-List UI | GREEN |
+| 098 | List persistence validation and browser reload | GREEN |
+| 099 | Per-List Task counts | GREEN |
+| 100 | Create Tasks directly in a selected List | GREEN |
+
+Expected successful checkpoint:
+
+```text
+Tests: 171 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+```
+
+Lists remain optional in storage version 1 so existing saved workspaces continue
+to load without migration.
+
+
+## TDD 096 GREEN compatibility correction
+
+TDD 096's new List command behavior passed, but GREEN verification also exposed
+an older exact-state assertion after deleting the final Project.
+
+Observed state:
+
+```text
+{ areas: [], lists: [], projects: [], tasks: [] }
+```
+
+Existing expected state:
+
+```text
+{ projects: [], tasks: [] }
+```
+
+The test was not changed or weakened.
+
+Cause: TDD 094's Project-delete implementation spread the entire state to
+preserve Areas and Lists, which also introduced empty optional collections into
+the historical state shape.
+
+Implementation correction:
+
+- preserve non-empty Areas;
+- filter and preserve Lists when Lists existed;
+- avoid introducing empty optional collections when there is no unrelated data
+  to preserve.
+
+The corrected reducer must satisfy both the existing command test and the new
+Project-delete hierarchy test before TDD 097 begins.

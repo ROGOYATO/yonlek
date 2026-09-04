@@ -1,5 +1,6 @@
 import { createArea } from '../domain/area'
 import { createProject } from '../domain/project'
+import { createTaskList } from '../domain/task-list'
 import {
   createTask,
   type TaskPriority,
@@ -17,8 +18,12 @@ export interface WorkspaceCommands {
   renameArea(areaId: string, name: string): void
   deleteArea(areaId: string): void
   changeProjectArea(projectId: string, areaId: string | null): void
+  addTaskList(projectId: string, name: string): ReturnType<typeof createTaskList>
+  renameTaskList(listId: string, name: string): void
+  deleteTaskList(listId: string): void
+  changeTaskList(taskId: string, listId: string | null): void
   addProject(name: string): ReturnType<typeof createProject>
-  addTask(projectId: string, title: string): ReturnType<typeof createTask>
+  addTask(projectId: string, title: string, listId?: string): ReturnType<typeof createTask>
   renameProject(projectId: string, name: string): void
   changeProjectDescription(projectId: string, description: string | null): void
   renameTask(taskId: string, title: string): void
@@ -74,6 +79,45 @@ export function createWorkspaceCommands(
       })
     },
 
+    addTaskList(projectId, name) {
+      const list = createTaskList({
+        id: runtime.nextId(),
+        projectId,
+        name,
+        now: runtime.now(),
+      })
+
+      store.dispatch({
+        type: 'list/added',
+        list,
+      })
+
+      return list
+    },
+
+    renameTaskList(listId, name) {
+      store.dispatch({
+        type: 'list/nameChanged',
+        listId,
+        name,
+      })
+    },
+
+    deleteTaskList(listId) {
+      store.dispatch({
+        type: 'list/deleted',
+        listId,
+      })
+    },
+
+    changeTaskList(taskId, listId) {
+      store.dispatch({
+        type: 'task/listChanged',
+        taskId,
+        listId,
+      })
+    },
+
     addProject(name) {
       const project = createProject({
         id: runtime.nextId(),
@@ -89,12 +133,13 @@ export function createWorkspaceCommands(
       return project
     },
 
-    addTask(projectId, title) {
+    addTask(projectId, title, listId) {
       const task = createTask({
         id: runtime.nextId(),
         projectId,
         title,
         now: runtime.now(),
+        listId,
       })
 
       store.dispatch({

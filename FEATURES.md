@@ -26,7 +26,7 @@ Workspace
 - [x] Workspace domain/persistence boundary
 - [x] Areas
 - [x] Projects
-- [ ] Lists inside projects
+- [x] Lists inside projects
 - [x] Tasks
 - [ ] Subtasks
 - [ ] Checklists
@@ -61,7 +61,9 @@ Workspace
 - [x] Priority filter
 - [x] Due-date filter
 - [x] Sort by created/title/due date/priority
-- [ ] Move between project/list containers
+- [x] Move between project/list containers
+- [x] Assign tasks to Lists
+- [x] Create tasks directly in a List
 - [ ] Subtasks
 - [ ] Checklists
 - [ ] Manual ordering

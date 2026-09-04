@@ -888,3 +888,133 @@ describe('WorkspaceRoot area summaries', () => {
     expect(screen.getByText('Operations (0 projects)')).toBeTruthy()
   })
 })
+
+
+describe('WorkspaceRoot lists', () => {
+  it('lets a user create, rename, and delete a list inside a project', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'list-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T03:50:00.000Z',
+    })
+    commands.addProject('Robotics Research')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.type(
+      screen.getByLabelText('List name for Robotics Research'),
+      'Backlog',
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Add list to Robotics Research' }),
+    )
+
+    expect(store.getState().lists?.[0]?.name).toBe('Backlog')
+
+    const input = screen.getByLabelText('Name for list Backlog')
+    await user.clear(input)
+    await user.type(input, 'Sprint 1')
+    await user.click(
+      screen.getByRole('button', { name: 'Save list name for Backlog' }),
+    )
+
+    expect(store.getState().lists?.[0]?.name).toBe('Sprint 1')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Delete list Sprint 1' }),
+    )
+    expect(store.getState().lists).toEqual([])
+  })
+
+  it('assigns tasks only to lists from their own project', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = [
+      'project-1',
+      'project-2',
+      'list-1',
+      'list-2',
+      'task-1',
+    ]
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T03:51:00.000Z',
+    })
+    const robotics = commands.addProject('Robotics Research')
+    const field = commands.addProject('Field Tests')
+    const backlog = commands.addTaskList(robotics.id, 'Backlog')
+    commands.addTaskList(field.id, 'Field Queue')
+    const task = commands.addTask(robotics.id, 'Draft experiment plan')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    const select = screen.getByLabelText('List for Draft experiment plan')
+
+    expect(within(select).getByRole('option', { name: 'Backlog' })).toBeTruthy()
+    expect(
+      within(select).queryByRole('option', { name: 'Field Queue' }),
+    ).toBeNull()
+
+    await user.selectOptions(select, backlog.id)
+    expect(store.getState().tasks[0]?.listId).toBe(backlog.id)
+
+    await user.selectOptions(select, '')
+    expect(store.getState().tasks[0]).not.toHaveProperty('listId')
+    expect(task.projectId).toBe(robotics.id)
+  })
+})
+
+
+describe('WorkspaceRoot list summaries', () => {
+  it('shows how many tasks belong to each list', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'list-1', 'list-2', 'task-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T04:10:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const backlog = commands.addTaskList(project.id, 'Backlog')
+    commands.addTaskList(project.id, 'Sprint 1')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+    commands.changeTaskList(task.id, backlog.id)
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    expect(screen.getByText('Backlog (1 task)')).toBeTruthy()
+    expect(screen.getByText('Sprint 1 (0 tasks)')).toBeTruthy()
+  })
+})
+
+
+it('lets a user create a task directly in a selected list', async () => {
+  const user = userEvent.setup()
+  const storage = new MemoryStore()
+  const store = createWorkspaceStore(storage)
+  const ids = ['project-1', 'list-1', 'task-1']
+  const commands = createWorkspaceCommands(store, {
+    nextId: () => ids.shift() ?? 'unexpected-id',
+    now: () => '2026-09-04T04:21:00.000Z',
+  })
+  const project = commands.addProject('Robotics Research')
+  const list = commands.addTaskList(project.id, 'Backlog')
+
+  render(<WorkspaceRoot store={store} commands={commands} />)
+
+  await user.selectOptions(
+    screen.getByLabelText('List for new task in Robotics Research'),
+    list.id,
+  )
+  await user.type(
+    screen.getByLabelText('Task title for Robotics Research'),
+    'Draft experiment plan',
+  )
+  await user.click(screen.getByRole('button', { name: 'Add task' }))
+
+  expect(store.getState().tasks[0]?.listId).toBe(list.id)
+})

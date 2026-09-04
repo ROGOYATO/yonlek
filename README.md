@@ -9,14 +9,14 @@ The current implementation is intentionally small. It is being developed as a se
 Starting checkpoint for this batch:
 
 - branch: `main`
-- commit: `142e051` (`TDD 076-084: add task moves and project descriptions`)
-- TDD state: cycle 092 GREEN
-- tests: 148 passing
+- commit: `dc269bf` (`TDD 085-092: brand Yönlek and add Areas`)
+- TDD state: cycle 100 GREEN
+- tests: 171 passing
 - production build: passing
 - lint: 0 warnings, 0 errors
 
-Yönlek is now the product-facing working name. Existing persistence keys remain
-`workspace-app.*` so branding does not strand previously saved local data.
+The hierarchy now supports optional Lists inside Projects while preserving older
+saved workspaces and tasks that have no List assignment.
 
 See [`FEATURES.md`](./FEATURES.md) for the maintained feature-first roadmap.
 
@@ -285,3 +285,28 @@ Workspace
 
 The `areas` field is an additive optional field in storage version 1. Older
 saved workspaces without Areas remain valid.
+
+
+Lists:
+
+- create, rename, and delete Lists inside Projects;
+- optionally assign Tasks to a List in their own Project;
+- deleting a List preserves Tasks and clears their List assignment;
+- deleting a Project removes its Lists and Tasks while preserving unrelated
+  Areas;
+- moving a Task to another Project clears an incompatible List assignment;
+- create a Task directly in a selected List;
+- show per-List Task counts;
+- persist and validate Lists and Task-to-List relationships;
+- older version-1 workspaces without `lists` or Task `listId` remain valid.
+
+Hierarchy:
+
+```text
+Workspace
+→ Area
+→ Project
+→ List
+→ Task
+→ Subtask
+```

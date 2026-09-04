@@ -10,6 +10,7 @@ export interface Task {
   createdAt: string
   dueDate?: string
   description?: string
+  listId?: string
 }
 
 export interface CreateTaskInput {
@@ -17,6 +18,7 @@ export interface CreateTaskInput {
   projectId: string
   title: string
   now: string
+  listId?: string
 }
 
 export function createTask(input: CreateTaskInput): Task {
@@ -26,7 +28,7 @@ export function createTask(input: CreateTaskInput): Task {
     throw new Error('Task title is required')
   }
 
-  return {
+  const task: Task = {
     id: input.id,
     projectId: input.projectId,
     title,
@@ -34,6 +36,18 @@ export function createTask(input: CreateTaskInput): Task {
     priority: 'normal',
     createdAt: input.now,
   }
+
+  if (input.listId !== undefined) {
+    const listId = input.listId.trim()
+
+    if (!listId) {
+      throw new Error('Task list is required')
+    }
+
+    task.listId = listId
+  }
+
+  return task
 }
 
 export function renameTask(task: Task, title: string): Task {
@@ -121,5 +135,28 @@ export function moveTaskToProject(task: Task, projectId: string): Task {
   return {
     ...task,
     projectId: normalizedProjectId,
+  }
+}
+
+
+export function setTaskList(
+  task: Task,
+  listId: string | null,
+): Task {
+  if (listId === null) {
+    const next = { ...task }
+    delete next.listId
+    return next
+  }
+
+  const normalizedListId = listId.trim()
+
+  if (!normalizedListId) {
+    throw new Error('Task list is required')
+  }
+
+  return {
+    ...task,
+    listId: normalizedListId,
   }
 }

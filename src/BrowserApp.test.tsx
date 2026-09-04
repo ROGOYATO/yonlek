@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { createArea } from './domain/area'
 import { createProject } from './domain/project'
 import { createTask } from './domain/task'
+import { createTaskList } from './domain/task-list'
 import { createDefaultViewPreferences } from './domain/view-preferences'
 import { emptyWorkspace } from './domain/workspace'
 import {
@@ -473,4 +474,50 @@ it('restores areas and project area assignments from browser storage', () => {
     (screen.getByLabelText('Area for Robotics Research') as HTMLSelectElement)
       .value,
   ).toBe(area.id)
+})
+
+
+it('restores lists and task list assignments from browser storage', () => {
+  const storage = new MemoryStore()
+  const project = createProject({
+    id: 'project-1',
+    name: 'Robotics Research',
+    now: '2026-09-04T04:05:00.000Z',
+  })
+  const list = createTaskList({
+    id: 'list-1',
+    projectId: project.id,
+    name: 'Backlog',
+    now: '2026-09-04T04:06:00.000Z',
+  })
+  const task = {
+    ...createTask({
+      id: 'task-1',
+      projectId: project.id,
+      title: 'Draft experiment plan',
+      now: '2026-09-04T04:07:00.000Z',
+    }),
+    listId: list.id,
+  }
+
+  saveWorkspace(storage, {
+    lists: [list],
+    projects: [project],
+    tasks: [task],
+  })
+
+  render(
+    <BrowserApp
+      storage={storage}
+      runtime={{
+        nextId: () => 'unused-id',
+        now: () => '2026-09-04T04:08:00.000Z',
+      }}
+    />,
+  )
+
+  expect(
+    (screen.getByLabelText('List for Draft experiment plan') as HTMLSelectElement)
+      .value,
+  ).toBe(list.id)
 })

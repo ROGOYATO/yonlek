@@ -578,3 +578,180 @@ describe('area persistence', () => {
     expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
   })
 })
+
+
+describe('list persistence', () => {
+  const storedList = {
+    id: 'list-1',
+    projectId: 'project-1',
+    name: 'Backlog',
+    createdAt: '2026-09-04T04:00:00.000Z',
+  }
+
+  it('round-trips lists and task list assignments', () => {
+    const store = new MemoryStore()
+    const workspace = {
+      lists: [storedList],
+      projects: [
+        {
+          id: 'project-1',
+          name: 'Robotics Research',
+          createdAt: '2026-09-04T04:00:00.000Z',
+        },
+      ],
+      tasks: [
+        {
+          id: 'task-1',
+          projectId: 'project-1',
+          listId: 'list-1',
+          title: 'Draft experiment plan',
+          status: 'todo' as const,
+          priority: 'normal' as const,
+          createdAt: '2026-09-04T04:01:00.000Z',
+        },
+      ],
+    }
+
+    saveWorkspace(store, workspace)
+
+    expect(loadWorkspace(store)).toEqual(workspace)
+  })
+
+  it('rejects invalid and duplicate persisted lists', () => {
+    const invalid: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            lists: [
+              {
+                id: 'list-1',
+                projectId: 'project-1',
+                name: 42,
+                createdAt: '2026-09-04T04:00:00.000Z',
+              },
+            ],
+            projects: [
+              {
+                id: 'project-1',
+                name: 'Robotics Research',
+                createdAt: '2026-09-04T04:00:00.000Z',
+              },
+            ],
+            tasks: [],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    const duplicate: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            lists: [storedList, { ...storedList, name: 'Sprint 1' }],
+            projects: [
+              {
+                id: 'project-1',
+                name: 'Robotics Research',
+                createdAt: '2026-09-04T04:00:00.000Z',
+              },
+            ],
+            tasks: [],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(invalid)).toThrow('Workspace storage is invalid')
+    expect(() => loadWorkspace(duplicate)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects a list whose project is missing', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            lists: [storedList],
+            projects: [],
+            tasks: [],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects a task that references a missing list', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            lists: [],
+            projects: [
+              {
+                id: 'project-1',
+                name: 'Robotics Research',
+                createdAt: '2026-09-04T04:00:00.000Z',
+              },
+            ],
+            tasks: [
+              {
+                id: 'task-1',
+                projectId: 'project-1',
+                listId: 'missing-list',
+                title: 'Draft experiment plan',
+                status: 'todo',
+                priority: 'normal',
+                createdAt: '2026-09-04T04:01:00.000Z',
+              },
+            ],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects a task whose list belongs to another project', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            lists: [storedList],
+            projects: [
+              {
+                id: 'project-1',
+                name: 'Robotics Research',
+                createdAt: '2026-09-04T04:00:00.000Z',
+              },
+              {
+                id: 'project-2',
+                name: 'Field Tests',
+                createdAt: '2026-09-04T04:00:00.000Z',
+              },
+            ],
+            tasks: [
+              {
+                id: 'task-1',
+                projectId: 'project-2',
+                listId: 'list-1',
+                title: 'Inspect field setup',
+                status: 'todo',
+                priority: 'normal',
+                createdAt: '2026-09-04T04:01:00.000Z',
+              },
+            ],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+})

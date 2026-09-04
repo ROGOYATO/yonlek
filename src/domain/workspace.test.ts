@@ -342,3 +342,171 @@ describe('project area relationships', () => {
     expect(next.tasks).toEqual([task])
   })
 })
+
+
+describe('workspace lists', () => {
+  const list = {
+    id: 'list-1',
+    projectId: project.id,
+    name: 'Backlog',
+    createdAt: '2026-09-04T03:20:00.000Z',
+  }
+
+  it('adds a list only when its project exists', () => {
+    const next = workspaceReducer(
+      { projects: [project], tasks: [] },
+      { type: 'list/added', list } as never,
+    )
+
+    expect(next.lists).toEqual([list])
+
+    expect(() =>
+      workspaceReducer(
+        { projects: [], tasks: [] },
+        { type: 'list/added', list } as never,
+      ),
+    ).toThrow('Cannot add a list to a missing project')
+  })
+
+  it('renames a list without mutating the previous state', () => {
+    const state = {
+      lists: [list],
+      projects: [project],
+      tasks: [],
+    }
+
+    const next = workspaceReducer(state, {
+      type: 'list/nameChanged',
+      listId: list.id,
+      name: 'Sprint 1',
+    } as never)
+
+    expect(next.lists?.[0]?.name).toBe('Sprint 1')
+    expect(state.lists[0]?.name).toBe('Backlog')
+  })
+
+  it('deleting a list keeps its tasks and removes their list assignment', () => {
+    const listedTask = { ...task, listId: list.id }
+    const state = {
+      lists: [list],
+      projects: [project],
+      tasks: [listedTask],
+    }
+
+    const next = workspaceReducer(state, {
+      type: 'list/deleted',
+      listId: list.id,
+    } as never)
+
+    expect(next.lists).toEqual([])
+    expect(next.tasks[0]?.id).toBe(task.id)
+    expect(next.tasks[0]).not.toHaveProperty('listId')
+  })
+
+  it('deleting a project removes its lists and tasks but preserves areas', () => {
+    const area = {
+      id: 'area-1',
+      name: 'Engineering',
+      createdAt: '2026-09-04T03:21:00.000Z',
+    }
+    const listedProject = { ...project, areaId: area.id }
+    const listedTask = { ...task, listId: list.id }
+
+    const next = workspaceReducer(
+      {
+        areas: [area],
+        lists: [list],
+        projects: [listedProject],
+        tasks: [listedTask],
+      },
+      { type: 'project/deleted', projectId: project.id },
+    )
+
+    expect(next.areas).toEqual([area])
+    expect(next.lists).toEqual([])
+    expect(next.projects).toEqual([])
+    expect(next.tasks).toEqual([])
+  })
+})
+
+
+describe('task list relationships', () => {
+  const backlog = {
+    id: 'list-1',
+    projectId: project.id,
+    name: 'Backlog',
+    createdAt: '2026-09-04T03:30:00.000Z',
+  }
+  const otherProject = createProject({
+    id: 'project-2',
+    name: 'Field Tests',
+    now: '2026-09-04T03:31:00.000Z',
+  })
+  const otherList = {
+    id: 'list-2',
+    projectId: otherProject.id,
+    name: 'Field',
+    createdAt: '2026-09-04T03:32:00.000Z',
+  }
+
+  it('assigns a task only to a list in the same project', () => {
+    const state = {
+      lists: [backlog, otherList],
+      projects: [project, otherProject],
+      tasks: [task],
+    }
+
+    const next = workspaceReducer(state, {
+      type: 'task/listChanged',
+      taskId: task.id,
+      listId: backlog.id,
+    } as never)
+
+    expect(next.tasks[0]?.listId).toBe(backlog.id)
+
+    expect(() =>
+      workspaceReducer(state, {
+        type: 'task/listChanged',
+        taskId: task.id,
+        listId: otherList.id,
+      } as never),
+    ).toThrow('Cannot assign a task to a list from another project')
+  })
+
+  it('rejects assigning a task to a missing list', () => {
+    expect(() =>
+      workspaceReducer(
+        {
+          lists: [backlog],
+          projects: [project],
+          tasks: [task],
+        },
+        {
+          type: 'task/listChanged',
+          taskId: task.id,
+          listId: 'missing-list',
+        } as never,
+      ),
+    ).toThrow('Cannot assign a task to a missing list')
+  })
+
+  it('clears an incompatible list when a task moves to another project', () => {
+    const listedTask = { ...task, listId: backlog.id }
+
+    const next = workspaceReducer(
+      {
+        lists: [backlog],
+        projects: [project, otherProject],
+        tasks: [listedTask],
+      },
+      {
+        type: 'task/projectChanged',
+        taskId: task.id,
+        projectId: otherProject.id,
+      },
+    )
+
+    expect(next.tasks[0]?.projectId).toBe(otherProject.id)
+    expect(next.tasks[0]).not.toHaveProperty('listId')
+  })
+})

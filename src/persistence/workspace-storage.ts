@@ -53,6 +53,20 @@ function isValidProject(value: unknown): boolean {
 }
 
 
+function isValidTaskList(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    value.id.trim().length > 0 &&
+    typeof value.projectId === 'string' &&
+    value.projectId.trim().length > 0 &&
+    typeof value.name === 'string' &&
+    value.name.trim().length > 0 &&
+    isIsoInstant(value.createdAt)
+  )
+}
+
+
 function isValidArea(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -82,7 +96,9 @@ function isValidTask(value: unknown): boolean {
       value.priority !== 'high') ||
     !isIsoInstant(value.createdAt) ||
     (value.description !== undefined &&
-      typeof value.description !== 'string')
+      typeof value.description !== 'string') ||
+    (value.listId !== undefined &&
+      (typeof value.listId !== 'string' || value.listId.trim().length === 0))
   ) {
     return false
   }
@@ -130,6 +146,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   if (
     !isRecord(workspace) ||
     (workspace.areas !== undefined && !Array.isArray(workspace.areas)) ||
+    (workspace.lists !== undefined && !Array.isArray(workspace.lists)) ||
     !Array.isArray(workspace.projects) ||
     !Array.isArray(workspace.tasks)
   ) {
@@ -137,9 +154,11 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   }
 
   const areas = workspace.areas ?? []
+  const lists = workspace.lists ?? []
 
   if (
     !areas.every(isValidArea) ||
+    !lists.every(isValidTaskList) ||
     !workspace.projects.every(isValidProject) ||
     !workspace.tasks.every(isValidTask)
   ) {
@@ -172,6 +191,30 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     invalidStorage()
   }
 
+  const listIds = new Set(
+    lists.map((list) => (list as { id: string }).id),
+  )
+
+  if (listIds.size !== lists.length) {
+    invalidStorage()
+  }
+
+  if (
+    lists.some(
+      (list) =>
+        !projectIds.has((list as { projectId: string }).projectId),
+    )
+  ) {
+    invalidStorage()
+  }
+
+  const listProjects = new Map(
+    lists.map((list) => [
+      (list as { id: string }).id,
+      (list as { projectId: string }).projectId,
+    ]),
+  )
+
   const taskIds = new Set(
     workspace.tasks.map((task) => (task as { id: string }).id),
   )
@@ -184,6 +227,25 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     workspace.tasks.some(
       (task) => !projectIds.has((task as { projectId: string }).projectId),
     )
+  ) {
+    invalidStorage()
+  }
+
+  if (
+    workspace.tasks.some((task) => {
+      const listId = (task as { listId?: string }).listId
+
+      if (listId === undefined) {
+        return false
+      }
+
+      const listProjectId = listProjects.get(listId)
+
+      return (
+        listProjectId === undefined ||
+        listProjectId !== (task as { projectId: string }).projectId
+      )
+    })
   ) {
     invalidStorage()
   }

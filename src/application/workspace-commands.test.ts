@@ -228,3 +228,53 @@ describe('area commands', () => {
     expect(loadWorkspace(storage).projects[0]).not.toHaveProperty('areaId')
   })
 })
+
+
+describe('list commands', () => {
+  it('creates, renames, assigns, and deletes lists through the workspace store', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'list-1', 'task-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T03:40:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const list = commands.addTaskList(project.id, 'Backlog')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+
+    commands.renameTaskList(list.id, 'Sprint 1')
+    commands.changeTaskList(task.id, list.id)
+
+    expect(store.getState().lists?.[0]?.name).toBe('Sprint 1')
+    expect(store.getState().tasks[0]?.listId).toBe(list.id)
+
+    commands.deleteTaskList(list.id)
+
+    expect(store.getState().lists).toEqual([])
+    expect(store.getState().tasks[0]).not.toHaveProperty('listId')
+    expect(loadWorkspace(storage).tasks[0]).not.toHaveProperty('listId')
+  })
+})
+
+
+it('creates a task directly in a list from the command boundary', () => {
+  const storage = new MemoryStore()
+  const store = createWorkspaceStore(storage)
+  const ids = ['project-1', 'list-1', 'task-1']
+  const commands = createWorkspaceCommands(store, {
+    nextId: () => ids.shift() ?? 'unexpected-id',
+    now: () => '2026-09-04T04:20:00.000Z',
+  })
+  const project = commands.addProject('Robotics Research')
+  const list = commands.addTaskList(project.id, 'Backlog')
+
+  const task = commands.addTask(
+    project.id,
+    'Draft experiment plan',
+    list.id,
+  )
+
+  expect(task.listId).toBe(list.id)
+  expect(loadWorkspace(storage).tasks[0]?.listId).toBe(list.id)
+})

@@ -20,10 +20,14 @@ export interface AppProps {
   onRenameArea?: (areaId: string, name: string) => void
   onDeleteArea?: (areaId: string) => void
   onChangeProjectArea?: (projectId: string, areaId: string | null) => void
+  onCreateTaskList?: (projectId: string, name: string) => void
+  onRenameTaskList?: (listId: string, name: string) => void
+  onDeleteTaskList?: (listId: string) => void
+  onChangeTaskList?: (taskId: string, listId: string | null) => void
   onCreateProject?: (name: string) => void
   onRenameProject?: (projectId: string, name: string) => void
   onChangeProjectDescription?: (projectId: string, description: string | null) => void
-  onCreateTask?: (projectId: string, title: string) => void
+  onCreateTask?: (projectId: string, title: string, listId?: string) => void
   onDeleteProject?: (projectId: string) => void
   onRenameTask?: (taskId: string, title: string) => void
   onDeleteTask?: (taskId: string) => void
@@ -46,6 +50,10 @@ export function App({
   onRenameArea,
   onDeleteArea,
   onChangeProjectArea,
+  onCreateTaskList,
+  onRenameTaskList,
+  onDeleteTaskList,
+  onChangeTaskList,
   onCreateProject,
   onRenameProject,
   onChangeProjectDescription,
@@ -63,10 +71,13 @@ export function App({
 }: AppProps) {
   const [areaName, setAreaName] = useState('')
   const [areaEdits, setAreaEdits] = useState<Record<string, string>>({})
+  const [listNames, setListNames] = useState<Record<string, string>>({})
+  const [listEdits, setListEdits] = useState<Record<string, string>>({})
   const [projectName, setProjectName] = useState('')
   const [projectEdits, setProjectEdits] = useState<Record<string, string>>({})
   const [projectDescriptions, setProjectDescriptions] = useState<Record<string, string>>({})
   const [taskTitles, setTaskTitles] = useState<Record<string, string>>({})
+  const [newTaskLists, setNewTaskLists] = useState<Record<string, string>>({})
   const [taskEdits, setTaskEdits] = useState<Record<string, string>>({})
   const [taskDescriptions, setTaskDescriptions] = useState<Record<string, string>>({})
   const [viewPreferences, setViewPreferences] = useState<ViewPreferences>(
@@ -123,6 +134,7 @@ export function App({
   }
 
   const areas = state.areas ?? []
+  const lists = state.lists ?? []
   const workspaceSummary = summarizeTasks(state.tasks)
   const projectLabel = state.projects.length === 1 ? 'project' : 'projects'
   const taskLabel = workspaceSummary.total === 1 ? 'task' : 'tasks'
@@ -359,6 +371,9 @@ export function App({
         <p>No projects yet.</p>
       ) : (
         visibleProjects.map((project) => {
+          const projectLists = lists.filter(
+            (list) => list.projectId === project.id,
+          )
           const projectTasks = state.tasks.filter(
             (task) => task.projectId === project.id,
           )
@@ -371,7 +386,9 @@ export function App({
             }),
             taskSort,
           )
+          const listName = listNames[project.id] ?? ''
           const taskTitle = taskTitles[project.id] ?? ''
+          const newTaskListId = newTaskLists[project.id] ?? ''
           const editedProjectName = projectEdits[project.id] ?? project.name
           const editedProjectDescription =
             projectDescriptions[project.id] ?? project.description ?? ''
@@ -485,6 +502,114 @@ export function App({
                 </form>
               ) : null}
 
+              {onCreateTaskList ? (
+                <section>
+                  <h3>Lists for {project.name}</h3>
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault()
+
+                      try {
+                        onCreateTaskList(project.id, listName)
+                        setListNames((current) => ({
+                          ...current,
+                          [project.id]: '',
+                        }))
+                        setError(null)
+                      } catch (caught) {
+                        setError(errorMessage(caught))
+                      }
+                    }}
+                  >
+                    <label htmlFor={`list-name-${project.id}`}>
+                      List name for {project.name}
+                    </label>
+                    <input
+                      id={`list-name-${project.id}`}
+                      value={listName}
+                      onChange={(event) =>
+                        setListNames((current) => ({
+                          ...current,
+                          [project.id]: event.target.value,
+                        }))
+                      }
+                    />
+                    <button type="submit">
+                      Add list to {project.name}
+                    </button>
+                  </form>
+
+                  {projectLists.length === 0 ? (
+                    <p>No lists yet.</p>
+                  ) : (
+                    <ul>
+                      {projectLists.map((list) => {
+                        const editedName = listEdits[list.id] ?? list.name
+
+                        return (
+                          <li key={list.id}>
+                            <span>
+                              {list.name} (
+                              {
+                                projectTasks.filter(
+                                  (task) => task.listId === list.id,
+                                ).length
+                              }{' '}
+                              {
+                                projectTasks.filter(
+                                  (task) => task.listId === list.id,
+                                ).length === 1
+                                  ? 'task'
+                                  : 'tasks'
+                              }
+                              )
+                            </span>
+                            {onRenameTaskList ? (
+                              <form
+                                onSubmit={(event) => {
+                                  event.preventDefault()
+                                  onRenameTaskList(list.id, editedName)
+                                  setListEdits((current) => {
+                                    const next = { ...current }
+                                    delete next[list.id]
+                                    return next
+                                  })
+                                }}
+                              >
+                                <label htmlFor={`list-edit-${list.id}`}>
+                                  Name for list {list.name}
+                                </label>
+                                <input
+                                  id={`list-edit-${list.id}`}
+                                  value={editedName}
+                                  onChange={(event) =>
+                                    setListEdits((current) => ({
+                                      ...current,
+                                      [list.id]: event.target.value,
+                                    }))
+                                  }
+                                />
+                                <button type="submit">
+                                  Save list name for {list.name}
+                                </button>
+                              </form>
+                            ) : null}
+                            {onDeleteTaskList ? (
+                              <button
+                                type="button"
+                                onClick={() => onDeleteTaskList(list.id)}
+                              >
+                                Delete list {list.name}
+                              </button>
+                            ) : null}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </section>
+              ) : null}
+
               {onDeleteProject ? (
                 <button
                   type="button"
@@ -506,7 +631,11 @@ export function App({
                     event.preventDefault()
 
                     try {
-                      onCreateTask(project.id, taskTitle)
+                      onCreateTask(
+                        project.id,
+                        taskTitle,
+                        newTaskListId || undefined,
+                      )
                       setTaskTitles((current) => ({
                         ...current,
                         [project.id]: '',
@@ -517,6 +646,31 @@ export function App({
                     }
                   }}
                 >
+                  {projectLists.length > 0 ? (
+                    <>
+                      <label htmlFor={`new-task-list-${project.id}`}>
+                        List for new task in {project.name}
+                      </label>
+                      <select
+                        id={`new-task-list-${project.id}`}
+                        value={newTaskListId}
+                        onChange={(event) =>
+                          setNewTaskLists((current) => ({
+                            ...current,
+                            [project.id]: event.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">No list</option>
+                        {projectLists.map((list) => (
+                          <option key={list.id} value={list.id}>
+                            {list.name}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  ) : null}
+
                   <label htmlFor={`task-title-${project.id}`}>
                     Task title for {project.name}
                   </label>
@@ -680,6 +834,31 @@ export function App({
                                 )
                               }
                             />
+                          </>
+                        ) : null}
+
+                        {onChangeTaskList ? (
+                          <>
+                            <label htmlFor={`task-list-${task.id}`}>
+                              List for {task.title}
+                            </label>
+                            <select
+                              id={`task-list-${task.id}`}
+                              value={task.listId ?? ''}
+                              onChange={(event) =>
+                                onChangeTaskList(
+                                  task.id,
+                                  event.target.value || null,
+                                )
+                              }
+                            >
+                              <option value="">No list</option>
+                              {projectLists.map((list) => (
+                                <option key={list.id} value={list.id}>
+                                  {list.name}
+                                </option>
+                              ))}
+                            </select>
                           </>
                         ) : null}
 
