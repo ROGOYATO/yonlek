@@ -1098,3 +1098,142 @@ describe('task tag assignments', () => {
     expect(next.tasks[0]).not.toHaveProperty('tagIds')
   })
 })
+
+
+describe('workspace people', () => {
+  const ada = {
+    id: 'person-1',
+    name: 'Ada Lovelace',
+    createdAt: '2026-09-04T08:20:00.000Z',
+  }
+
+  it('adds and renames a person without mutating previous state', () => {
+    const state = {
+      projects: [project],
+      tasks: [task],
+    }
+
+    const added = workspaceReducer(state, {
+      type: 'person/added',
+      person: ada,
+    } as never)
+    const renamed = workspaceReducer(added, {
+      type: 'person/nameChanged',
+      personId: ada.id,
+      name: 'Grace Hopper',
+    } as never)
+
+    expect(added.people).toEqual([ada])
+    expect(renamed.people?.[0]?.name).toBe('Grace Hopper')
+    expect(state).not.toHaveProperty('people')
+    expect(ada.name).toBe('Ada Lovelace')
+  })
+
+  it('deleting a person preserves tasks and removes their assignment', () => {
+    const assignedTask = { ...task, assigneeIds: [ada.id] }
+
+    const next = workspaceReducer(
+      {
+        people: [ada],
+        projects: [project],
+        tasks: [assignedTask],
+      },
+      {
+        type: 'person/deleted',
+        personId: ada.id,
+      } as never,
+    )
+
+    expect(next.tasks[0]?.id).toBe(task.id)
+    expect(next.tasks[0]).not.toHaveProperty('assigneeIds')
+  })
+
+  it('deleting the final person removes the optional people collection', () => {
+    const next = workspaceReducer(
+      {
+        people: [ada],
+        projects: [project],
+        tasks: [task],
+      },
+      {
+        type: 'person/deleted',
+        personId: ada.id,
+      } as never,
+    )
+
+    expect(next).not.toHaveProperty('people')
+  })
+})
+
+
+describe('task assignees', () => {
+  const ada = {
+    id: 'person-1',
+    name: 'Ada Lovelace',
+    createdAt: '2026-09-04T08:30:00.000Z',
+  }
+
+  it('assigns an existing person once to an existing task', () => {
+    const state = {
+      people: [ada],
+      projects: [project],
+      tasks: [task],
+    }
+
+    const assigned = workspaceReducer(state, {
+      type: 'task/assigneeAdded',
+      taskId: task.id,
+      personId: ada.id,
+    } as never)
+    const assignedAgain = workspaceReducer(assigned, {
+      type: 'task/assigneeAdded',
+      taskId: task.id,
+      personId: ada.id,
+    } as never)
+
+    expect(assignedAgain.tasks[0]?.assigneeIds).toEqual([ada.id])
+  })
+
+  it('rejects missing tasks and missing people', () => {
+    const state = {
+      people: [ada],
+      projects: [project],
+      tasks: [task],
+    }
+
+    expect(() =>
+      workspaceReducer(state, {
+        type: 'task/assigneeAdded',
+        taskId: 'missing-task',
+        personId: ada.id,
+      } as never),
+    ).toThrow('Cannot assign a missing task')
+
+    expect(() =>
+      workspaceReducer(state, {
+        type: 'task/assigneeAdded',
+        taskId: task.id,
+        personId: 'missing-person',
+      } as never),
+    ).toThrow('Cannot assign a missing person')
+  })
+
+  it('removes an assignee and clears the optional field when none remain', () => {
+    const assignedTask = { ...task, assigneeIds: [ada.id] }
+
+    const next = workspaceReducer(
+      {
+        people: [ada],
+        projects: [project],
+        tasks: [assignedTask],
+      },
+      {
+        type: 'task/assigneeRemoved',
+        taskId: task.id,
+        personId: ada.id,
+      } as never,
+    )
+
+    expect(next.tasks[0]).not.toHaveProperty('assigneeIds')
+  })
+})

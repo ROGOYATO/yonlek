@@ -5,6 +5,7 @@ import {
   type ChecklistItem,
 } from './checklist'
 import { renameTaskList, type TaskList } from './task-list'
+import { renamePerson, type Person } from './person'
 import { renameTag, type Tag } from './tag'
 import {
   moveItemWithinGroup,
@@ -31,6 +32,7 @@ export interface WorkspaceState {
   areas?: Area[]
   lists?: TaskList[]
   tags?: Tag[]
+  people?: Person[]
   projects: Project[]
   tasks: Task[]
 }
@@ -47,6 +49,9 @@ export type WorkspaceAction =
   | { type: 'area/deleted'; areaId: string }
   | { type: 'area/nameChanged'; areaId: string; name: string }
   | { type: 'area/moved'; areaId: string; direction: MoveDirection }
+  | { type: 'person/added'; person: Person }
+  | { type: 'person/deleted'; personId: string }
+  | { type: 'person/nameChanged'; personId: string; name: string }
   | { type: 'tag/added'; tag: Tag }
   | { type: 'tag/deleted'; tagId: string }
   | { type: 'tag/nameChanged'; tagId: string; name: string }
@@ -69,6 +74,8 @@ export type WorkspaceAction =
   | { type: 'task/projectChanged'; taskId: string; projectId: string }
   | { type: 'task/listChanged'; taskId: string; listId: string | null }
   | { type: 'task/moved'; taskId: string; direction: MoveDirection }
+  | { type: 'task/assigneeAdded'; taskId: string; personId: string }
+  | { type: 'task/assigneeRemoved'; taskId: string; personId: string }
   | { type: 'task/tagAdded'; taskId: string; tagId: string }
   | { type: 'task/tagRemoved'; taskId: string; tagId: string }
   | { type: 'task/checklistItemAdded'; taskId: string; item: ChecklistItem }
@@ -118,6 +125,57 @@ export function workspaceReducer(
             : project,
         ),
       }
+
+    case 'person/added':
+      return {
+        ...state,
+        people: [...(state.people ?? []), action.person],
+      }
+
+    case 'person/nameChanged':
+      return {
+        ...state,
+        people: (state.people ?? []).map((person) =>
+          person.id === action.personId
+            ? renamePerson(person, action.name)
+            : person,
+        ),
+      }
+
+    case 'person/deleted': {
+      const people = (state.people ?? []).filter(
+        (person) => person.id !== action.personId,
+      )
+      const next: WorkspaceState = {
+        ...state,
+        tasks: state.tasks.map((task) => {
+          if (task.assigneeIds === undefined) {
+            return task
+          }
+
+          const assigneeIds = task.assigneeIds.filter(
+            (personId) => personId !== action.personId,
+          )
+          const updated = { ...task }
+
+          if (assigneeIds.length === 0) {
+            delete updated.assigneeIds
+          } else {
+            updated.assigneeIds = assigneeIds
+          }
+
+          return updated
+        }),
+      }
+
+      if (people.length === 0) {
+        delete next.people
+      } else {
+        next.people = people
+      }
+
+      return next
+    }
 
     case 'tag/added':
       return {
@@ -502,6 +560,71 @@ export function workspaceReducer(
             candidate.listId === target.listId &&
             candidate.parentTaskId === target.parentTaskId,
         ),
+      }
+
+    case 'task/assigneeAdded': {
+      const taskExists = state.tasks.some(
+        (task) => task.id === action.taskId,
+      )
+
+      if (!taskExists) {
+        throw new Error('Cannot assign a missing task')
+      }
+
+      const personExists = (state.people ?? []).some(
+        (person) => person.id === action.personId,
+      )
+
+      if (!personExists) {
+        throw new Error('Cannot assign a missing person')
+      }
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) => {
+          if (task.id !== action.taskId) {
+            return task
+          }
+
+          if ((task.assigneeIds ?? []).includes(action.personId)) {
+            return task
+          }
+
+          return {
+            ...task,
+            assigneeIds: [
+              ...(task.assigneeIds ?? []),
+              action.personId,
+            ],
+          }
+        }),
+      }
+    }
+
+    case 'task/assigneeRemoved':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) => {
+          if (
+            task.id !== action.taskId ||
+            task.assigneeIds === undefined
+          ) {
+            return task
+          }
+
+          const assigneeIds = task.assigneeIds.filter(
+            (personId) => personId !== action.personId,
+          )
+          const next = { ...task }
+
+          if (assigneeIds.length === 0) {
+            delete next.assigneeIds
+          } else {
+            next.assigneeIds = assigneeIds
+          }
+
+          return next
+        }),
       }
 
     case 'task/tagAdded': {

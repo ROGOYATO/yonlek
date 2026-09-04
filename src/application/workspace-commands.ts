@@ -1,6 +1,7 @@
 import { createChecklistItem } from '../domain/checklist'
 import { createArea } from '../domain/area'
 import { createProject } from '../domain/project'
+import { createPerson } from '../domain/person'
 import { createTaskList } from '../domain/task-list'
 import { createTag } from '../domain/tag'
 import {
@@ -18,6 +19,11 @@ export interface WorkspaceRuntime {
 }
 
 export interface WorkspaceCommands {
+  addPerson(name: string): ReturnType<typeof createPerson>
+  renamePerson(personId: string, name: string): void
+  deletePerson(personId: string): void
+  assignTaskAssignee(taskId: string, personId: string): void
+  removeTaskAssignee(taskId: string, personId: string): void
   addTag(name: string): ReturnType<typeof createTag>
   renameTag(tagId: string, name: string): void
   deleteTag(tagId: string): void
@@ -60,6 +66,52 @@ export function createWorkspaceCommands(
   runtime: WorkspaceRuntime,
 ): WorkspaceCommands {
   return {
+    addPerson(name) {
+      const person = createPerson({
+        id: runtime.nextId(),
+        name,
+        now: runtime.now(),
+      })
+
+      store.dispatch({
+        type: 'person/added',
+        person,
+      })
+
+      return person
+    },
+
+    renamePerson(personId, name) {
+      store.dispatch({
+        type: 'person/nameChanged',
+        personId,
+        name,
+      })
+    },
+
+    deletePerson(personId) {
+      store.dispatch({
+        type: 'person/deleted',
+        personId,
+      })
+    },
+
+    assignTaskAssignee(taskId, personId) {
+      store.dispatch({
+        type: 'task/assigneeAdded',
+        taskId,
+        personId,
+      })
+    },
+
+    removeTaskAssignee(taskId, personId) {
+      store.dispatch({
+        type: 'task/assigneeRemoved',
+        taskId,
+        personId,
+      })
+    },
+
     addTag(name) {
       const tag = createTag({
         id: runtime.nextId(),

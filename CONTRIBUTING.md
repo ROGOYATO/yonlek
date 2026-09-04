@@ -503,3 +503,23 @@ Rules:
 - Existing version-1 workspace documents without Tags remain valid.
 - Tag colors and visual badge styling are deferred; do not couple semantic Tag
   identity to a presentation color.
+
+
+## Local Person and assignee integrity
+
+People are workspace-level local identities. Tasks reference them by ID.
+
+Rules:
+
+- `WorkspaceState.people` remains optional for backward compatibility.
+- `Task.assigneeIds` remains optional and may contain multiple People.
+- Person names are trimmed and non-empty.
+- Person IDs are unique across the workspace.
+- Assignee IDs must be unique within each Task and reference existing People.
+- Assigning the same Person twice is idempotent.
+- Deleting a Person preserves Tasks and removes that ID from all Tasks.
+- Deleting the final assignment removes `assigneeIds`.
+- Deleting the final Person removes the optional `people` collection.
+- Existing version-1 workspace documents without People remain valid.
+- A local Person is not an authenticated account. Do not attach authorization,
+  invitation, notification, or remote identity semantics to this model.

@@ -451,3 +451,38 @@ describe('tag commands', () => {
     expect(store.getState().tasks[0]).not.toHaveProperty('tagIds')
   })
 })
+
+
+describe('person and assignee commands', () => {
+  it('creates renames assigns removes and deletes a persisted person', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['person-1', 'project-1', 'task-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T08:40:00.000Z',
+    })
+
+    const person = commands.addPerson('Ada Lovelace')
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+
+    commands.renamePerson(person.id, 'Grace Hopper')
+    commands.assignTaskAssignee(task.id, person.id)
+
+    expect(store.getState().people?.[0]?.name).toBe('Grace Hopper')
+    expect(store.getState().tasks[0]?.assigneeIds).toEqual([person.id])
+    expect(loadWorkspace(storage).tasks[0]?.assigneeIds).toEqual([
+      person.id,
+    ])
+
+    commands.removeTaskAssignee(task.id, person.id)
+    expect(store.getState().tasks[0]).not.toHaveProperty('assigneeIds')
+
+    commands.assignTaskAssignee(task.id, person.id)
+    commands.deletePerson(person.id)
+
+    expect(store.getState()).not.toHaveProperty('people')
+    expect(store.getState().tasks[0]).not.toHaveProperty('assigneeIds')
+  })
+})

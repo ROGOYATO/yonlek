@@ -16,6 +16,7 @@ export interface Task {
   parentTaskId?: string
   checklist?: ChecklistItem[]
   tagIds?: string[]
+  assigneeIds?: string[]
 }
 
 export interface CreateTaskInput {

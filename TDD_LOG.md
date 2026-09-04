@@ -584,3 +584,26 @@ Lint: 0 warnings, 0 errors
 
 Tags are additive optional data in workspace storage version 1, so existing
 saved workspaces remain valid without migration.
+
+
+## Cycles 125-130
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 125 | Person create/rename domain behavior | GREEN |
+| 126 | Workspace Person lifecycle and delete cleanup | GREEN |
+| 127 | Task-to-Person assignee integrity | GREEN |
+| 128 | Person / assignee application commands | GREEN |
+| 129 | Bare-bone People management and Task assignment UI | GREEN |
+| 130 | Person persistence validation and browser reload | GREEN |
+
+Expected successful checkpoint:
+
+```text
+Tests: 253 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+```
+
+People and assignee references are additive optional data in workspace storage
+version 1, so existing saved workspaces remain valid without migration.

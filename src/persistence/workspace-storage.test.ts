@@ -1095,3 +1095,118 @@ describe('tag persistence', () => {
     expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
   })
 })
+
+
+describe('person and assignee persistence', () => {
+  const person = {
+    id: 'person-1',
+    name: 'Ada Lovelace',
+    createdAt: '2026-09-04T09:00:00.000Z',
+  }
+  const project = {
+    id: 'project-1',
+    name: 'Robotics Research',
+    createdAt: '2026-09-04T09:01:00.000Z',
+  }
+  const task = {
+    id: 'task-1',
+    projectId: project.id,
+    title: 'Draft experiment plan',
+    status: 'todo',
+    priority: 'normal',
+    createdAt: '2026-09-04T09:02:00.000Z',
+  }
+
+  it('round-trips people and task assignee assignments', () => {
+    const store = new MemoryStore()
+    const assignedTask = { ...task, assigneeIds: [person.id] }
+    const workspace = {
+      people: [person],
+      projects: [project],
+      tasks: [assignedTask],
+    }
+
+    saveWorkspace(store, workspace)
+
+    expect(loadWorkspace(store)).toEqual(workspace)
+  })
+
+  it('rejects an invalid persisted person record', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            people: [
+              {
+                id: 'person-1',
+                name: 42,
+                createdAt: '2026-09-04T09:00:00.000Z',
+              },
+            ],
+            projects: [project],
+            tasks: [task],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects duplicate persisted person ids', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            people: [person, { ...person, name: 'Grace Hopper' }],
+            projects: [project],
+            tasks: [task],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects a task that references a missing assignee', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            people: [],
+            projects: [project],
+            tasks: [{ ...task, assigneeIds: ['missing-person'] }],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects duplicate task assignee ids', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            people: [person],
+            projects: [project],
+            tasks: [
+              {
+                ...task,
+                assigneeIds: [person.id, person.id],
+              },
+            ],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+})

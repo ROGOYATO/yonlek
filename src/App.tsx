@@ -17,6 +17,10 @@ import { emptyWorkspace, type WorkspaceState } from './domain/workspace'
 
 export interface AppProps {
   state?: WorkspaceState
+  onCreatePerson?: (name: string) => void
+  onRenamePerson?: (personId: string, name: string) => void
+  onDeletePerson?: (personId: string) => void
+  onChangeTaskAssignee?: (taskId: string, personId: string, assigned: boolean) => void
   onCreateTag?: (name: string) => void
   onRenameTag?: (tagId: string, name: string) => void
   onDeleteTag?: (tagId: string) => void
@@ -61,6 +65,10 @@ function errorMessage(error: unknown): string {
 
 export function App({
   state = emptyWorkspace,
+  onCreatePerson,
+  onRenamePerson,
+  onDeletePerson,
+  onChangeTaskAssignee,
   onCreateTag,
   onRenameTag,
   onDeleteTag,
@@ -98,6 +106,8 @@ export function App({
   initialViewPreferences = createDefaultViewPreferences(),
   onViewPreferencesChange,
 }: AppProps) {
+  const [personName, setPersonName] = useState('')
+  const [personEdits, setPersonEdits] = useState<Record<string, string>>({})
   const [tagName, setTagName] = useState('')
   const [tagEdits, setTagEdits] = useState<Record<string, string>>({})
   const [areaName, setAreaName] = useState('')
@@ -134,6 +144,22 @@ export function App({
     })
   }
   const [error, setError] = useState<string | null>(null)
+
+  function submitPerson(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!onCreatePerson) {
+      return
+    }
+
+    try {
+      onCreatePerson(personName)
+      setPersonName('')
+      setError(null)
+    } catch (caught) {
+      setError(errorMessage(caught))
+    }
+  }
 
   function submitTag(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -183,6 +209,7 @@ export function App({
     }
   }
 
+  const people = state.people ?? []
   const tags = state.tags ?? []
   const areas = state.areas ?? []
   const lists = state.lists ?? []
@@ -413,6 +440,82 @@ export function App({
                         onClick={() => onDeleteArea(area.id)}
                       >
                         Delete area {area.name}
+                      </button>
+                    ) : null}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+      ) : null}
+
+      {onCreatePerson ? (
+        <section>
+          <h2>People</h2>
+          <form onSubmit={submitPerson}>
+            <label htmlFor="person-name">Person name</label>
+            <input
+              id="person-name"
+              value={personName}
+              onChange={(event) => setPersonName(event.target.value)}
+            />
+            <button type="submit">Add person</button>
+          </form>
+
+          {people.length === 0 ? (
+            <p>No people yet.</p>
+          ) : (
+            <ul>
+              {people.map((person) => {
+                const editedPersonName =
+                  personEdits[person.id] ?? person.name
+
+                return (
+                  <li key={person.id}>
+                    <span>{person.name}</span>
+                    {onRenamePerson ? (
+                      <form
+                        onSubmit={(event) => {
+                          event.preventDefault()
+
+                          try {
+                            onRenamePerson(person.id, editedPersonName)
+                            setPersonEdits((current) => {
+                              const next = { ...current }
+                              delete next[person.id]
+                              return next
+                            })
+                            setError(null)
+                          } catch (caught) {
+                            setError(errorMessage(caught))
+                          }
+                        }}
+                      >
+                        <label htmlFor={`person-edit-${person.id}`}>
+                          Name for person {person.name}
+                        </label>
+                        <input
+                          id={`person-edit-${person.id}`}
+                          value={editedPersonName}
+                          onChange={(event) =>
+                            setPersonEdits((current) => ({
+                              ...current,
+                              [person.id]: event.target.value,
+                            }))
+                          }
+                        />
+                        <button type="submit">
+                          Save person name for {person.name}
+                        </button>
+                      </form>
+                    ) : null}
+                    {onDeletePerson ? (
+                      <button
+                        type="button"
+                        onClick={() => onDeletePerson(person.id)}
+                      >
+                        Delete person {person.name}
                       </button>
                     ) : null}
                   </li>
@@ -901,6 +1004,30 @@ export function App({
                             ? 'subtask'
                             : 'subtasks'}
                         </span>
+                        {people.length > 0 &&
+                        onChangeTaskAssignee ? (
+                          <fieldset>
+                            <legend>Assignees for {task.title}</legend>
+                            {people.map((person) => (
+                              <label key={person.id}>
+                                <input
+                                  type="checkbox"
+                                  checked={(task.assigneeIds ?? []).includes(
+                                    person.id,
+                                  )}
+                                  onChange={(event) =>
+                                    onChangeTaskAssignee(
+                                      task.id,
+                                      person.id,
+                                      event.target.checked,
+                                    )
+                                  }
+                                />
+                                Assignee {person.name} for {task.title}
+                              </label>
+                            ))}
+                          </fieldset>
+                        ) : null}
                         {tags.length > 0 && onChangeTaskTag ? (
                           <fieldset>
                             <legend>Tags for {task.title}</legend>

@@ -1409,3 +1409,70 @@ describe('WorkspaceRoot tags', () => {
     expect(task.title).toBe('Draft experiment plan')
   })
 })
+
+
+describe('WorkspaceRoot people and assignees', () => {
+  it('lets a user create rename and delete a local person', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['person-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T08:50:00.000Z',
+    })
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.type(screen.getByLabelText('Person name'), 'Ada Lovelace')
+    await user.click(screen.getByRole('button', { name: 'Add person' }))
+
+    expect(store.getState().people?.[0]?.name).toBe('Ada Lovelace')
+
+    const input = screen.getByLabelText('Name for person Ada Lovelace')
+    await user.clear(input)
+    await user.type(input, 'Grace Hopper')
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Save person name for Ada Lovelace',
+      }),
+    )
+
+    expect(store.getState().people?.[0]?.name).toBe('Grace Hopper')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Delete person Grace Hopper' }),
+    )
+
+    expect(store.getState()).not.toHaveProperty('people')
+  })
+
+  it('lets a user assign and remove people without changing the task title', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['person-1', 'project-1', 'task-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T08:51:00.000Z',
+    })
+    const person = commands.addPerson('Ada Lovelace')
+    const project = commands.addProject('Robotics Research')
+    commands.addTask(project.id, 'Draft experiment plan')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    const checkbox = screen.getByLabelText(
+      'Assignee Ada Lovelace for Draft experiment plan',
+    )
+
+    await user.click(checkbox)
+
+    expect(store.getState().tasks[0]?.assigneeIds).toEqual([person.id])
+    expect(screen.getByText('Draft experiment plan')).toBeTruthy()
+
+    await user.click(checkbox)
+
+    expect(store.getState().tasks[0]).not.toHaveProperty('assigneeIds')
+  })
+})

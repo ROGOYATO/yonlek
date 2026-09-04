@@ -29,6 +29,22 @@ export function WorkspaceRoot({
       state={state}
       initialViewPreferences={initialViewPreferences}
       onViewPreferencesChange={onViewPreferencesChange}
+      onCreatePerson={(name) => {
+        commands.addPerson(name)
+      }}
+      onRenamePerson={(personId, name) => {
+        commands.renamePerson(personId, name)
+      }}
+      onDeletePerson={(personId) => {
+        commands.deletePerson(personId)
+      }}
+      onChangeTaskAssignee={(taskId, personId, assigned) => {
+        if (assigned) {
+          commands.assignTaskAssignee(taskId, personId)
+        } else {
+          commands.removeTaskAssignee(taskId, personId)
+        }
+      }}
       onCreateTag={(name) => {
         commands.addTag(name)
       }}

@@ -79,6 +79,18 @@ function isValidChecklistItem(value: unknown): boolean {
 }
 
 
+function isValidPerson(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    value.id.trim().length > 0 &&
+    typeof value.name === 'string' &&
+    value.name.trim().length > 0 &&
+    isIsoInstant(value.createdAt)
+  )
+}
+
+
 function isValidTag(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -133,6 +145,12 @@ function isValidTask(value: unknown): boolean {
       (!Array.isArray(value.tagIds) ||
         !value.tagIds.every(
           (tagId) => typeof tagId === 'string' && tagId.trim().length > 0,
+        ))) ||
+    (value.assigneeIds !== undefined &&
+      (!Array.isArray(value.assigneeIds) ||
+        !value.assigneeIds.every(
+          (personId) =>
+            typeof personId === 'string' && personId.trim().length > 0,
         )))
   ) {
     return false
@@ -183,6 +201,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     (workspace.areas !== undefined && !Array.isArray(workspace.areas)) ||
     (workspace.lists !== undefined && !Array.isArray(workspace.lists)) ||
     (workspace.tags !== undefined && !Array.isArray(workspace.tags)) ||
+    (workspace.people !== undefined && !Array.isArray(workspace.people)) ||
     !Array.isArray(workspace.projects) ||
     !Array.isArray(workspace.tasks)
   ) {
@@ -192,11 +211,13 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   const areas = workspace.areas ?? []
   const lists = workspace.lists ?? []
   const tags = workspace.tags ?? []
+  const people = workspace.people ?? []
 
   if (
     !areas.every(isValidArea) ||
     !lists.every(isValidTaskList) ||
     !tags.every(isValidTag) ||
+    !people.every(isValidPerson) ||
     !workspace.projects.every(isValidProject) ||
     !workspace.tasks.every(isValidTask)
   ) {
@@ -226,6 +247,14 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   )
 
   if (tagIds.size !== tags.length) {
+    invalidStorage()
+  }
+
+  const personIds = new Set(
+    people.map((person) => (person as { id: string }).id),
+  )
+
+  if (personIds.size !== people.length) {
     invalidStorage()
   }
 
@@ -326,6 +355,26 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
       return (
         uniqueTagIds.size !== assignedTagIds.length ||
         assignedTagIds.some((tagId) => !tagIds.has(tagId))
+      )
+    })
+  ) {
+    invalidStorage()
+  }
+
+  if (
+    workspace.tasks.some((task) => {
+      const assigneeIds = (task as { assigneeIds?: string[] })
+        .assigneeIds
+
+      if (assigneeIds === undefined) {
+        return false
+      }
+
+      const uniqueAssigneeIds = new Set(assigneeIds)
+
+      return (
+        uniqueAssigneeIds.size !== assigneeIds.length ||
+        assigneeIds.some((personId) => !personIds.has(personId))
       )
     })
   ) {

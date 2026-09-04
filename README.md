@@ -9,13 +9,14 @@ The current implementation is intentionally small. It is being developed as a se
 Starting checkpoint for this batch:
 
 - branch: `main`
-- commit: `a77d594` (`TDD 114-118: add manual ordering`)
-- TDD state: cycle 124 GREEN
-- tests: 238 passing
+- commit: `cda4f98` (`TDD 119-124: add Tags`)
+- TDD state: cycle 130 GREEN
+- tests: 253 passing
 - production build: passing
 - lint: 0 warnings, 0 errors
 
-Tags are reusable workspace-level definitions assigned to Tasks by ID.
+People are local workspace identities. Tasks reference zero or more People by
+ID through optional `assigneeIds`.
 
 See [`FEATURES.md`](./FEATURES.md) for the maintained feature-first roadmap.
 
@@ -386,3 +387,20 @@ Tags / labels:
 - browser reload restores Task Tag assignment state;
 - Tags are semantic data only in this phase; visual colors/badges remain part of
   later UI design work.
+
+
+Local People / assignees:
+
+- create, rename, and delete reusable workspace-local People;
+- People have durable IDs, names, and creation timestamps;
+- Tasks optionally store multiple `assigneeIds`;
+- assign/remove People through Task checkboxes;
+- duplicate assignment is idempotent;
+- deleting a Person preserves Tasks and removes that Person from every Task;
+- deleting the final assignment removes the optional `assigneeIds` field;
+- deleting the final Person removes the optional `people` collection;
+- persisted Person records, duplicate Person IDs, duplicate Task assignments,
+  and missing references are rejected;
+- browser reload restores Task assignee checkbox state;
+- this is local identity only; accounts, email invitations, permissions,
+  notifications, and remote membership remain later multiuser work.

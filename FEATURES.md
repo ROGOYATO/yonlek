@@ -4,7 +4,7 @@ Direction: build an original, feature-rich project/work management product that
 can reach broad capability parity with products such as ClickUp **without**
 copying their protected expression, branding, assets, or distinctive UI.
 
-Current prepared feature state after TDD 124.
+Current prepared feature state after TDD 130.
 
 ## Product identity
 
@@ -75,6 +75,7 @@ Workspace
 - [x] Checklists
 - [x] Manual ordering
 - [x] Task Tag assignment / removal
+- [x] Multiple Task assignees
 - [ ] Duplicate
 - [ ] Archive / restore
 - [x] Tags / labels

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 
 import { createArea } from './domain/area'
 import { createProject } from './domain/project'
+import { createPerson } from './domain/person'
 import { createTask } from './domain/task'
 import { createTaskList } from './domain/task-list'
 import { createTag } from './domain/tag'
@@ -654,6 +655,52 @@ it('restores persisted task tag assignments from browser storage', () => {
   expect(
     (screen.getByLabelText(
       'Tag Safety for Draft experiment plan',
+    ) as HTMLInputElement).checked,
+  ).toBe(true)
+})
+
+
+it('restores persisted task assignee assignments from browser storage', () => {
+  const storage = new MemoryStore()
+  const person = createPerson({
+    id: 'person-1',
+    name: 'Ada Lovelace',
+    now: '2026-09-04T09:05:00.000Z',
+  })
+  const project = createProject({
+    id: 'project-1',
+    name: 'Robotics Research',
+    now: '2026-09-04T09:06:00.000Z',
+  })
+  const task = {
+    ...createTask({
+      id: 'task-1',
+      projectId: project.id,
+      title: 'Draft experiment plan',
+      now: '2026-09-04T09:07:00.000Z',
+    }),
+    assigneeIds: [person.id],
+  }
+
+  saveWorkspace(storage, {
+    people: [person],
+    projects: [project],
+    tasks: [task],
+  })
+
+  render(
+    <BrowserApp
+      storage={storage}
+      runtime={{
+        nextId: () => 'unused-id',
+        now: () => '2026-09-04T09:08:00.000Z',
+      }}
+    />,
+  )
+
+  expect(
+    (screen.getByLabelText(
+      'Assignee Ada Lovelace for Draft experiment plan',
     ) as HTMLInputElement).checked,
   ).toBe(true)
 })
