@@ -465,3 +465,54 @@ Implementation correction:
 
 The corrected reducer must satisfy both the existing command test and the new
 Project-delete hierarchy test before TDD 097 begins.
+
+
+## Cycles 101-107
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 101 | Subtask creation domain behavior | GREEN |
+| 102 | Parent validation and descendant deletion | GREEN |
+| 103 | Subtask application command | GREEN |
+| 104 | Bare-bone Subtask creation/relationship UI | GREEN |
+| 105 | Parent persistence validation, cycle rejection, browser reload | GREEN |
+| 106 | Parent/descendant Project-move integrity | GREEN |
+| 107 | Immediate Subtask counts | GREEN |
+
+Expected successful checkpoint:
+
+```text
+Tests: 189 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+```
+
+Subtasks reuse Task behavior and remain backward-compatible through optional
+`parentTaskId`.
+
+
+## TDD 107 GREEN title/count correction
+
+The first TDD 107 GREEN implementation rendered Task titles and immediate
+Subtask counts as one text string, for example:
+
+```text
+Draft experiment plan (1 subtask)
+```
+
+The new TDD 107 count test passed, but 10 established WorkspaceRoot tests
+failed because exact Task titles are stable semantic locators.
+
+No existing test was changed.
+
+With explicit user approval, the new TDD 107 test was corrected to preserve the
+established title contract and assert the count through a separate labeled
+element:
+
+```text
+Draft experiment plan
+1 subtask
+```
+
+The implementation was changed accordingly. The full WorkspaceRoot suite must
+pass before post-107 documentation and final checks run.

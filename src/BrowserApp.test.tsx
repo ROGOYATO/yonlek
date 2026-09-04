@@ -521,3 +521,45 @@ it('restores lists and task list assignments from browser storage', () => {
       .value,
   ).toBe(list.id)
 })
+
+
+it('restores a persisted subtask relationship', () => {
+  const storage = new MemoryStore()
+  const project = createProject({
+    id: 'project-1',
+    name: 'Robotics Research',
+    now: '2026-09-04T05:15:00.000Z',
+  })
+  const parent = createTask({
+    id: 'task-1',
+    projectId: project.id,
+    title: 'Draft experiment plan',
+    now: '2026-09-04T05:16:00.000Z',
+  })
+  const child = {
+    ...createTask({
+      id: 'task-2',
+      projectId: project.id,
+      title: 'Calibrate camera',
+      now: '2026-09-04T05:17:00.000Z',
+    }),
+    parentTaskId: parent.id,
+  }
+
+  saveWorkspace(storage, {
+    projects: [project],
+    tasks: [parent, child],
+  })
+
+  render(
+    <BrowserApp
+      storage={storage}
+      runtime={{
+        nextId: () => 'unused-id',
+        now: () => '2026-09-04T05:18:00.000Z',
+      }}
+    />,
+  )
+
+  expect(screen.getByText('Subtask of Draft experiment plan')).toBeTruthy()
+})

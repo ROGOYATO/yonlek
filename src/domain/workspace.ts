@@ -201,6 +201,26 @@ export function workspaceReducer(
         throw new Error('Cannot add a task to a missing project')
       }
 
+      if (action.task.parentTaskId !== undefined) {
+        if (action.task.parentTaskId === action.task.id) {
+          throw new Error('Cannot add a task as its own subtask')
+        }
+
+        const parent = state.tasks.find(
+          (candidate) => candidate.id === action.task.parentTaskId,
+        )
+
+        if (!parent) {
+          throw new Error('Cannot add a subtask to a missing parent task')
+        }
+
+        if (parent.projectId !== action.task.projectId) {
+          throw new Error(
+            'Cannot add a subtask to a parent from another project',
+          )
+        }
+      }
+
       if (action.task.listId !== undefined) {
         const list = (state.lists ?? []).find(
           (candidate) => candidate.id === action.task.listId,
@@ -279,10 +299,45 @@ export function workspaceReducer(
         throw new Error('Cannot move a task to a missing project')
       }
 
+      const targetTask = state.tasks.find(
+        (task) => task.id === action.taskId,
+      )
+
+      if (!targetTask) {
+        return state
+      }
+
+      if (
+        targetTask.parentTaskId !== undefined &&
+        targetTask.projectId !== action.projectId
+      ) {
+        throw new Error(
+          'Cannot move a subtask away from its parent project',
+        )
+      }
+
+      const movedIds = new Set([targetTask.id])
+
+      let changed = true
+      while (changed) {
+        changed = false
+
+        for (const task of state.tasks) {
+          if (
+            task.parentTaskId !== undefined &&
+            movedIds.has(task.parentTaskId) &&
+            !movedIds.has(task.id)
+          ) {
+            movedIds.add(task.id)
+            changed = true
+          }
+        }
+      }
+
       return {
         ...state,
         tasks: state.tasks.map((task) => {
-          if (task.id !== action.taskId) {
+          if (!movedIds.has(task.id)) {
             return task
           }
 
@@ -326,10 +381,29 @@ export function workspaceReducer(
       }
     }
 
-    case 'task/deleted':
+    case 'task/deleted': {
+      const deletedIds = new Set([action.taskId])
+
+      let changed = true
+      while (changed) {
+        changed = false
+
+        for (const task of state.tasks) {
+          if (
+            task.parentTaskId !== undefined &&
+            deletedIds.has(task.parentTaskId) &&
+            !deletedIds.has(task.id)
+          ) {
+            deletedIds.add(task.id)
+            changed = true
+          }
+        }
+      }
+
       return {
         ...state,
-        tasks: state.tasks.filter((task) => task.id !== action.taskId),
+        tasks: state.tasks.filter((task) => !deletedIds.has(task.id)),
       }
+    }
   }
 }

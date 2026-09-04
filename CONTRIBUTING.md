@@ -389,3 +389,44 @@ TDD 096 is the reference case. A new Project-delete implementation correctly
 preserved hierarchy data but also introduced empty `areas`/`lists` arrays into
 an older command test's exact state shape. The correction was implementation
 only; the existing behavior test was not changed.
+
+
+## Subtask hierarchy integrity
+
+Subtasks use the existing `Task` entity with optional `parentTaskId`.
+
+- A parent reference must resolve to an existing Task.
+- Parent and child must belong to the same Project.
+- Persistence rejects cycles in the parent chain.
+- Creating a Subtask inherits the parent's Project and current List.
+- Deleting a Task cascades through all descendants.
+- Moving a root/parent Task across Projects moves its descendants and clears
+  incompatible List assignments.
+- Moving a Subtask away from its parent Project by itself is rejected.
+- Existing Tasks without `parentTaskId` remain valid and require no migration.
+
+Do not create a parallel `Subtask` entity unless a later invariant requires
+data that cannot be represented by Task + parent relationship.
+
+
+## Stable task-title semantics for adjacent summaries
+
+Task titles are stable semantic text used by interaction tests and UI queries.
+Do not append counters, badges, status text, or other summaries directly into
+the Task title string.
+
+Render adjacent summaries as separate semantic elements. For example, immediate
+Subtask counts use a dedicated label such as:
+
+```tsx
+<span>{task.title}</span>
+<span aria-label={`Subtask count for ${task.title}`}>
+  {count === 1 ? '1 subtask' : `${count} subtasks`}
+</span>
+```
+
+TDD 107 is the reference case. The first GREEN implementation appended the
+Subtask count to every Task title. The new count assertion passed, but 10 older
+interaction tests could no longer locate Tasks by their exact titles. With user
+approval, only the new TDD 107 assertion was corrected; existing tests were not
+changed or weakened.

@@ -9,14 +9,14 @@ The current implementation is intentionally small. It is being developed as a se
 Starting checkpoint for this batch:
 
 - branch: `main`
-- commit: `dc269bf` (`TDD 085-092: brand Yönlek and add Areas`)
-- TDD state: cycle 100 GREEN
-- tests: 171 passing
+- commit: `7a9dae7` (`TDD 093-100: add Lists to hierarchy`)
+- TDD state: cycle 107 GREEN
+- tests: 189 passing
 - production build: passing
 - lint: 0 warnings, 0 errors
 
-The hierarchy now supports optional Lists inside Projects while preserving older
-saved workspaces and tasks that have no List assignment.
+Subtasks are represented by ordinary Tasks with optional `parentTaskId`, so the
+existing task model remains reusable instead of introducing a second task type.
 
 See [`FEATURES.md`](./FEATURES.md) for the maintained feature-first roadmap.
 
@@ -299,6 +299,34 @@ Lists:
 - show per-List Task counts;
 - persist and validate Lists and Task-to-List relationships;
 - older version-1 workspaces without `lists` or Task `listId` remain valid.
+
+Hierarchy:
+
+```text
+Workspace
+→ Area
+→ Project
+→ List
+→ Task
+→ Subtask
+```
+
+
+Subtasks:
+
+- create Subtasks from any existing Task;
+- inherit Project and current List from the parent at creation time;
+- retain normal Task status, priority, due-date, description, and editing
+  behavior;
+- show the parent relationship in the bare-bone UI;
+- support nested parent chains;
+- deleting a Task cascades through all descendants;
+- persisted parent references must exist in the same Project;
+- persisted parent cycles are rejected;
+- moving a parent Task to another Project moves all descendants and clears
+  incompatible List assignments;
+- moving a Subtask away from its parent Project by itself is rejected;
+- show immediate Subtask counts.
 
 Hierarchy:
 

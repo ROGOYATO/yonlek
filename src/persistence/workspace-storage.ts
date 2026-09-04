@@ -98,7 +98,10 @@ function isValidTask(value: unknown): boolean {
     (value.description !== undefined &&
       typeof value.description !== 'string') ||
     (value.listId !== undefined &&
-      (typeof value.listId !== 'string' || value.listId.trim().length === 0))
+      (typeof value.listId !== 'string' || value.listId.trim().length === 0)) ||
+    (value.parentTaskId !== undefined &&
+      (typeof value.parentTaskId !== 'string' ||
+        value.parentTaskId.trim().length === 0))
   ) {
     return false
   }
@@ -248,6 +251,60 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     })
   ) {
     invalidStorage()
+  }
+
+  const tasksById = new Map(
+    workspace.tasks.map((task) => [
+      (task as { id: string }).id,
+      task as {
+        id: string
+        projectId: string
+        parentTaskId?: string
+      },
+    ]),
+  )
+
+  if (
+    workspace.tasks.some((task) => {
+      const current = task as {
+        id: string
+        projectId: string
+        parentTaskId?: string
+      }
+
+      if (current.parentTaskId === undefined) {
+        return false
+      }
+
+      const parent = tasksById.get(current.parentTaskId)
+
+      return parent === undefined || parent.projectId !== current.projectId
+    })
+  ) {
+    invalidStorage()
+  }
+
+  for (const task of workspace.tasks) {
+    const start = task as {
+      id: string
+      parentTaskId?: string
+    }
+    const visited = new Set<string>()
+    let current:
+      | {
+          id: string
+          parentTaskId?: string
+        }
+      | undefined = start
+
+    while (current?.parentTaskId !== undefined) {
+      if (visited.has(current.id)) {
+        invalidStorage()
+      }
+
+      visited.add(current.id)
+      current = tasksById.get(current.parentTaskId)
+    }
   }
 
   return workspace as unknown as WorkspaceState

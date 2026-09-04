@@ -278,3 +278,30 @@ it('creates a task directly in a list from the command boundary', () => {
   expect(task.listId).toBe(list.id)
   expect(loadWorkspace(storage).tasks[0]?.listId).toBe(list.id)
 })
+
+
+describe('subtask command', () => {
+  it('creates a persisted subtask from an existing parent task', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'list-1', 'task-1', 'task-2']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T04:50:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const list = commands.addTaskList(project.id, 'Backlog')
+    const parent = commands.addTask(
+      project.id,
+      'Draft experiment plan',
+      list.id,
+    )
+
+    const child = commands.addSubtask(parent.id, 'Calibrate camera')
+
+    expect(child.parentTaskId).toBe(parent.id)
+    expect(child.projectId).toBe(parent.projectId)
+    expect(child.listId).toBe(list.id)
+    expect(loadWorkspace(storage).tasks[1]?.parentTaskId).toBe(parent.id)
+  })
+})

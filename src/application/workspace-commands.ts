@@ -2,6 +2,7 @@ import { createArea } from '../domain/area'
 import { createProject } from '../domain/project'
 import { createTaskList } from '../domain/task-list'
 import {
+  createSubtask,
   createTask,
   type TaskPriority,
   type TaskStatus,
@@ -24,6 +25,7 @@ export interface WorkspaceCommands {
   changeTaskList(taskId: string, listId: string | null): void
   addProject(name: string): ReturnType<typeof createProject>
   addTask(projectId: string, title: string, listId?: string): ReturnType<typeof createTask>
+  addSubtask(parentTaskId: string, title: string): ReturnType<typeof createSubtask>
   renameProject(projectId: string, name: string): void
   changeProjectDescription(projectId: string, description: string | null): void
   renameTask(taskId: string, title: string): void
@@ -140,6 +142,30 @@ export function createWorkspaceCommands(
         title,
         now: runtime.now(),
         listId,
+      })
+
+      store.dispatch({
+        type: 'task/added',
+        task,
+      })
+
+      return task
+    },
+
+    addSubtask(parentTaskId, title) {
+      const parent = store
+        .getState()
+        .tasks.find((task) => task.id === parentTaskId)
+
+      if (!parent) {
+        throw new Error('Cannot create a subtask for a missing task')
+      }
+
+      const task = createSubtask({
+        id: runtime.nextId(),
+        parent,
+        title,
+        now: runtime.now(),
       })
 
       store.dispatch({

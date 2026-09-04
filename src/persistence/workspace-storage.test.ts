@@ -755,3 +755,113 @@ describe('list persistence', () => {
     expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
   })
 })
+
+
+describe('subtask persistence', () => {
+  const project = {
+    id: 'project-1',
+    name: 'Robotics Research',
+    createdAt: '2026-09-04T05:10:00.000Z',
+  }
+  const parent = {
+    id: 'task-1',
+    projectId: project.id,
+    title: 'Draft experiment plan',
+    status: 'todo',
+    priority: 'normal',
+    createdAt: '2026-09-04T05:11:00.000Z',
+  }
+
+  it('round-trips a valid parent task relationship', () => {
+    const store = new MemoryStore()
+    const child = {
+      ...parent,
+      id: 'task-2',
+      title: 'Calibrate camera',
+      parentTaskId: parent.id,
+    }
+
+    saveWorkspace(store, {
+      projects: [project],
+      tasks: [parent, child],
+    })
+
+    expect(loadWorkspace(store).tasks[1]?.parentTaskId).toBe(parent.id)
+  })
+
+  it('rejects a subtask whose parent is missing', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            projects: [project],
+            tasks: [
+              {
+                ...parent,
+                id: 'task-2',
+                parentTaskId: 'missing-task',
+              },
+            ],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects a subtask whose parent belongs to another project', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            projects: [
+              project,
+              {
+                id: 'project-2',
+                name: 'Field Tests',
+                createdAt: '2026-09-04T05:12:00.000Z',
+              },
+            ],
+            tasks: [
+              parent,
+              {
+                ...parent,
+                id: 'task-2',
+                projectId: 'project-2',
+                parentTaskId: parent.id,
+              },
+            ],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects task parent cycles', () => {
+    const first = { ...parent, parentTaskId: 'task-2' }
+    const second = {
+      ...parent,
+      id: 'task-2',
+      title: 'Calibrate camera',
+      parentTaskId: parent.id,
+    }
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            projects: [project],
+            tasks: [first, second],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+})

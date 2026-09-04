@@ -28,6 +28,7 @@ export interface AppProps {
   onRenameProject?: (projectId: string, name: string) => void
   onChangeProjectDescription?: (projectId: string, description: string | null) => void
   onCreateTask?: (projectId: string, title: string, listId?: string) => void
+  onCreateSubtask?: (parentTaskId: string, title: string) => void
   onDeleteProject?: (projectId: string) => void
   onRenameTask?: (taskId: string, title: string) => void
   onDeleteTask?: (taskId: string) => void
@@ -58,6 +59,7 @@ export function App({
   onRenameProject,
   onChangeProjectDescription,
   onCreateTask,
+  onCreateSubtask,
   onDeleteProject,
   onRenameTask,
   onDeleteTask,
@@ -78,6 +80,7 @@ export function App({
   const [projectDescriptions, setProjectDescriptions] = useState<Record<string, string>>({})
   const [taskTitles, setTaskTitles] = useState<Record<string, string>>({})
   const [newTaskLists, setNewTaskLists] = useState<Record<string, string>>({})
+  const [subtaskTitles, setSubtaskTitles] = useState<Record<string, string>>({})
   const [taskEdits, setTaskEdits] = useState<Record<string, string>>({})
   const [taskDescriptions, setTaskDescriptions] = useState<Record<string, string>>({})
   const [viewPreferences, setViewPreferences] = useState<ViewPreferences>(
@@ -693,12 +696,69 @@ export function App({
               ) : (
                 <ul>
                   {tasks.map((task) => {
+                    const parentTask =
+                      task.parentTaskId === undefined
+                        ? undefined
+                        : state.tasks.find(
+                            (candidate) => candidate.id === task.parentTaskId,
+                          )
+                    const subtaskTitle = subtaskTitles[task.id] ?? ''
+                    const immediateSubtaskCount = state.tasks.filter(
+                      (candidate) => candidate.parentTaskId === task.id,
+                    ).length
                     const editedTitle = taskEdits[task.id] ?? task.title
                     const editedDescription = taskDescriptions[task.id] ?? task.description ?? ''
 
                     return (
                       <li key={task.id}>
                         <span>{task.title}</span>
+                        <span
+                          aria-label={`Subtask count for ${task.title}`}
+                        >
+                          {immediateSubtaskCount}{' '}
+                          {immediateSubtaskCount === 1
+                            ? 'subtask'
+                            : 'subtasks'}
+                        </span>
+                        {parentTask ? (
+                          <span>Subtask of {parentTask.title}</span>
+                        ) : null}
+
+                        {onCreateSubtask ? (
+                          <form
+                            onSubmit={(event) => {
+                              event.preventDefault()
+
+                              try {
+                                onCreateSubtask(task.id, subtaskTitle)
+                                setSubtaskTitles((current) => ({
+                                  ...current,
+                                  [task.id]: '',
+                                }))
+                                setError(null)
+                              } catch (caught) {
+                                setError(errorMessage(caught))
+                              }
+                            }}
+                          >
+                            <label htmlFor={`subtask-title-${task.id}`}>
+                              Subtask title for {task.title}
+                            </label>
+                            <input
+                              id={`subtask-title-${task.id}`}
+                              value={subtaskTitle}
+                              onChange={(event) =>
+                                setSubtaskTitles((current) => ({
+                                  ...current,
+                                  [task.id]: event.target.value,
+                                }))
+                              }
+                            />
+                            <button type="submit">
+                              Add subtask to {task.title}
+                            </button>
+                          </form>
+                        ) : null}
 
                         {onChangeTaskDescription ? (
                           <form

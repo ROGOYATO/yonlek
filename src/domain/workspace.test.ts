@@ -510,3 +510,156 @@ describe('task list relationships', () => {
     expect(next.tasks[0]).not.toHaveProperty('listId')
   })
 })
+
+
+describe('subtask relationships', () => {
+  const parentTask = task
+  const childTask = {
+    ...task,
+    id: 'task-2',
+    title: 'Calibrate camera',
+    parentTaskId: task.id,
+  }
+
+  it('adds a subtask only when its parent exists in the same project', () => {
+    const state = {
+      projects: [project],
+      tasks: [parentTask],
+    }
+
+    const next = workspaceReducer(state, {
+      type: 'task/added',
+      task: childTask,
+    })
+
+    expect(next.tasks[1]?.parentTaskId).toBe(parentTask.id)
+
+    expect(() =>
+      workspaceReducer(
+        { projects: [project], tasks: [] },
+        { type: 'task/added', task: childTask },
+      ),
+    ).toThrow('Cannot add a subtask to a missing parent task')
+  })
+
+  it('rejects a subtask whose parent is in another project', () => {
+    const otherProject = createProject({
+      id: 'project-2',
+      name: 'Field Tests',
+      now: '2026-09-04T04:40:00.000Z',
+    })
+    const wrongProjectChild = {
+      ...childTask,
+      projectId: otherProject.id,
+    }
+
+    expect(() =>
+      workspaceReducer(
+        {
+          projects: [project, otherProject],
+          tasks: [parentTask],
+        },
+        { type: 'task/added', task: wrongProjectChild },
+      ),
+    ).toThrow('Cannot add a subtask to a parent from another project')
+  })
+
+  it('deleting a parent task cascades through its descendants', () => {
+    const grandchild = {
+      ...task,
+      id: 'task-3',
+      title: 'Tune exposure',
+      parentTaskId: childTask.id,
+    }
+
+    const next = workspaceReducer(
+      {
+        projects: [project],
+        tasks: [parentTask, childTask, grandchild],
+      },
+      { type: 'task/deleted', taskId: parentTask.id },
+    )
+
+    expect(next.tasks).toEqual([])
+  })
+})
+
+
+describe('subtask project moves', () => {
+  it('moves descendants with their parent and clears incompatible list assignments', () => {
+    const otherProject = createProject({
+      id: 'project-2',
+      name: 'Field Tests',
+      now: '2026-09-04T05:20:00.000Z',
+    })
+    const list = {
+      id: 'list-1',
+      projectId: project.id,
+      name: 'Backlog',
+      createdAt: '2026-09-04T05:21:00.000Z',
+    }
+    const parent = { ...task, listId: list.id }
+    const child = {
+      ...task,
+      id: 'task-2',
+      title: 'Calibrate camera',
+      listId: list.id,
+      parentTaskId: parent.id,
+    }
+    const grandchild = {
+      ...task,
+      id: 'task-3',
+      title: 'Tune exposure',
+      listId: list.id,
+      parentTaskId: child.id,
+    }
+
+    const next = workspaceReducer(
+      {
+        lists: [list],
+        projects: [project, otherProject],
+        tasks: [parent, child, grandchild],
+      },
+      {
+        type: 'task/projectChanged',
+        taskId: parent.id,
+        projectId: otherProject.id,
+      },
+    )
+
+    expect(next.tasks.map((item) => item.projectId)).toEqual([
+      otherProject.id,
+      otherProject.id,
+      otherProject.id,
+    ])
+    expect(next.tasks.every((item) => item.listId === undefined)).toBe(true)
+  })
+
+  it('rejects moving a subtask away from its parent project by itself', () => {
+    const otherProject = createProject({
+      id: 'project-2',
+      name: 'Field Tests',
+      now: '2026-09-04T05:22:00.000Z',
+    })
+    const child = {
+      ...task,
+      id: 'task-2',
+      title: 'Calibrate camera',
+      parentTaskId: task.id,
+    }
+
+    expect(() =>
+      workspaceReducer(
+        {
+          projects: [project, otherProject],
+          tasks: [task, child],
+        },
+        {
+          type: 'task/projectChanged',
+          taskId: child.id,
+          projectId: otherProject.id,
+        },
+      ),
+    ).toThrow('Cannot move a subtask away from its parent project')
+  })
+})

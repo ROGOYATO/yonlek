@@ -28,7 +28,7 @@ Workspace
 - [x] Projects
 - [x] Lists inside projects
 - [x] Tasks
-- [ ] Subtasks
+- [x] Subtasks
 - [ ] Checklists
 
 ## Projects
@@ -64,6 +64,8 @@ Workspace
 - [x] Move between project/list containers
 - [x] Assign tasks to Lists
 - [x] Create tasks directly in a List
+- [x] Nested subtask relationships
+- [x] Cascading subtask deletion
 - [ ] Subtasks
 - [ ] Checklists
 - [ ] Manual ordering

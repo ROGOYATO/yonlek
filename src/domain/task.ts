@@ -11,6 +11,7 @@ export interface Task {
   dueDate?: string
   description?: string
   listId?: string
+  parentTaskId?: string
 }
 
 export interface CreateTaskInput {
@@ -158,5 +159,28 @@ export function setTaskList(
   return {
     ...task,
     listId: normalizedListId,
+  }
+}
+
+
+export interface CreateSubtaskInput {
+  id: string
+  parent: Task
+  title: string
+  now: string
+}
+
+export function createSubtask(input: CreateSubtaskInput): Task {
+  const task = createTask({
+    id: input.id,
+    projectId: input.parent.projectId,
+    title: input.title,
+    now: input.now,
+    listId: input.parent.listId,
+  })
+
+  return {
+    ...task,
+    parentTaskId: input.parent.id,
   }
 }

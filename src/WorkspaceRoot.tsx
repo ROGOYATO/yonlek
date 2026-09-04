@@ -65,6 +65,9 @@ export function WorkspaceRoot({
       onCreateTask={(projectId, title, listId) => {
         commands.addTask(projectId, title, listId)
       }}
+      onCreateSubtask={(parentTaskId, title) => {
+        commands.addSubtask(parentTaskId, title)
+      }}
       onDeleteProject={(projectId) => {
         commands.deleteProject(projectId)
       }}

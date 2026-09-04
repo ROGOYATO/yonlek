@@ -1018,3 +1018,89 @@ it('lets a user create a task directly in a selected list', async () => {
 
   expect(store.getState().tasks[0]?.listId).toBe(list.id)
 })
+
+
+describe('WorkspaceRoot subtasks', () => {
+  it('lets a user create a subtask from an existing task', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'list-1', 'task-1', 'task-2']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T05:00:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const list = commands.addTaskList(project.id, 'Backlog')
+    const parent = commands.addTask(
+      project.id,
+      'Draft experiment plan',
+      list.id,
+    )
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.type(
+      screen.getByLabelText('Subtask title for Draft experiment plan'),
+      'Calibrate camera',
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Add subtask to Draft experiment plan',
+      }),
+    )
+
+    expect(store.getState().tasks[1]).toMatchObject({
+      parentTaskId: parent.id,
+      projectId: project.id,
+      listId: list.id,
+      title: 'Calibrate camera',
+    })
+  })
+
+  it('shows the parent relationship while keeping normal task controls', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1', 'task-2']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T05:01:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const parent = commands.addTask(project.id, 'Draft experiment plan')
+    commands.addSubtask(parent.id, 'Calibrate camera')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    expect(screen.getByText('Subtask of Draft experiment plan')).toBeTruthy()
+    expect(screen.getByLabelText('Status for Calibrate camera')).toBeTruthy()
+    expect(screen.getByLabelText('Priority for Calibrate camera')).toBeTruthy()
+  })
+})
+
+
+describe('WorkspaceRoot subtask summaries', () => {
+  it('shows immediate subtask counts for each task', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1', 'task-2']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T05:30:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const parent = commands.addTask(project.id, 'Draft experiment plan')
+    commands.addSubtask(parent.id, 'Calibrate camera')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    expect(screen.getByText('Draft experiment plan')).toBeTruthy()
+    expect(
+      screen.getByLabelText('Subtask count for Draft experiment plan').textContent,
+    ).toBe('1 subtask')
+    expect(screen.getByText('Calibrate camera')).toBeTruthy()
+    expect(
+      screen.getByLabelText('Subtask count for Calibrate camera').textContent,
+    ).toBe('0 subtasks')
+  })
+})
