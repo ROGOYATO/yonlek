@@ -17,6 +17,10 @@ import { emptyWorkspace, type WorkspaceState } from './domain/workspace'
 
 export interface AppProps {
   state?: WorkspaceState
+  onCreateTag?: (name: string) => void
+  onRenameTag?: (tagId: string, name: string) => void
+  onDeleteTag?: (tagId: string) => void
+  onChangeTaskTag?: (taskId: string, tagId: string, assigned: boolean) => void
   onCreateArea?: (name: string) => void
   onRenameArea?: (areaId: string, name: string) => void
   onDeleteArea?: (areaId: string) => void
@@ -57,6 +61,10 @@ function errorMessage(error: unknown): string {
 
 export function App({
   state = emptyWorkspace,
+  onCreateTag,
+  onRenameTag,
+  onDeleteTag,
+  onChangeTaskTag,
   onCreateArea,
   onRenameArea,
   onDeleteArea,
@@ -90,6 +98,8 @@ export function App({
   initialViewPreferences = createDefaultViewPreferences(),
   onViewPreferencesChange,
 }: AppProps) {
+  const [tagName, setTagName] = useState('')
+  const [tagEdits, setTagEdits] = useState<Record<string, string>>({})
   const [areaName, setAreaName] = useState('')
   const [areaEdits, setAreaEdits] = useState<Record<string, string>>({})
   const [listNames, setListNames] = useState<Record<string, string>>({})
@@ -125,6 +135,22 @@ export function App({
   }
   const [error, setError] = useState<string | null>(null)
 
+  function submitTag(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!onCreateTag) {
+      return
+    }
+
+    try {
+      onCreateTag(tagName)
+      setTagName('')
+      setError(null)
+    } catch (caught) {
+      setError(errorMessage(caught))
+    }
+  }
+
   function submitArea(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -157,6 +183,7 @@ export function App({
     }
   }
 
+  const tags = state.tags ?? []
   const areas = state.areas ?? []
   const lists = state.lists ?? []
   const workspaceSummary = summarizeTasks(state.tasks)
@@ -386,6 +413,81 @@ export function App({
                         onClick={() => onDeleteArea(area.id)}
                       >
                         Delete area {area.name}
+                      </button>
+                    ) : null}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+      ) : null}
+
+      {onCreateTag ? (
+        <section>
+          <h2>Tags</h2>
+          <form onSubmit={submitTag}>
+            <label htmlFor="tag-name">Tag name</label>
+            <input
+              id="tag-name"
+              value={tagName}
+              onChange={(event) => setTagName(event.target.value)}
+            />
+            <button type="submit">Add tag</button>
+          </form>
+
+          {tags.length === 0 ? (
+            <p>No tags yet.</p>
+          ) : (
+            <ul>
+              {tags.map((tag) => {
+                const editedTagName = tagEdits[tag.id] ?? tag.name
+
+                return (
+                  <li key={tag.id}>
+                    <span>{tag.name}</span>
+                    {onRenameTag ? (
+                      <form
+                        onSubmit={(event) => {
+                          event.preventDefault()
+
+                          try {
+                            onRenameTag(tag.id, editedTagName)
+                            setTagEdits((current) => {
+                              const next = { ...current }
+                              delete next[tag.id]
+                              return next
+                            })
+                            setError(null)
+                          } catch (caught) {
+                            setError(errorMessage(caught))
+                          }
+                        }}
+                      >
+                        <label htmlFor={`tag-edit-${tag.id}`}>
+                          Name for tag {tag.name}
+                        </label>
+                        <input
+                          id={`tag-edit-${tag.id}`}
+                          value={editedTagName}
+                          onChange={(event) =>
+                            setTagEdits((current) => ({
+                              ...current,
+                              [tag.id]: event.target.value,
+                            }))
+                          }
+                        />
+                        <button type="submit">
+                          Save tag name for {tag.name}
+                        </button>
+                      </form>
+                    ) : null}
+                    {onDeleteTag ? (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteTag(tag.id)}
+                      >
+                        Delete tag {tag.name}
                       </button>
                     ) : null}
                   </li>
@@ -799,6 +901,27 @@ export function App({
                             ? 'subtask'
                             : 'subtasks'}
                         </span>
+                        {tags.length > 0 && onChangeTaskTag ? (
+                          <fieldset>
+                            <legend>Tags for {task.title}</legend>
+                            {tags.map((tag) => (
+                              <label key={tag.id}>
+                                <input
+                                  type="checkbox"
+                                  checked={(task.tagIds ?? []).includes(tag.id)}
+                                  onChange={(event) =>
+                                    onChangeTaskTag(
+                                      task.id,
+                                      tag.id,
+                                      event.target.checked,
+                                    )
+                                  }
+                                />
+                                Tag {tag.name} for {task.title}
+                              </label>
+                            ))}
+                          </fieldset>
+                        ) : null}
                         {taskSort === 'manual' && onMoveTask ? (
                           <>
                             <button

@@ -1344,3 +1344,68 @@ describe('WorkspaceRoot manual ordering', () => {
     ).toEqual([second.id, first.id])
   })
 })
+
+
+describe('WorkspaceRoot tags', () => {
+  it('lets a user create rename and delete a workspace tag', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['tag-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T07:50:00.000Z',
+    })
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.type(screen.getByLabelText('Tag name'), 'Safety')
+    await user.click(screen.getByRole('button', { name: 'Add tag' }))
+
+    expect(store.getState().tags?.[0]?.name).toBe('Safety')
+
+    const input = screen.getByLabelText('Name for tag Safety')
+    await user.clear(input)
+    await user.type(input, 'Camera')
+    await user.click(
+      screen.getByRole('button', { name: 'Save tag name for Safety' }),
+    )
+
+    expect(store.getState().tags?.[0]?.name).toBe('Camera')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Delete tag Camera' }),
+    )
+    expect(store.getState()).not.toHaveProperty('tags')
+  })
+
+  it('lets a user assign and remove a tag without changing the task title', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['tag-1', 'project-1', 'task-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T07:51:00.000Z',
+    })
+    const tag = commands.addTag('Safety')
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    const checkbox = screen.getByLabelText(
+      'Tag Safety for Draft experiment plan',
+    )
+
+    await user.click(checkbox)
+
+    expect(store.getState().tasks[0]?.tagIds).toEqual([tag.id])
+    expect(screen.getByText('Draft experiment plan')).toBeTruthy()
+
+    await user.click(checkbox)
+
+    expect(store.getState().tasks[0]).not.toHaveProperty('tagIds')
+    expect(task.title).toBe('Draft experiment plan')
+  })
+})

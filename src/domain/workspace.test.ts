@@ -959,3 +959,142 @@ describe('manual sibling ordering', () => {
     ).toEqual([second.id, first.id])
   })
 })
+
+
+describe('workspace tags', () => {
+  const safety = {
+    id: 'tag-1',
+    name: 'Safety',
+    createdAt: '2026-09-04T07:20:00.000Z',
+  }
+
+  it('adds and renames a tag without mutating previous state', () => {
+    const state = {
+      projects: [project],
+      tasks: [task],
+    }
+
+    const added = workspaceReducer(state, {
+      type: 'tag/added',
+      tag: safety,
+    } as never)
+    const renamed = workspaceReducer(added, {
+      type: 'tag/nameChanged',
+      tagId: safety.id,
+      name: 'Camera',
+    } as never)
+
+    expect(added.tags).toEqual([safety])
+    expect(renamed.tags?.[0]?.name).toBe('Camera')
+    expect(state).not.toHaveProperty('tags')
+    expect(safety.name).toBe('Safety')
+  })
+
+  it('deleting a tag preserves tasks and removes their assignment', () => {
+    const taggedTask = { ...task, tagIds: [safety.id] }
+
+    const next = workspaceReducer(
+      {
+        tags: [safety],
+        projects: [project],
+        tasks: [taggedTask],
+      },
+      {
+        type: 'tag/deleted',
+        tagId: safety.id,
+      } as never,
+    )
+
+    expect(next.tasks[0]?.id).toBe(task.id)
+    expect(next.tasks[0]).not.toHaveProperty('tagIds')
+  })
+
+  it('deleting the final tag removes the optional tag collection', () => {
+    const next = workspaceReducer(
+      {
+        tags: [safety],
+        projects: [project],
+        tasks: [task],
+      },
+      {
+        type: 'tag/deleted',
+        tagId: safety.id,
+      } as never,
+    )
+
+    expect(next).not.toHaveProperty('tags')
+  })
+})
+
+
+describe('task tag assignments', () => {
+  const safety = {
+    id: 'tag-1',
+    name: 'Safety',
+    createdAt: '2026-09-04T07:30:00.000Z',
+  }
+
+  it('assigns an existing tag once to an existing task', () => {
+    const state = {
+      tags: [safety],
+      projects: [project],
+      tasks: [task],
+    }
+
+    const assigned = workspaceReducer(state, {
+      type: 'task/tagAdded',
+      taskId: task.id,
+      tagId: safety.id,
+    } as never)
+    const assignedAgain = workspaceReducer(assigned, {
+      type: 'task/tagAdded',
+      taskId: task.id,
+      tagId: safety.id,
+    } as never)
+
+    expect(assignedAgain.tasks[0]?.tagIds).toEqual([safety.id])
+  })
+
+  it('rejects missing tasks and missing tags', () => {
+    const state = {
+      tags: [safety],
+      projects: [project],
+      tasks: [task],
+    }
+
+    expect(() =>
+      workspaceReducer(state, {
+        type: 'task/tagAdded',
+        taskId: 'missing-task',
+        tagId: safety.id,
+      } as never),
+    ).toThrow('Cannot tag a missing task')
+
+    expect(() =>
+      workspaceReducer(state, {
+        type: 'task/tagAdded',
+        taskId: task.id,
+        tagId: 'missing-tag',
+      } as never),
+    ).toThrow('Cannot assign a missing tag')
+  })
+
+  it('removes a task tag and clears the optional field when none remain', () => {
+    const taggedTask = { ...task, tagIds: [safety.id] }
+
+    const next = workspaceReducer(
+      {
+        tags: [safety],
+        projects: [project],
+        tasks: [taggedTask],
+      },
+      {
+        type: 'task/tagRemoved',
+        taskId: task.id,
+        tagId: safety.id,
+      } as never,
+    )
+
+    expect(next.tasks[0]).not.toHaveProperty('tagIds')
+  })
+})

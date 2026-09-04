@@ -985,3 +985,113 @@ describe('checklist persistence', () => {
     expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
   })
 })
+
+
+describe('tag persistence', () => {
+  const tag = {
+    id: 'tag-1',
+    name: 'Safety',
+    createdAt: '2026-09-04T08:00:00.000Z',
+  }
+  const project = {
+    id: 'project-1',
+    name: 'Robotics Research',
+    createdAt: '2026-09-04T08:01:00.000Z',
+  }
+  const task = {
+    id: 'task-1',
+    projectId: project.id,
+    title: 'Draft experiment plan',
+    status: 'todo',
+    priority: 'normal',
+    createdAt: '2026-09-04T08:02:00.000Z',
+  }
+
+  it('round-trips tags and task tag assignments', () => {
+    const store = new MemoryStore()
+    const taggedTask = { ...task, tagIds: [tag.id] }
+    const workspace = {
+      tags: [tag],
+      projects: [project],
+      tasks: [taggedTask],
+    }
+
+    saveWorkspace(store, workspace)
+
+    expect(loadWorkspace(store)).toEqual(workspace)
+  })
+
+  it('rejects an invalid persisted tag record', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            tags: [
+              {
+                id: 'tag-1',
+                name: 42,
+                createdAt: '2026-09-04T08:00:00.000Z',
+              },
+            ],
+            projects: [project],
+            tasks: [task],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects duplicate persisted tag ids', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            tags: [tag, { ...tag, name: 'Camera' }],
+            projects: [project],
+            tasks: [task],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects a task that references a missing tag', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            tags: [],
+            projects: [project],
+            tasks: [{ ...task, tagIds: ['missing-tag'] }],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects duplicate task tag ids', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            tags: [tag],
+            projects: [project],
+            tasks: [{ ...task, tagIds: [tag.id, tag.id] }],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+})

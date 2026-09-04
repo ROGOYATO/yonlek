@@ -9,14 +9,13 @@ The current implementation is intentionally small. It is being developed as a se
 Starting checkpoint for this batch:
 
 - branch: `main`
-- commit: `b4b9a9b` (`TDD 108-113: add Checklists`)
-- TDD state: cycle 118 GREEN
-- tests: 220 passing
+- commit: `a77d594` (`TDD 114-118: add manual ordering`)
+- TDD state: cycle 124 GREEN
+- tests: 238 passing
 - production build: passing
 - lint: 0 warnings, 0 errors
 
-Manual order uses existing persisted array order. No numeric position fields or
-storage migration were added.
+Tags are reusable workspace-level definitions assigned to Tasks by ID.
 
 See [`FEATURES.md`](./FEATURES.md) for the maintained feature-first roadmap.
 
@@ -370,3 +369,20 @@ Manual ordering:
   or numeric position field is required;
 - current UI uses explicit Move up / Move down controls. Drag-and-drop remains
   deferred to the visual interaction phase.
+
+
+Tags / labels:
+
+- create, rename, and delete reusable workspace Tags;
+- Tags have durable IDs, names, and creation timestamps;
+- Tasks optionally store `tagIds`;
+- assign/remove Tags through Task checkboxes;
+- duplicate assignment is idempotent;
+- deleting a Tag preserves Tasks and removes that Tag from every Task;
+- deleting the last assignment removes the optional `tagIds` field;
+- deleting the final workspace Tag removes the optional `tags` collection;
+- persisted Tags, duplicate Tag IDs, duplicate Task assignments, and missing
+  references are validated;
+- browser reload restores Task Tag assignment state;
+- Tags are semantic data only in this phase; visual colors/badges remain part of
+  later UI design work.

@@ -5,6 +5,7 @@ import {
   type ChecklistItem,
 } from './checklist'
 import { renameTaskList, type TaskList } from './task-list'
+import { renameTag, type Tag } from './tag'
 import {
   moveItemWithinGroup,
   type MoveDirection,
@@ -29,6 +30,7 @@ import {
 export interface WorkspaceState {
   areas?: Area[]
   lists?: TaskList[]
+  tags?: Tag[]
   projects: Project[]
   tasks: Task[]
 }
@@ -45,6 +47,9 @@ export type WorkspaceAction =
   | { type: 'area/deleted'; areaId: string }
   | { type: 'area/nameChanged'; areaId: string; name: string }
   | { type: 'area/moved'; areaId: string; direction: MoveDirection }
+  | { type: 'tag/added'; tag: Tag }
+  | { type: 'tag/deleted'; tagId: string }
+  | { type: 'tag/nameChanged'; tagId: string; name: string }
   | { type: 'list/added'; list: TaskList }
   | { type: 'list/deleted'; listId: string }
   | { type: 'list/nameChanged'; listId: string; name: string }
@@ -64,6 +69,8 @@ export type WorkspaceAction =
   | { type: 'task/projectChanged'; taskId: string; projectId: string }
   | { type: 'task/listChanged'; taskId: string; listId: string | null }
   | { type: 'task/moved'; taskId: string; direction: MoveDirection }
+  | { type: 'task/tagAdded'; taskId: string; tagId: string }
+  | { type: 'task/tagRemoved'; taskId: string; tagId: string }
   | { type: 'task/checklistItemAdded'; taskId: string; item: ChecklistItem }
   | { type: 'task/checklistItemTextChanged'; taskId: string; itemId: string; text: string }
   | { type: 'task/checklistItemCompletedChanged'; taskId: string; itemId: string; completed: boolean }
@@ -111,6 +118,55 @@ export function workspaceReducer(
             : project,
         ),
       }
+
+    case 'tag/added':
+      return {
+        ...state,
+        tags: [...(state.tags ?? []), action.tag],
+      }
+
+    case 'tag/nameChanged':
+      return {
+        ...state,
+        tags: (state.tags ?? []).map((tag) =>
+          tag.id === action.tagId ? renameTag(tag, action.name) : tag,
+        ),
+      }
+
+    case 'tag/deleted': {
+      const tags = (state.tags ?? []).filter(
+        (tag) => tag.id !== action.tagId,
+      )
+      const next: WorkspaceState = {
+        ...state,
+        tasks: state.tasks.map((task) => {
+          if (task.tagIds === undefined) {
+            return task
+          }
+
+          const tagIds = task.tagIds.filter(
+            (tagId) => tagId !== action.tagId,
+          )
+          const updated = { ...task }
+
+          if (tagIds.length === 0) {
+            delete updated.tagIds
+          } else {
+            updated.tagIds = tagIds
+          }
+
+          return updated
+        }),
+      }
+
+      if (tags.length === 0) {
+        delete next.tags
+      } else {
+        next.tags = tags
+      }
+
+      return next
+    }
 
     case 'list/added': {
       const projectExists = state.projects.some(
@@ -446,6 +502,65 @@ export function workspaceReducer(
             candidate.listId === target.listId &&
             candidate.parentTaskId === target.parentTaskId,
         ),
+      }
+
+    case 'task/tagAdded': {
+      const taskExists = state.tasks.some(
+        (task) => task.id === action.taskId,
+      )
+
+      if (!taskExists) {
+        throw new Error('Cannot tag a missing task')
+      }
+
+      const tagExists = (state.tags ?? []).some(
+        (tag) => tag.id === action.tagId,
+      )
+
+      if (!tagExists) {
+        throw new Error('Cannot assign a missing tag')
+      }
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) => {
+          if (task.id !== action.taskId) {
+            return task
+          }
+
+          if ((task.tagIds ?? []).includes(action.tagId)) {
+            return task
+          }
+
+          return {
+            ...task,
+            tagIds: [...(task.tagIds ?? []), action.tagId],
+          }
+        }),
+      }
+    }
+
+    case 'task/tagRemoved':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) => {
+          if (task.id !== action.taskId || task.tagIds === undefined) {
+            return task
+          }
+
+          const tagIds = task.tagIds.filter(
+            (tagId) => tagId !== action.tagId,
+          )
+          const next = { ...task }
+
+          if (tagIds.length === 0) {
+            delete next.tagIds
+          } else {
+            next.tagIds = tagIds
+          }
+
+          return next
+        }),
       }
 
     case 'task/checklistItemAdded': {

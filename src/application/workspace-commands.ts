@@ -2,6 +2,7 @@ import { createChecklistItem } from '../domain/checklist'
 import { createArea } from '../domain/area'
 import { createProject } from '../domain/project'
 import { createTaskList } from '../domain/task-list'
+import { createTag } from '../domain/tag'
 import {
   createSubtask,
   createTask,
@@ -17,6 +18,11 @@ export interface WorkspaceRuntime {
 }
 
 export interface WorkspaceCommands {
+  addTag(name: string): ReturnType<typeof createTag>
+  renameTag(tagId: string, name: string): void
+  deleteTag(tagId: string): void
+  assignTaskTag(taskId: string, tagId: string): void
+  removeTaskTag(taskId: string, tagId: string): void
   addArea(name: string): ReturnType<typeof createArea>
   renameArea(areaId: string, name: string): void
   deleteArea(areaId: string): void
@@ -54,6 +60,52 @@ export function createWorkspaceCommands(
   runtime: WorkspaceRuntime,
 ): WorkspaceCommands {
   return {
+    addTag(name) {
+      const tag = createTag({
+        id: runtime.nextId(),
+        name,
+        now: runtime.now(),
+      })
+
+      store.dispatch({
+        type: 'tag/added',
+        tag,
+      })
+
+      return tag
+    },
+
+    renameTag(tagId, name) {
+      store.dispatch({
+        type: 'tag/nameChanged',
+        tagId,
+        name,
+      })
+    },
+
+    deleteTag(tagId) {
+      store.dispatch({
+        type: 'tag/deleted',
+        tagId,
+      })
+    },
+
+    assignTaskTag(taskId, tagId) {
+      store.dispatch({
+        type: 'task/tagAdded',
+        taskId,
+        tagId,
+      })
+    },
+
+    removeTaskTag(taskId, tagId) {
+      store.dispatch({
+        type: 'task/tagRemoved',
+        taskId,
+        tagId,
+      })
+    },
+
     addArea(name) {
       const area = createArea({
         id: runtime.nextId(),

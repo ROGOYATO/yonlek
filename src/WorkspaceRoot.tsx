@@ -29,6 +29,22 @@ export function WorkspaceRoot({
       state={state}
       initialViewPreferences={initialViewPreferences}
       onViewPreferencesChange={onViewPreferencesChange}
+      onCreateTag={(name) => {
+        commands.addTag(name)
+      }}
+      onRenameTag={(tagId, name) => {
+        commands.renameTag(tagId, name)
+      }}
+      onDeleteTag={(tagId) => {
+        commands.deleteTag(tagId)
+      }}
+      onChangeTaskTag={(taskId, tagId, assigned) => {
+        if (assigned) {
+          commands.assignTaskTag(taskId, tagId)
+        } else {
+          commands.removeTaskTag(taskId, tagId)
+        }
+      }}
       onCreateArea={(name) => {
         commands.addArea(name)
       }}

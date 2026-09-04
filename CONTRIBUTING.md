@@ -482,3 +482,24 @@ Rules:
   do not add position fields solely for local manual ordering.
 - Drag-and-drop is a later interaction layer over these commands, not a separate
   ordering model.
+
+
+## Tag integrity
+
+Tags are reusable workspace-level definitions. Tasks reference them by ID.
+
+Rules:
+
+- `WorkspaceState.tags` remains optional for backward compatibility.
+- `Task.tagIds` remains optional; deleting the final assignment removes it.
+- Tag names are trimmed and non-empty.
+- Tag identity is ID-based; this batch does not enforce unique names.
+- Tag IDs must be unique across the workspace.
+- Task `tagIds` must be unique within the Task and reference existing Tags.
+- Assigning the same Tag twice is idempotent.
+- Deleting a Tag preserves Tasks and removes that Tag ID from all Tasks.
+- Deleting the final Tag removes the optional `tags` collection instead of
+  forcing an empty array into older state shapes.
+- Existing version-1 workspace documents without Tags remain valid.
+- Tag colors and visual badge styling are deferred; do not couple semantic Tag
+  identity to a presentation color.

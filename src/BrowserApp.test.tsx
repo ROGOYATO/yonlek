@@ -8,6 +8,7 @@ import { createArea } from './domain/area'
 import { createProject } from './domain/project'
 import { createTask } from './domain/task'
 import { createTaskList } from './domain/task-list'
+import { createTag } from './domain/tag'
 import { createDefaultViewPreferences } from './domain/view-preferences'
 import { emptyWorkspace } from './domain/workspace'
 import {
@@ -607,6 +608,52 @@ it('restores checklist items and completion state from browser storage', () => {
   expect(
     (screen.getByLabelText(
       'Checklist item Review safety notes complete',
+    ) as HTMLInputElement).checked,
+  ).toBe(true)
+})
+
+
+it('restores persisted task tag assignments from browser storage', () => {
+  const storage = new MemoryStore()
+  const tag = createTag({
+    id: 'tag-1',
+    name: 'Safety',
+    now: '2026-09-04T08:05:00.000Z',
+  })
+  const project = createProject({
+    id: 'project-1',
+    name: 'Robotics Research',
+    now: '2026-09-04T08:06:00.000Z',
+  })
+  const task = {
+    ...createTask({
+      id: 'task-1',
+      projectId: project.id,
+      title: 'Draft experiment plan',
+      now: '2026-09-04T08:07:00.000Z',
+    }),
+    tagIds: [tag.id],
+  }
+
+  saveWorkspace(storage, {
+    tags: [tag],
+    projects: [project],
+    tasks: [task],
+  })
+
+  render(
+    <BrowserApp
+      storage={storage}
+      runtime={{
+        nextId: () => 'unused-id',
+        now: () => '2026-09-04T08:08:00.000Z',
+      }}
+    />,
+  )
+
+  expect(
+    (screen.getByLabelText(
+      'Tag Safety for Draft experiment plan',
     ) as HTMLInputElement).checked,
   ).toBe(true)
 })

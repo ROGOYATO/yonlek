@@ -79,6 +79,18 @@ function isValidChecklistItem(value: unknown): boolean {
 }
 
 
+function isValidTag(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    value.id.trim().length > 0 &&
+    typeof value.name === 'string' &&
+    value.name.trim().length > 0 &&
+    isIsoInstant(value.createdAt)
+  )
+}
+
+
 function isValidArea(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -116,7 +128,12 @@ function isValidTask(value: unknown): boolean {
         value.parentTaskId.trim().length === 0)) ||
     (value.checklist !== undefined &&
       (!Array.isArray(value.checklist) ||
-        !value.checklist.every(isValidChecklistItem)))
+        !value.checklist.every(isValidChecklistItem))) ||
+    (value.tagIds !== undefined &&
+      (!Array.isArray(value.tagIds) ||
+        !value.tagIds.every(
+          (tagId) => typeof tagId === 'string' && tagId.trim().length > 0,
+        )))
   ) {
     return false
   }
@@ -165,6 +182,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     !isRecord(workspace) ||
     (workspace.areas !== undefined && !Array.isArray(workspace.areas)) ||
     (workspace.lists !== undefined && !Array.isArray(workspace.lists)) ||
+    (workspace.tags !== undefined && !Array.isArray(workspace.tags)) ||
     !Array.isArray(workspace.projects) ||
     !Array.isArray(workspace.tasks)
   ) {
@@ -173,10 +191,12 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
 
   const areas = workspace.areas ?? []
   const lists = workspace.lists ?? []
+  const tags = workspace.tags ?? []
 
   if (
     !areas.every(isValidArea) ||
     !lists.every(isValidTaskList) ||
+    !tags.every(isValidTag) ||
     !workspace.projects.every(isValidProject) ||
     !workspace.tasks.every(isValidTask)
   ) {
@@ -198,6 +218,14 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
         !areaIds.has((project as { areaId: string }).areaId),
     )
   ) {
+    invalidStorage()
+  }
+
+  const tagIds = new Set(
+    tags.map((tag) => (tag as { id: string }).id),
+  )
+
+  if (tagIds.size !== tags.length) {
     invalidStorage()
   }
 
@@ -280,6 +308,25 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
       const checklistIds = new Set(checklist.map((item) => item.id))
 
       return checklistIds.size !== checklist.length
+    })
+  ) {
+    invalidStorage()
+  }
+
+  if (
+    workspace.tasks.some((task) => {
+      const assignedTagIds = (task as { tagIds?: string[] }).tagIds
+
+      if (assignedTagIds === undefined) {
+        return false
+      }
+
+      const uniqueTagIds = new Set(assignedTagIds)
+
+      return (
+        uniqueTagIds.size !== assignedTagIds.length ||
+        assignedTagIds.some((tagId) => !tagIds.has(tagId))
+      )
     })
   ) {
     invalidStorage()

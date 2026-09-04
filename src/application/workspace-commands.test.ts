@@ -418,3 +418,36 @@ describe('manual order commands', () => {
     ).toEqual([secondItem.id, firstItem.id])
   })
 })
+
+
+describe('tag commands', () => {
+  it('creates renames assigns removes and deletes a persisted tag', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['tag-1', 'project-1', 'task-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T07:40:00.000Z',
+    })
+
+    const tag = commands.addTag('Safety')
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+
+    commands.renameTag(tag.id, 'Camera')
+    commands.assignTaskTag(task.id, tag.id)
+
+    expect(store.getState().tags?.[0]?.name).toBe('Camera')
+    expect(store.getState().tasks[0]?.tagIds).toEqual([tag.id])
+    expect(loadWorkspace(storage).tasks[0]?.tagIds).toEqual([tag.id])
+
+    commands.removeTaskTag(task.id, tag.id)
+    expect(store.getState().tasks[0]).not.toHaveProperty('tagIds')
+
+    commands.assignTaskTag(task.id, tag.id)
+    commands.deleteTag(tag.id)
+
+    expect(store.getState()).not.toHaveProperty('tags')
+    expect(store.getState().tasks[0]).not.toHaveProperty('tagIds')
+  })
+})
