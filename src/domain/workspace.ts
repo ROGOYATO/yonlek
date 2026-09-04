@@ -19,8 +19,10 @@ import {
   type MoveDirection,
 } from './manual-order'
 import {
+  archiveProject,
   moveProjectToArea,
   renameProject,
+  restoreProject,
   setProjectDescription,
   type Project,
 } from './project'
@@ -76,6 +78,8 @@ export type WorkspaceAction =
   | { type: 'relationship/added'; relationship: TaskRelationship }
   | { type: 'relationship/deleted'; relationshipId: string }
   | { type: 'project/added'; project: Project }
+  | { type: 'project/archived'; projectId: string; archivedAt: string }
+  | { type: 'project/restored'; projectId: string }
   | { type: 'project/deleted'; projectId: string }
   | { type: 'project/nameChanged'; projectId: string; name: string }
   | { type: 'project/descriptionChanged'; projectId: string; description: string | null }
@@ -492,6 +496,26 @@ export function workspaceReducer(
       return {
         ...state,
         projects: [...state.projects, action.project],
+      }
+
+    case 'project/archived':
+      return {
+        ...state,
+        projects: state.projects.map((project) =>
+          project.id === action.projectId
+            ? archiveProject(project, action.archivedAt)
+            : project,
+        ),
+      }
+
+    case 'project/restored':
+      return {
+        ...state,
+        projects: state.projects.map((project) =>
+          project.id === action.projectId
+            ? restoreProject(project)
+            : project,
+        ),
       }
 
     case 'project/nameChanged':

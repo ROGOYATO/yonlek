@@ -53,6 +53,8 @@ export interface AppProps {
   onMoveChecklistItem?: (taskId: string, itemId: string, direction: MoveDirection) => void
   onMoveProject?: (projectId: string, direction: MoveDirection) => void
   onCreateProject?: (name: string) => void
+  onArchiveProject?: (projectId: string) => void
+  onRestoreProject?: (projectId: string) => void
   onRenameProject?: (projectId: string, name: string) => void
   onChangeProjectDescription?: (projectId: string, description: string | null) => void
   onCreateTask?: (projectId: string, title: string, listId?: string) => void
@@ -110,6 +112,8 @@ export function App({
   onMoveChecklistItem,
   onMoveProject,
   onCreateProject,
+  onArchiveProject,
+  onRestoreProject,
   onRenameProject,
   onChangeProjectDescription,
   onCreateTask,
@@ -266,11 +270,24 @@ export function App({
   const tags = state.tags ?? []
   const areas = state.areas ?? []
   const lists = state.lists ?? []
+  const activeProjects = state.projects.filter(
+    (project) => project.archivedAt === undefined,
+  )
+  const archivedProjects = state.projects.filter(
+    (project) => project.archivedAt !== undefined,
+  )
+  const activeProjectIds = new Set(
+    activeProjects.map((project) => project.id),
+  )
   const activeTasks = state.tasks.filter(
-    (task) => task.archivedAt === undefined,
+    (task) =>
+      task.archivedAt === undefined &&
+      activeProjectIds.has(task.projectId),
   )
   const archivedTasks = state.tasks.filter(
-    (task) => task.archivedAt !== undefined,
+    (task) =>
+      task.archivedAt !== undefined &&
+      activeProjectIds.has(task.projectId),
   )
   const archivedTaskRoots = archivedTasks.filter((task) => {
     if (task.parentTaskId === undefined) {
@@ -283,15 +300,15 @@ export function App({
     return parent?.archivedAt === undefined
   })
   const workspaceSummary = summarizeTasks(activeTasks)
-  const projectLabel = state.projects.length === 1 ? 'project' : 'projects'
+  const projectLabel = activeProjects.length === 1 ? 'project' : 'projects'
   const taskLabel = workspaceSummary.total === 1 ? 'task' : 'tasks'
 
   const effectiveProjectView =
     projectView === 'all' ||
-    state.projects.some((project) => project.id === projectView)
+    activeProjects.some((project) => project.id === projectView)
       ? projectView
       : 'all'
-  const visibleProjects = state.projects.filter(
+  const visibleProjects = activeProjects.filter(
     (project) =>
       effectiveProjectView === 'all' || project.id === effectiveProjectView,
   )
@@ -300,7 +317,7 @@ export function App({
     <main>
       <h1>Yönlek</h1>
       <p className="workspace-summary">
-        {state.projects.length} {projectLabel} · {workspaceSummary.total}{' '}
+        {activeProjects.length} {projectLabel} · {workspaceSummary.total}{' '}
         {taskLabel} · {workspaceSummary.done} done
       </p>
 
@@ -311,7 +328,7 @@ export function App({
         onChange={(event) => updatePreferences({ projectView: event.target.value })}
       >
         <option value="all">All projects</option>
-        {state.projects.map((project) => {
+        {activeProjects.map((project) => {
           const taskCount = activeTasks.filter(
             (task) => task.projectId === project.id,
           ).length
@@ -438,12 +455,12 @@ export function App({
                     <span>
                       {area.name} (
                       {
-                        state.projects.filter(
+                        activeProjects.filter(
                           (project) => project.areaId === area.id,
                         ).length
                       }{' '}
                       {
-                        state.projects.filter(
+                        activeProjects.filter(
                           (project) => project.areaId === area.id,
                         ).length === 1
                           ? 'project'
@@ -776,7 +793,7 @@ export function App({
         </form>
       ) : null}
 
-      {state.projects.length === 0 ? (
+      {activeProjects.length === 0 ? (
         <p>No projects yet.</p>
       ) : (
         visibleProjects.map((project) => {
@@ -1053,6 +1070,21 @@ export function App({
                     </ul>
                   )}
                 </section>
+              ) : null}
+
+              {onArchiveProject ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (effectiveProjectView === project.id) {
+                      updatePreferences({ projectView: 'all' })
+                    }
+
+                    onArchiveProject(project.id)
+                  }}
+                >
+                  Archive project {project.name}
+                </button>
               ) : null}
 
               {onDeleteProject ? (
@@ -1871,7 +1903,7 @@ export function App({
                                 )
                               }
                             >
-                              {state.projects.map((candidateProject) => (
+                              {activeProjects.map((candidateProject) => (
                                 <option
                                   key={candidateProject.id}
                                   value={candidateProject.id}
@@ -1917,6 +1949,27 @@ export function App({
         })
       )}
 
+
+      {archivedProjects.length > 0 ? (
+        <section>
+          <h2>Archived projects</h2>
+          <ul>
+            {archivedProjects.map((project) => (
+              <li key={project.id}>
+                <span>{project.name}</span>
+                {onRestoreProject ? (
+                  <button
+                    type="button"
+                    onClick={() => onRestoreProject(project.id)}
+                  >
+                    Restore project {project.name}
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {archivedTaskRoots.length > 0 ? (
         <section>

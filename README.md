@@ -8,20 +8,20 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The latest user-confirmed behavior checkpoint is TDD 147.
+The latest user-confirmed behavior checkpoint is TDD 152.
 
 - branch: `main`
-- behavior commit: `d976d0d` (`TDD 145-147: add task duplication`)
+- behavior commit: `e71af4e` (`TDD 148-152: add task archiving`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 305 passed
+- tests: 310 passed across 32 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
 - push: `origin/main` updated successfully
 
-This documentation refresh starts from that clean behavior checkpoint. It does
-not change application behavior.
+This checkpoint includes Task duplication, Task archive/restore, persisted
+archive timestamps, and the active/archive UI split.
 
 ## Current product model
 
@@ -59,12 +59,14 @@ Projects own Lists and Tasks.
 
 Current behavior:
 
-- create, rename, describe, move, and delete Projects;
+- create, rename, describe, move, archive, restore, and delete Projects;
 - focus the UI on one Project by immutable Project ID;
 - show Project Task counts and completion summaries;
 - move Tasks between Projects;
 - delete a Project together with its Lists and Tasks;
-- preserve unrelated workspace metadata when a Project is deleted.
+- preserve unrelated workspace metadata when a Project is deleted;
+- hide archived Projects and their Tasks from normal counts, selectors, Area
+  summaries, and Task move targets without deleting their data.
 
 ### Lists
 
@@ -155,6 +157,27 @@ It deliberately does not copy:
 
 Those records do not belong to the Task object being copied. Copying them would
 change the workspace graph instead of copying only one Task.
+
+## Project archive and restore contract
+
+TDD 153-157 adds reversible Project archive behavior.
+
+Archiving a Project records optional `archivedAt` on the Project itself. It does
+not rewrite the `archivedAt` field of every Task in that Project. The Project,
+its Lists, Tasks, Area assignment, description, and relationship edges remain in
+workspace state and browser persistence.
+
+Normal workspace surfaces operate on active Projects. Tasks under an archived
+Project are therefore excluded from workspace and Project counts, search,
+filters, sorting, Project selectors, Area Project counts, and Task move targets.
+The archived Project surface exposes `Restore project <name>` controls.
+
+Restoring a Project removes only the Project's `archivedAt`. Tasks that were
+independently archived before or during the Project archive remain archived and
+return only through the Task archive flow.
+
+The storage document remains version 1 because Project `archivedAt` is an
+optional additive field. Persisted values are validated as ISO instants.
 
 ## Task archive and restore contract
 
@@ -363,8 +386,10 @@ first.
 
 Multi-cycle work uses fail-fast PowerShell bundles. A stopped bundle leaves the
 repository at the exact failing stage. Do not reset or clean it. Resume bundles
-pin the expected branch, HEAD, dirty paths, and normalized file hashes before
-continuing.
+pin the expected branch, HEAD, and dirty paths before continuing. For new RED
+coverage, prefer focused test files when that avoids depending on unrelated
+historical formatting in a large existing test file. Existing production files
+still require guarded live-HEAD context before modification.
 
 See `CONTRIBUTING.md` for the full workflow.
 

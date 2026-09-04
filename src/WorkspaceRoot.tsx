@@ -130,6 +130,12 @@ export function WorkspaceRoot({
       onCreateProject={(name) => {
         commands.addProject(name)
       }}
+      onArchiveProject={(projectId) => {
+        commands.archiveProject(projectId)
+      }}
+      onRestoreProject={(projectId) => {
+        commands.restoreProject(projectId)
+      }}
       onRenameProject={(projectId, name) => {
         commands.renameProject(projectId, name)
       }}

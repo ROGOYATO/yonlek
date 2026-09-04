@@ -5,26 +5,21 @@
 The latest user-confirmed behavior commit is:
 
 ```text
-d976d0d  TDD 145-147: add task duplication
+e71af4e  TDD 148-152: add task archiving
 ```
 
 Verified on Windows from `C:\Users\yavuz\git\yonlek`:
 
 ```text
-Tests: 305 passed
+Tests: 310 passed across 32 files
 Lint: 0 warnings, 0 errors
 Build: passed
 Working tree: clean after commit
-Push: origin/main updated
+Push: origin/main updated from 1777db5 to e71af4e
 ```
 
-The repository folder was renamed from `workspace-app` to `yonlek` before this
-batch. The first rename attempt failed because the interactive PowerShell shell
-was still inside the directory. After moving to `C:\Users\yavuz\git`, the
-rename succeeded without changing Git history or repository contents.
-
-A later documentation-only commit can advance repository HEAD without changing
-this behavior checkpoint.
+The preceding docs-only checkpoint was `1777db5`. TDD 148-152 then added Task
+archive/restore and advanced the behavior baseline to `e71af4e`.
 
 This log records completed behavior cycles. RED was observed before the
 corresponding production implementation unless a row is explicitly marked as
@@ -990,10 +985,133 @@ Wire archive/restore commands through `WorkspaceRoot`. Normal Task lists and
 summaries operate on active Tasks only. Render an `Archived tasks` section for
 archived roots with semantic `Restore task <title>` buttons.
 
-## Prepared verification target after TDD 152
+## Confirmed checkpoint after TDD 152
 
-This batch starts from clean `main` at `1777db5`. Five new behavior tests are
-prepared, so the expected full-suite count is 310 if the live repository test
-inventory is otherwise unchanged. The bundle must still treat the live runner
-output as authoritative and must not commit unless focused GREENs, lint, the
-full test suite, production build, and diff checks all pass.
+The repaired TDD 150-152 resume completed from `1777db5` and created:
+
+```text
+e71af4e  TDD 148-152: add task archiving
+```
+
+Live verification:
+
+```text
+Tests: 310 passed across 32 files
+Lint: 0 warnings, 0 errors
+Build: passed
+Working tree: clean after commit
+Push: origin/main updated from 1777db5 to e71af4e
+```
+
+TDD 150 RED was re-established for the intended behavior failure before GREEN.
+TDD 151 and 152 then completed normally.
+
+## Line-ending policy before TDD 153
+
+Repeated Windows Git warnings showed that bundle payloads were writing LF while
+the checkout was still governed by local `core.autocrlf` behavior. The project
+now carries an explicit `.gitattributes` rule:
+
+```text
+* text=auto eol=lf
+```
+
+Repository text is therefore LF on every platform. Guarded bundle payloads write
+UTF-8 LF and the runner audits changed repository text before staging. This is a
+repository-format rule, not a mass rewrite of unrelated files.
+
+## TDD 153 resume runner correction
+
+The first Project-archive bundle stopped before TDD 153 RED after adding only
+`.gitattributes`. Its Git helper used an explicit parameter named `Args`, which
+collided with PowerShell's automatic `$args`/`@args` behavior and produced a
+false "not tracked at HEAD" result for `src/domain/project.test.ts`. No Project
+archive test or production file changed in that run.
+
+The corrected resume keeps `e71af4e` plus untracked `.gitattributes` as the
+starting boundary. It uses direct Git plumbing checks with unambiguous argument
+variables. RED tests live in five new focused files, so their setup no longer
+depends on the historical layout of large existing test files. Production
+changes still target the same public domain, reducer, persistence, command, and
+rendered UI seams.
+
+## TDD 153 - Project archive value semantics
+
+**RED**
+
+Add focused `src/domain/project-archive.test.ts` coverage for `archiveProject` and `restoreProject`. The source
+Project must remain unchanged, archive must return a Project with `archivedAt`,
+and restore must reproduce the original Project value.
+
+Expected RED marker: `archiveProject is not a function`.
+
+**GREEN**
+
+Add optional `Project.archivedAt`, `archiveProject`, and `restoreProject`.
+
+## TDD 154 - Workspace Project archive preservation
+
+**RED**
+
+Add focused reducer coverage with Project-owned Tasks and a List, an Area assignment, and a
+relationship edge. Project archive and restore must change only the Project
+archive field. Tasks, Lists, Area assignment, and relationships remain intact.
+
+**GREEN**
+
+Add `project/archived` and `project/restored` actions using the Project-domain
+archive functions.
+
+## TDD 155 - Archived Project persistence validation
+
+**RED**
+
+Add focused storage coverage that round-trips a valid Project `archivedAt` ISO instant and
+rejects an invalid value through the existing `Workspace storage is invalid`
+contract.
+
+**GREEN**
+
+Validate optional Project `archivedAt` in storage version 1. No version bump is
+needed because the field is optional and additive.
+
+## TDD 156 - Persisted Project archive commands
+
+**RED**
+
+Add focused command-boundary coverage that archives a Project using the injected runtime
+clock, proves its Task is not Task-archived, verifies persistence, restores the
+Project, and verifies persistence again.
+
+Expected RED marker: `archiveProject is not a function`.
+
+**GREEN**
+
+Add `archiveProject(projectId)` and `restoreProject(projectId)` commands through
+the existing reducer/store persistence path.
+
+## TDD 157 - Project archive and restore UI
+
+**RED**
+
+Add a focused rendered interaction test with one active Task and one independently
+archived Task. Archiving the Project must remove the Project and both Tasks from
+normal surfaces, expose `Restore project <name>`, and hide the independent Task
+archive while its Project is archived. Restoring the Project returns only the
+independently active Task; the independently archived Task remains in the Task
+archive.
+
+Expected RED marker: `Archive project Robotics Research`.
+
+**GREEN**
+
+Normal workspace UI uses active Projects. Active Task calculation requires both
+an unarchived Task and an active owning Project. Project selectors, Area counts,
+Project focus, Task move targets, and archive surfaces use the same active
+Project boundary. Add semantic Project archive and restore controls.
+
+## Prepared verification target after TDD 157
+
+This batch starts from clean `main` at `e71af4e`. Five focused behavior test files are prepared, so the expected suite count is 315 across 37 test files if the live test inventory is otherwise unchanged. The live runner remains authoritative and must pass focused
+GREENs, zero-warning lint, the full suite, production build, line-ending audits,
+and staged diff checks before commit or push.

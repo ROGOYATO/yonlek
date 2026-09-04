@@ -67,8 +67,16 @@ A Checklist item belongs to one Task and is not another hierarchy level.
 - [x] Assign Projects to Areas
 - [x] Clear Area assignment when an Area is deleted
 - [x] Manual ordering
-- [ ] Archive and restore
+- [x] Archive and restore
 - [ ] Project templates
+
+Project archive is reversible and uses optional `archivedAt` state on the
+Project. Archiving a Project hides the Project and all of its Tasks from normal
+workspace surfaces without rewriting each Task's own archive state. Lists, Area
+assignment, Project description, Tasks, and relationship edges remain in
+workspace state and persistence. Restoring the Project makes independently
+active Tasks visible again while Tasks that were archived separately remain
+archived.
 
 Project deletion is a selective cleanup operation. It must remove only data
 owned by the deleted Project or data that points to one of its deleted Tasks.

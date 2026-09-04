@@ -2,6 +2,7 @@
   id: string
   name: string
   createdAt: string
+  archivedAt?: string
   description?: string
   areaId?: string
 }
@@ -24,6 +25,23 @@ export function createProject(input: CreateProjectInput): Project {
     name,
     createdAt: input.now,
   }
+}
+
+
+export function archiveProject(
+  project: Project,
+  archivedAt: string,
+): Project {
+  return {
+    ...project,
+    archivedAt,
+  }
+}
+
+export function restoreProject(project: Project): Project {
+  const restored = { ...project }
+  delete restored.archivedAt
+  return restored
 }
 
 

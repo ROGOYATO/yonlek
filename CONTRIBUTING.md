@@ -5,20 +5,18 @@
 The current user-confirmed behavior baseline is:
 
 - branch: `main`
-- behavior commit: `d976d0d`
+- behavior commit: `e71af4e` (`TDD 148-152: add task archiving`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- verified suite: 305 tests
+- verified suite: 310 tests across 32 files
 - lint: 0 warnings and 0 errors
 - production build: passed
+- post-commit tree: clean
+- push: `origin/main` updated successfully
 
-The repository, npm package, and product slug now use `yonlek`. The browser
-storage keys intentionally keep the historical `workspace-app.*` prefix until a
-tested migration is added.
-
-Documentation-only maintenance may start from this behavior commit and create a
-later docs commit. In that case, `d976d0d` remains the behavior baseline even
-when repository HEAD advances through documentation changes.
+The repository, npm package, and product slug use `yonlek`. The browser storage
+keys intentionally keep the historical `workspace-app.*` prefix until a tested
+migration is added.
 
 ## Test-first rule
 
@@ -849,3 +847,59 @@ The first repaired TDD 150 resume exposed this distinction. Vitest visibly
 printed the intended `AssertionError: expected [Function] to throw an error`,
 but the runner compared the marker against unsanitized captured output and
 falsely reported it missing. No production change was needed for that stop.
+
+## Repository line endings
+
+The repository defines text normalization in `.gitattributes`:
+
+```text
+* text=auto eol=lf
+```
+
+Git stores and checks out repository text as LF regardless of a developer's
+`core.autocrlf` setting. This keeps generated bundles, Linux tooling, Windows
+Git, and CI on one text format and removes repeated LF-to-CRLF warnings from
+guarded patch runs.
+
+Bundle writers must write repository payloads as UTF-8 using LF. Normalized
+SHA-256 guards still normalize line endings before comparison, but the final
+working-tree bytes must also match the repository EOL policy. PowerShell
+launcher scripts distributed outside the repository remain ASCII-safe and may
+use CRLF because they are Windows operator files, not repository source.
+
+Line-ending policy is a repository contract, not a reason to rewrite unrelated
+files. Do not run a blanket normalization commit unless Git actually reports
+content changes that need review.
+
+
+## PowerShell Git argument wrappers
+
+Do not name an explicit PowerShell parameter `Args`. PowerShell already reserves
+`$args` as the automatic array of undeclared arguments, and `@args` has special
+pass-through splatting behavior. Git wrapper functions must use an unambiguous
+name such as `GitArguments` or invoke the fixed Git command directly.
+
+The first TDD 153 resume used `param([string[]]$Args)` and then splatted
+`@Args`. Its first tracked-file guard falsely reported
+`src/domain/project.test.ts` as untracked even though the file was part of
+`e71af4e`. The runner stopped before any TDD 153 source change. Future bundle
+preflights should exercise the Git plumbing check against a known tracked file
+before the first patch.
+
+## Project archive integrity
+
+Project archive and Task archive are separate state transitions.
+
+- Project archive sets optional `Project.archivedAt`.
+- It does not rewrite `Task.archivedAt`.
+- Normal UI surfaces include only active Projects and Tasks that belong to active
+  Projects.
+- Restoring a Project does not restore Tasks that were archived independently.
+- Lists, Area assignment, description, Tasks, and relationship edges are
+  retained while the Project is archived.
+- Delete remains the destructive operation and continues to remove owned Lists,
+  Tasks, and affected relationship edges.
+
+Tests should preserve that distinction. Do not implement Project archive as
+Project delete plus reconstruction, and do not cascade Task archive state merely
+to hide a Project.
