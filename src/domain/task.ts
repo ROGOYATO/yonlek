@@ -1,3 +1,5 @@
+import type { ChecklistItem } from './checklist'
+
 export type TaskStatus = 'todo' | 'doing' | 'done'
 export type TaskPriority = 'low' | 'normal' | 'high'
 
@@ -12,6 +14,7 @@ export interface Task {
   description?: string
   listId?: string
   parentTaskId?: string
+  checklist?: ChecklistItem[]
 }
 
 export interface CreateTaskInput {

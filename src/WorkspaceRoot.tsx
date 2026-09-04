@@ -53,6 +53,18 @@ export function WorkspaceRoot({
       onChangeTaskList={(taskId, listId) => {
         commands.changeTaskList(taskId, listId)
       }}
+      onAddChecklistItem={(taskId, text) => {
+        commands.addChecklistItem(taskId, text)
+      }}
+      onRenameChecklistItem={(taskId, itemId, text) => {
+        commands.renameChecklistItem(taskId, itemId, text)
+      }}
+      onChangeChecklistItemCompleted={(taskId, itemId, completed) => {
+        commands.changeChecklistItemCompleted(taskId, itemId, completed)
+      }}
+      onDeleteChecklistItem={(taskId, itemId) => {
+        commands.deleteChecklistItem(taskId, itemId)
+      }}
       onCreateProject={(name) => {
         commands.addProject(name)
       }}

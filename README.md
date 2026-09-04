@@ -9,14 +9,13 @@ The current implementation is intentionally small. It is being developed as a se
 Starting checkpoint for this batch:
 
 - branch: `main`
-- commit: `7a9dae7` (`TDD 093-100: add Lists to hierarchy`)
-- TDD state: cycle 107 GREEN
-- tests: 189 passing
+- commit: `f444e9d` (`TDD 101-107: add Subtasks`)
+- TDD state: cycle 113 GREEN
+- tests: 206 passing
 - production build: passing
 - lint: 0 warnings, 0 errors
 
-Subtasks are represented by ordinary Tasks with optional `parentTaskId`, so the
-existing task model remains reusable instead of introducing a second task type.
+Checklists are lightweight Task-local data and remain distinct from Subtasks.
 
 See [`FEATURES.md`](./FEATURES.md) for the maintained feature-first roadmap.
 
@@ -338,3 +337,17 @@ Workspace
 → Task
 → Subtask
 ```
+
+
+Checklists:
+
+- each Task can optionally contain lightweight Checklist items;
+- Checklist items have an ID, text, and completion state;
+- create, rename, complete/uncomplete, and delete Checklist items;
+- deleting the final item removes the optional `checklist` field;
+- Checklist item IDs must be unique within their Task;
+- persist and validate Checklist items and completion state;
+- restore Checklist state through browser composition;
+- show completed/total Checklist progress separately from the stable Task title;
+- Checklists are not Subtasks and do not have Project/List/status/priority
+  hierarchy of their own.

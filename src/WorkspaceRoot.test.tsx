@@ -1104,3 +1104,106 @@ describe('WorkspaceRoot subtask summaries', () => {
     ).toBe('0 subtasks')
   })
 })
+
+
+describe('WorkspaceRoot checklists', () => {
+  it('lets a user add, complete, and delete a checklist item', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1', 'check-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T05:50:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    commands.addTask(project.id, 'Draft experiment plan')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.type(
+      screen.getByLabelText('Checklist item for Draft experiment plan'),
+      'Review safety notes',
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Add checklist item to Draft experiment plan',
+      }),
+    )
+
+    expect(screen.getByText('Review safety notes')).toBeTruthy()
+
+    const checkbox = screen.getByLabelText(
+      'Checklist item Review safety notes complete',
+    )
+    await user.click(checkbox)
+
+    expect(store.getState().tasks[0]?.checklist?.[0]?.completed).toBe(true)
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Delete checklist item Review safety notes from Draft experiment plan',
+      }),
+    )
+
+    expect(store.getState().tasks[0]).not.toHaveProperty('checklist')
+  })
+
+  it('lets a user rename a checklist item', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1', 'check-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T05:51:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+    commands.addChecklistItem(task.id, 'Review safety notes')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    const input = screen.getByLabelText(
+      'Checklist text for Review safety notes in Draft experiment plan',
+    )
+    await user.clear(input)
+    await user.type(input, 'Confirm camera mount')
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Save checklist item Review safety notes',
+      }),
+    )
+
+    expect(store.getState().tasks[0]?.checklist?.[0]?.text).toBe(
+      'Confirm camera mount',
+    )
+    expect(screen.getByText('Confirm camera mount')).toBeTruthy()
+  })
+})
+
+
+describe('WorkspaceRoot checklist progress', () => {
+  it('shows completed and total checklist item counts without changing the task title', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1', 'check-1', 'check-2']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T06:10:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+    const first = commands.addChecklistItem(task.id, 'Review safety notes')
+    commands.addChecklistItem(task.id, 'Confirm camera mount')
+    commands.changeChecklistItemCompleted(task.id, first.id, true)
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    expect(screen.getByText('Draft experiment plan')).toBeTruthy()
+    expect(
+      screen.getByLabelText('Checklist progress for Draft experiment plan')
+        .textContent,
+    ).toBe('1/2 checklist items complete')
+  })
+})

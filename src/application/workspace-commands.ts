@@ -1,3 +1,4 @@
+import { createChecklistItem } from '../domain/checklist'
 import { createArea } from '../domain/area'
 import { createProject } from '../domain/project'
 import { createTaskList } from '../domain/task-list'
@@ -23,6 +24,10 @@ export interface WorkspaceCommands {
   renameTaskList(listId: string, name: string): void
   deleteTaskList(listId: string): void
   changeTaskList(taskId: string, listId: string | null): void
+  addChecklistItem(taskId: string, text: string): ReturnType<typeof createChecklistItem>
+  renameChecklistItem(taskId: string, itemId: string, text: string): void
+  changeChecklistItemCompleted(taskId: string, itemId: string, completed: boolean): void
+  deleteChecklistItem(taskId: string, itemId: string): void
   addProject(name: string): ReturnType<typeof createProject>
   addTask(projectId: string, title: string, listId?: string): ReturnType<typeof createTask>
   addSubtask(parentTaskId: string, title: string): ReturnType<typeof createSubtask>
@@ -117,6 +122,47 @@ export function createWorkspaceCommands(
         type: 'task/listChanged',
         taskId,
         listId,
+      })
+    },
+
+    addChecklistItem(taskId, text) {
+      const item = createChecklistItem({
+        id: runtime.nextId(),
+        text,
+      })
+
+      store.dispatch({
+        type: 'task/checklistItemAdded',
+        taskId,
+        item,
+      })
+
+      return item
+    },
+
+    renameChecklistItem(taskId, itemId, text) {
+      store.dispatch({
+        type: 'task/checklistItemTextChanged',
+        taskId,
+        itemId,
+        text,
+      })
+    },
+
+    changeChecklistItemCompleted(taskId, itemId, completed) {
+      store.dispatch({
+        type: 'task/checklistItemCompletedChanged',
+        taskId,
+        itemId,
+        completed,
+      })
+    },
+
+    deleteChecklistItem(taskId, itemId) {
+      store.dispatch({
+        type: 'task/checklistItemDeleted',
+        taskId,
+        itemId,
       })
     },
 

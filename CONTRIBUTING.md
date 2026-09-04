@@ -430,3 +430,27 @@ Subtask count to every Task title. The new count assertion passed, but 10 older
 interaction tests could no longer locate Tasks by their exact titles. With user
 approval, only the new TDD 107 assertion was corrected; existing tests were not
 changed or weakened.
+
+
+## Checklist integrity
+
+Checklists are Task-local lightweight data, distinct from Subtasks.
+
+Each Checklist item contains:
+
+- `id`
+- `text`
+- `completed`
+
+Rules:
+
+- Checklist item text is trimmed and must be non-empty.
+- Item IDs are unique within the containing Task.
+- Checklist item identity is Task-local; do not require global uniqueness
+  across different Tasks.
+- Deleting the final Checklist item removes the optional `checklist` field
+  rather than persisting an unnecessary empty array.
+- Checklist completion does not change Task status.
+- Checklist progress is adjacent summary text and must not be appended to the
+  stable Task title.
+- Existing Tasks without `checklist` remain valid and require no migration.

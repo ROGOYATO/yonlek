@@ -1,4 +1,9 @@
 import { renameArea, type Area } from './area'
+import {
+  renameChecklistItem,
+  setChecklistItemCompleted,
+  type ChecklistItem,
+} from './checklist'
 import { renameTaskList, type TaskList } from './task-list'
 import {
   moveProjectToArea,
@@ -51,6 +56,10 @@ export type WorkspaceAction =
   | { type: 'task/descriptionChanged'; taskId: string; description: string | null }
   | { type: 'task/projectChanged'; taskId: string; projectId: string }
   | { type: 'task/listChanged'; taskId: string; listId: string | null }
+  | { type: 'task/checklistItemAdded'; taskId: string; item: ChecklistItem }
+  | { type: 'task/checklistItemTextChanged'; taskId: string; itemId: string; text: string }
+  | { type: 'task/checklistItemCompletedChanged'; taskId: string; itemId: string; completed: boolean }
+  | { type: 'task/checklistItemDeleted'; taskId: string; itemId: string }
   | { type: 'task/deleted'; taskId: string }
 
 export function workspaceReducer(
@@ -380,6 +389,94 @@ export function workspaceReducer(
         ),
       }
     }
+
+    case 'task/checklistItemAdded': {
+      const target = state.tasks.find((task) => task.id === action.taskId)
+
+      if (!target) {
+        throw new Error('Cannot add a checklist item to a missing task')
+      }
+
+      if (
+        (target.checklist ?? []).some(
+          (item) => item.id === action.item.id,
+        )
+      ) {
+        throw new Error('Cannot add a duplicate checklist item')
+      }
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? {
+                ...task,
+                checklist: [...(task.checklist ?? []), action.item],
+              }
+            : task,
+        ),
+      }
+    }
+
+    case 'task/checklistItemTextChanged':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? {
+                ...task,
+                checklist: (task.checklist ?? []).map((item) =>
+                  item.id === action.itemId
+                    ? renameChecklistItem(item, action.text)
+                    : item,
+                ),
+              }
+            : task,
+        ),
+      }
+
+    case 'task/checklistItemCompletedChanged':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? {
+                ...task,
+                checklist: (task.checklist ?? []).map((item) =>
+                  item.id === action.itemId
+                    ? setChecklistItemCompleted(
+                        item,
+                        action.completed,
+                      )
+                    : item,
+                ),
+              }
+            : task,
+        ),
+      }
+
+    case 'task/checklistItemDeleted':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) => {
+          if (task.id !== action.taskId || task.checklist === undefined) {
+            return task
+          }
+
+          const checklist = task.checklist.filter(
+            (item) => item.id !== action.itemId,
+          )
+          const next = { ...task }
+
+          if (checklist.length === 0) {
+            delete next.checklist
+          } else {
+            next.checklist = checklist
+          }
+
+          return next
+        }),
+      }
 
     case 'task/deleted': {
       const deletedIds = new Set([action.taskId])

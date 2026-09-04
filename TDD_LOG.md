@@ -516,3 +516,26 @@ Draft experiment plan
 
 The implementation was changed accordingly. The full WorkspaceRoot suite must
 pass before post-107 documentation and final checks run.
+
+
+## Cycles 108-113
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 108 | Checklist item domain behavior | GREEN |
+| 109 | Task-local Checklist reducer lifecycle | GREEN |
+| 110 | Checklist application commands | GREEN |
+| 111 | Bare-bone Checklist interaction UI | GREEN |
+| 112 | Checklist persistence validation and browser reload | GREEN |
+| 113 | Checklist completed/total progress summary | GREEN |
+
+Expected successful checkpoint:
+
+```text
+Tests: 206 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+```
+
+Checklist data is optional and nested under Task, so existing stored Tasks remain
+backward-compatible without a storage-version migration.

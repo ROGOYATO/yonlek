@@ -663,3 +663,100 @@ describe('subtask project moves', () => {
     ).toThrow('Cannot move a subtask away from its parent project')
   })
 })
+
+
+describe('task checklists', () => {
+  const item = {
+    id: 'check-1',
+    text: 'Review safety notes',
+    completed: false,
+  }
+
+  it('adds a checklist item to an existing task and rejects a missing task', () => {
+    const state = {
+      projects: [project],
+      tasks: [task],
+    }
+
+    const next = workspaceReducer(state, {
+      type: 'task/checklistItemAdded',
+      taskId: task.id,
+      item,
+    } as never)
+
+    expect(next.tasks[0]?.checklist).toEqual([item])
+
+    expect(() =>
+      workspaceReducer(state, {
+        type: 'task/checklistItemAdded',
+        taskId: 'missing-task',
+        item,
+      } as never),
+    ).toThrow('Cannot add a checklist item to a missing task')
+  })
+
+  it('rejects duplicate checklist item ids within one task', () => {
+    const listedTask = { ...task, checklist: [item] }
+
+    expect(() =>
+      workspaceReducer(
+        {
+          projects: [project],
+          tasks: [listedTask],
+        },
+        {
+          type: 'task/checklistItemAdded',
+          taskId: task.id,
+          item: { ...item, text: 'Another item' },
+        } as never,
+      ),
+    ).toThrow('Cannot add a duplicate checklist item')
+  })
+
+  it('renames and completes a checklist item without mutating previous state', () => {
+    const listedTask = { ...task, checklist: [item] }
+    const state = {
+      projects: [project],
+      tasks: [listedTask],
+    }
+
+    const renamed = workspaceReducer(state, {
+      type: 'task/checklistItemTextChanged',
+      taskId: task.id,
+      itemId: item.id,
+      text: 'Confirm camera mount',
+    } as never)
+
+    const completed = workspaceReducer(renamed, {
+      type: 'task/checklistItemCompletedChanged',
+      taskId: task.id,
+      itemId: item.id,
+      completed: true,
+    } as never)
+
+    expect(completed.tasks[0]?.checklist?.[0]).toMatchObject({
+      text: 'Confirm camera mount',
+      completed: true,
+    })
+    expect(state.tasks[0]?.checklist?.[0]).toEqual(item)
+  })
+
+  it('deleting the last checklist item preserves the task and clears the optional field', () => {
+    const listedTask = { ...task, checklist: [item] }
+
+    const next = workspaceReducer(
+      {
+        projects: [project],
+        tasks: [listedTask],
+      },
+      {
+        type: 'task/checklistItemDeleted',
+        taskId: task.id,
+        itemId: item.id,
+      } as never,
+    )
+
+    expect(next.tasks[0]?.id).toBe(task.id)
+    expect(next.tasks[0]).not.toHaveProperty('checklist')
+  })
+})

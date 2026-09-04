@@ -563,3 +563,50 @@ it('restores a persisted subtask relationship', () => {
 
   expect(screen.getByText('Subtask of Draft experiment plan')).toBeTruthy()
 })
+
+
+it('restores checklist items and completion state from browser storage', () => {
+  const storage = new MemoryStore()
+  const project = createProject({
+    id: 'project-1',
+    name: 'Robotics Research',
+    now: '2026-09-04T06:05:00.000Z',
+  })
+  const task = {
+    ...createTask({
+      id: 'task-1',
+      projectId: project.id,
+      title: 'Draft experiment plan',
+      now: '2026-09-04T06:06:00.000Z',
+    }),
+    checklist: [
+      {
+        id: 'check-1',
+        text: 'Review safety notes',
+        completed: true,
+      },
+    ],
+  }
+
+  saveWorkspace(storage, {
+    projects: [project],
+    tasks: [task],
+  })
+
+  render(
+    <BrowserApp
+      storage={storage}
+      runtime={{
+        nextId: () => 'unused-id',
+        now: () => '2026-09-04T06:07:00.000Z',
+      }}
+    />,
+  )
+
+  expect(screen.getByText('Review safety notes')).toBeTruthy()
+  expect(
+    (screen.getByLabelText(
+      'Checklist item Review safety notes complete',
+    ) as HTMLInputElement).checked,
+  ).toBe(true)
+})

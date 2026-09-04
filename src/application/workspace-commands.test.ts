@@ -305,3 +305,44 @@ describe('subtask command', () => {
     expect(loadWorkspace(storage).tasks[1]?.parentTaskId).toBe(parent.id)
   })
 })
+
+
+describe('checklist commands', () => {
+  it('creates, renames, completes, and deletes a persisted checklist item', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['project-1', 'task-1', 'check-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T05:40:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+
+    const item = commands.addChecklistItem(
+      task.id,
+      'Review safety notes',
+    )
+    commands.renameChecklistItem(
+      task.id,
+      item.id,
+      'Confirm camera mount',
+    )
+    commands.changeChecklistItemCompleted(task.id, item.id, true)
+
+    expect(store.getState().tasks[0]?.checklist?.[0]).toMatchObject({
+      id: item.id,
+      text: 'Confirm camera mount',
+      completed: true,
+    })
+    expect(loadWorkspace(storage).tasks[0]?.checklist?.[0]).toMatchObject({
+      id: item.id,
+      completed: true,
+    })
+
+    commands.deleteChecklistItem(task.id, item.id)
+
+    expect(store.getState().tasks[0]).not.toHaveProperty('checklist')
+    expect(loadWorkspace(storage).tasks[0]).not.toHaveProperty('checklist')
+  })
+})

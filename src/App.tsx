@@ -24,6 +24,10 @@ export interface AppProps {
   onRenameTaskList?: (listId: string, name: string) => void
   onDeleteTaskList?: (listId: string) => void
   onChangeTaskList?: (taskId: string, listId: string | null) => void
+  onAddChecklistItem?: (taskId: string, text: string) => void
+  onRenameChecklistItem?: (taskId: string, itemId: string, text: string) => void
+  onChangeChecklistItemCompleted?: (taskId: string, itemId: string, completed: boolean) => void
+  onDeleteChecklistItem?: (taskId: string, itemId: string) => void
   onCreateProject?: (name: string) => void
   onRenameProject?: (projectId: string, name: string) => void
   onChangeProjectDescription?: (projectId: string, description: string | null) => void
@@ -55,6 +59,10 @@ export function App({
   onRenameTaskList,
   onDeleteTaskList,
   onChangeTaskList,
+  onAddChecklistItem,
+  onRenameChecklistItem,
+  onChangeChecklistItemCompleted,
+  onDeleteChecklistItem,
   onCreateProject,
   onRenameProject,
   onChangeProjectDescription,
@@ -81,6 +89,8 @@ export function App({
   const [taskTitles, setTaskTitles] = useState<Record<string, string>>({})
   const [newTaskLists, setNewTaskLists] = useState<Record<string, string>>({})
   const [subtaskTitles, setSubtaskTitles] = useState<Record<string, string>>({})
+  const [checklistTexts, setChecklistTexts] = useState<Record<string, string>>({})
+  const [checklistEdits, setChecklistEdits] = useState<Record<string, string>>({})
   const [taskEdits, setTaskEdits] = useState<Record<string, string>>({})
   const [taskDescriptions, setTaskDescriptions] = useState<Record<string, string>>({})
   const [viewPreferences, setViewPreferences] = useState<ViewPreferences>(
@@ -703,6 +713,11 @@ export function App({
                             (candidate) => candidate.id === task.parentTaskId,
                           )
                     const subtaskTitle = subtaskTitles[task.id] ?? ''
+                    const checklistText = checklistTexts[task.id] ?? ''
+                    const checklist = task.checklist ?? []
+                    const completedChecklistCount = checklist.filter(
+                      (item) => item.completed,
+                    ).length
                     const immediateSubtaskCount = state.tasks.filter(
                       (candidate) => candidate.parentTaskId === task.id,
                     ).length
@@ -758,6 +773,147 @@ export function App({
                               Add subtask to {task.title}
                             </button>
                           </form>
+                        ) : null}
+
+                        {onAddChecklistItem ? (
+                          <section>
+                            <h4>Checklist for {task.title}</h4>
+                            <span
+                              aria-label={`Checklist progress for ${task.title}`}
+                            >
+                              {completedChecklistCount}/{checklist.length}{' '}
+                              checklist items complete
+                            </span>
+                            <form
+                              onSubmit={(event) => {
+                                event.preventDefault()
+
+                                try {
+                                  onAddChecklistItem(task.id, checklistText)
+                                  setChecklistTexts((current) => ({
+                                    ...current,
+                                    [task.id]: '',
+                                  }))
+                                  setError(null)
+                                } catch (caught) {
+                                  setError(errorMessage(caught))
+                                }
+                              }}
+                            >
+                              <label htmlFor={`checklist-new-${task.id}`}>
+                                Checklist item for {task.title}
+                              </label>
+                              <input
+                                id={`checklist-new-${task.id}`}
+                                value={checklistText}
+                                onChange={(event) =>
+                                  setChecklistTexts((current) => ({
+                                    ...current,
+                                    [task.id]: event.target.value,
+                                  }))
+                                }
+                              />
+                              <button type="submit">
+                                Add checklist item to {task.title}
+                              </button>
+                            </form>
+
+                            {checklist.length === 0 ? (
+                              <p>No checklist items.</p>
+                            ) : (
+                              <ul>
+                                {checklist.map((item) => {
+                                  const editKey = `${task.id}:${item.id}`
+                                  const editedChecklistText =
+                                    checklistEdits[editKey] ?? item.text
+
+                                  return (
+                                    <li key={item.id}>
+                                      <span>{item.text}</span>
+                                      {onChangeChecklistItemCompleted ? (
+                                        <>
+                                          <label
+                                            htmlFor={`checklist-complete-${task.id}-${item.id}`}
+                                          >
+                                            Checklist item {item.text} complete
+                                          </label>
+                                          <input
+                                            id={`checklist-complete-${task.id}-${item.id}`}
+                                            type="checkbox"
+                                            checked={item.completed}
+                                            onChange={(event) =>
+                                              onChangeChecklistItemCompleted(
+                                                task.id,
+                                                item.id,
+                                                event.target.checked,
+                                              )
+                                            }
+                                          />
+                                        </>
+                                      ) : null}
+
+                                      {onRenameChecklistItem ? (
+                                        <form
+                                          onSubmit={(event) => {
+                                            event.preventDefault()
+
+                                            try {
+                                              onRenameChecklistItem(
+                                                task.id,
+                                                item.id,
+                                                editedChecklistText,
+                                              )
+                                              setChecklistEdits((current) => {
+                                                const next = { ...current }
+                                                delete next[editKey]
+                                                return next
+                                              })
+                                              setError(null)
+                                            } catch (caught) {
+                                              setError(errorMessage(caught))
+                                            }
+                                          }}
+                                        >
+                                          <label
+                                            htmlFor={`checklist-edit-${task.id}-${item.id}`}
+                                          >
+                                            Checklist text for {item.text} in {task.title}
+                                          </label>
+                                          <input
+                                            id={`checklist-edit-${task.id}-${item.id}`}
+                                            value={editedChecklistText}
+                                            onChange={(event) =>
+                                              setChecklistEdits((current) => ({
+                                                ...current,
+                                                [editKey]: event.target.value,
+                                              }))
+                                            }
+                                          />
+                                          <button type="submit">
+                                            Save checklist item {item.text}
+                                          </button>
+                                        </form>
+                                      ) : null}
+
+                                      {onDeleteChecklistItem ? (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            onDeleteChecklistItem(
+                                              task.id,
+                                              item.id,
+                                            )
+                                          }
+                                        >
+                                          Delete checklist item {item.text} from {task.title}
+                                        </button>
+                                      ) : null}
+                                    </li>
+                                  )
+                                })}
+                              </ul>
+                            )}
+                          </section>
                         ) : null}
 
                         {onChangeTaskDescription ? (

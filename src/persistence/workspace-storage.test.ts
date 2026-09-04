@@ -865,3 +865,123 @@ describe('subtask persistence', () => {
     expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
   })
 })
+
+
+describe('checklist persistence', () => {
+  const project = {
+    id: 'project-1',
+    name: 'Robotics Research',
+    createdAt: '2026-09-04T06:00:00.000Z',
+  }
+  const task = {
+    id: 'task-1',
+    projectId: project.id,
+    title: 'Draft experiment plan',
+    status: 'todo',
+    priority: 'normal',
+    createdAt: '2026-09-04T06:01:00.000Z',
+  }
+
+  it('round-trips a valid optional checklist', () => {
+    const store = new MemoryStore()
+    const listedTask = {
+      ...task,
+      checklist: [
+        {
+          id: 'check-1',
+          text: 'Review safety notes',
+          completed: true,
+        },
+      ],
+    }
+
+    saveWorkspace(store, {
+      projects: [project],
+      tasks: [listedTask],
+    })
+
+    expect(loadWorkspace(store).tasks[0]?.checklist).toEqual(
+      listedTask.checklist,
+    )
+  })
+
+  it('rejects an invalid persisted checklist item', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            projects: [project],
+            tasks: [
+              {
+                ...task,
+                checklist: [
+                  {
+                    id: 'check-1',
+                    text: 42,
+                    completed: false,
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects duplicate checklist item ids within a task', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            projects: [project],
+            tasks: [
+              {
+                ...task,
+                checklist: [
+                  {
+                    id: 'check-1',
+                    text: 'Review safety notes',
+                    completed: false,
+                  },
+                  {
+                    id: 'check-1',
+                    text: 'Confirm camera mount',
+                    completed: true,
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects a non-array persisted checklist', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            projects: [project],
+            tasks: [
+              {
+                ...task,
+                checklist: 'not-an-array',
+              },
+            ],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+})
