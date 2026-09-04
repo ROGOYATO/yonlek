@@ -1,4 +1,9 @@
 import { createChecklistItem } from '../domain/checklist'
+import {
+  createCustomField,
+  type CustomFieldType,
+  type CustomFieldValue,
+} from '../domain/custom-field'
 import { createArea } from '../domain/area'
 import { createProject } from '../domain/project'
 import { createPerson } from '../domain/person'
@@ -19,6 +24,10 @@ export interface WorkspaceRuntime {
 }
 
 export interface WorkspaceCommands {
+  addCustomField(name: string, type: CustomFieldType): ReturnType<typeof createCustomField>
+  renameCustomField(fieldId: string, name: string): void
+  deleteCustomField(fieldId: string): void
+  changeTaskCustomFieldValue(taskId: string, fieldId: string, value: CustomFieldValue | null): void
   addPerson(name: string): ReturnType<typeof createPerson>
   renamePerson(personId: string, name: string): void
   deletePerson(personId: string): void
@@ -66,6 +75,46 @@ export function createWorkspaceCommands(
   runtime: WorkspaceRuntime,
 ): WorkspaceCommands {
   return {
+    addCustomField(name, type) {
+      const field = createCustomField({
+        id: runtime.nextId(),
+        name,
+        type,
+        now: runtime.now(),
+      })
+
+      store.dispatch({
+        type: 'customField/added',
+        field,
+      })
+
+      return field
+    },
+
+    renameCustomField(fieldId, name) {
+      store.dispatch({
+        type: 'customField/nameChanged',
+        fieldId,
+        name,
+      })
+    },
+
+    deleteCustomField(fieldId) {
+      store.dispatch({
+        type: 'customField/deleted',
+        fieldId,
+      })
+    },
+
+    changeTaskCustomFieldValue(taskId, fieldId, value) {
+      store.dispatch({
+        type: 'task/customFieldValueChanged',
+        taskId,
+        fieldId,
+        value,
+      })
+    },
+
     addPerson(name) {
       const person = createPerson({
         id: runtime.nextId(),

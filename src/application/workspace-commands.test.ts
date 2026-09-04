@@ -486,3 +486,54 @@ describe('person and assignee commands', () => {
     expect(store.getState().tasks[0]).not.toHaveProperty('assigneeIds')
   })
 })
+
+
+describe('custom field commands', () => {
+  it('creates renames sets clears and deletes persisted custom fields', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['field-1', 'project-1', 'task-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T09:40:00.000Z',
+    })
+
+    const field = commands.addCustomField('Notes', 'text')
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+
+    commands.renameCustomField(field.id, 'Findings')
+    commands.changeTaskCustomFieldValue(
+      task.id,
+      field.id,
+      'Inspect mount',
+    )
+
+    expect(store.getState().customFields?.[0]?.name).toBe('Findings')
+    expect(store.getState().tasks[0]?.customFieldValues).toEqual({
+      [field.id]: 'Inspect mount',
+    })
+    expect(
+      loadWorkspace(storage).tasks[0]?.customFieldValues,
+    ).toEqual({
+      [field.id]: 'Inspect mount',
+    })
+
+    commands.changeTaskCustomFieldValue(task.id, field.id, null)
+    expect(store.getState().tasks[0]).not.toHaveProperty(
+      'customFieldValues',
+    )
+
+    commands.changeTaskCustomFieldValue(
+      task.id,
+      field.id,
+      'Inspect mount',
+    )
+    commands.deleteCustomField(field.id)
+
+    expect(store.getState()).not.toHaveProperty('customFields')
+    expect(store.getState().tasks[0]).not.toHaveProperty(
+      'customFieldValues',
+    )
+  })
+})

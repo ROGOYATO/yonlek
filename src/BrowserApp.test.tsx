@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 
 import { createArea } from './domain/area'
 import { createProject } from './domain/project'
+import { createCustomField } from './domain/custom-field'
 import { createPerson } from './domain/person'
 import { createTask } from './domain/task'
 import { createTaskList } from './domain/task-list'
@@ -703,4 +704,55 @@ it('restores persisted task assignee assignments from browser storage', () => {
       'Assignee Ada Lovelace for Draft experiment plan',
     ) as HTMLInputElement).checked,
   ).toBe(true)
+})
+
+
+it('restores persisted custom field values from browser storage', () => {
+  const storage = new MemoryStore()
+  const notes = createCustomField({
+    id: 'field-1',
+    name: 'Notes',
+    type: 'text',
+    now: '2026-09-04T10:05:00.000Z',
+  })
+  const project = createProject({
+    id: 'project-1',
+    name: 'Robotics Research',
+    now: '2026-09-04T10:06:00.000Z',
+  })
+  const task = {
+    ...createTask({
+      id: 'task-1',
+      projectId: project.id,
+      title: 'Draft experiment plan',
+      now: '2026-09-04T10:07:00.000Z',
+    }),
+    customFieldValues: {
+      [notes.id]: 'Inspect mount',
+    },
+  }
+
+  saveWorkspace(storage, {
+    customFields: [notes],
+    projects: [project],
+    tasks: [task],
+  })
+
+  render(
+    <BrowserApp
+      storage={storage}
+      runtime={{
+        nextId: () => 'unused-id',
+        now: () => '2026-09-04T10:08:00.000Z',
+      }}
+    />,
+  )
+
+  expect(
+    (
+      screen.getByLabelText(
+        'Custom field Notes for Draft experiment plan',
+      ) as HTMLInputElement
+    ).value,
+  ).toBe('Inspect mount')
 })

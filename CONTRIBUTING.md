@@ -523,3 +523,65 @@ Rules:
 - Existing version-1 workspace documents without People remain valid.
 - A local Person is not an authenticated account. Do not attach authorization,
   invitation, notification, or remote identity semantics to this model.
+
+
+## Custom Field integrity
+
+Custom Field definitions live at workspace level. Tasks reference definitions
+through keys in optional `customFieldValues`.
+
+Initial supported types:
+
+- `text`: string
+- `number`: finite number
+- `checkbox`: boolean
+
+Rules:
+
+- `WorkspaceState.customFields` remains optional for backward compatibility.
+- `Task.customFieldValues` remains optional.
+- Definition IDs are unique across the workspace.
+- Every Task value key must reference an existing definition.
+- Runtime value type must match the definition type.
+- Text values are normalized by trimming.
+- Clearing the final Task value removes `customFieldValues`.
+- Deleting a definition removes that value key from every Task.
+- Deleting the final definition removes `customFields`.
+- Existing version-1 workspaces without Custom Fields remain valid.
+- Do not silently mutate a definition's type after Tasks hold values; a later
+  type-change feature needs an explicit migration policy and tests.
+
+## Git push gate
+
+User-authorized bundles may push after a successful local commit.
+
+Order:
+
+1. RED/GREEN gates.
+2. Documentation/checklist updates.
+3. Full lint/tests/build.
+4. `git diff --check`.
+5. Local commit.
+6. Post-commit clean-tree check.
+7. Verify the configured `origin` URL.
+8. Non-force `git push -u origin main`.
+
+Allowed Yönlek remotes:
+
+- `https://github.com/ROGOYATO/yonlek.git`
+- `git@github.com:ROGOYATO/yonlek.git`
+
+Never force-push from a feature bundle. If push fails, stop and preserve the
+successful local commit and clean working tree. Do not reset or clean.
+
+
+### Controlled inputs with normalizing domain setters
+
+Do not feed a normalizing domain setter directly from every keystroke when the
+same persisted value controls the input. Normalization such as `trim()` can
+rewrite the field while the user is still composing text and can collapse
+intentional internal spaces.
+
+For Text Custom Fields, keep a local draft during editing and commit through the
+domain boundary on blur. Tests should assert the user-visible value contract;
+do not weaken the test to match a lossy controlled-input implementation.

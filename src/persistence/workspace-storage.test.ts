@@ -1210,3 +1210,168 @@ describe('person and assignee persistence', () => {
     expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
   })
 })
+
+
+describe('custom field persistence', () => {
+  const notes = {
+    id: 'field-text',
+    name: 'Notes',
+    type: 'text',
+    createdAt: '2026-09-04T10:00:00.000Z',
+  }
+  const estimate = {
+    id: 'field-number',
+    name: 'Estimate',
+    type: 'number',
+    createdAt: '2026-09-04T10:01:00.000Z',
+  }
+  const reviewed = {
+    id: 'field-checkbox',
+    name: 'Reviewed',
+    type: 'checkbox',
+    createdAt: '2026-09-04T10:02:00.000Z',
+  }
+  const project = {
+    id: 'project-1',
+    name: 'Robotics Research',
+    createdAt: '2026-09-04T10:03:00.000Z',
+  }
+  const task = {
+    id: 'task-1',
+    projectId: project.id,
+    title: 'Draft experiment plan',
+    status: 'todo',
+    priority: 'normal',
+    createdAt: '2026-09-04T10:04:00.000Z',
+  }
+
+  it('round-trips typed custom field definitions and values', () => {
+    const store = new MemoryStore()
+    const valuedTask = {
+      ...task,
+      customFieldValues: {
+        [notes.id]: 'Inspect mount',
+        [estimate.id]: 3.5,
+        [reviewed.id]: true,
+      },
+    }
+    const workspace = {
+      customFields: [notes, estimate, reviewed],
+      projects: [project],
+      tasks: [valuedTask],
+    }
+
+    saveWorkspace(store, workspace as never)
+
+    expect(loadWorkspace(store)).toEqual(workspace)
+  })
+
+  it('rejects an invalid persisted custom field definition', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            customFields: [
+              {
+                ...notes,
+                type: 'unsupported',
+              },
+            ],
+            projects: [project],
+            tasks: [task],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects duplicate persisted custom field ids', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            customFields: [notes, { ...notes, name: 'Findings' }],
+            projects: [project],
+            tasks: [task],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects a task value for a missing custom field', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            customFields: [],
+            projects: [project],
+            tasks: [
+              {
+                ...task,
+                customFieldValues: {
+                  'missing-field': 'value',
+                },
+              },
+            ],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects a task value whose type does not match its definition', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            customFields: [estimate],
+            projects: [project],
+            tasks: [
+              {
+                ...task,
+                customFieldValues: {
+                  [estimate.id]: '3.5',
+                },
+              },
+            ],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+
+  it('rejects a non-record custom field value map', () => {
+    const store: KeyValueStore = {
+      getItem: () =>
+        JSON.stringify({
+          version: 1,
+          workspace: {
+            customFields: [notes],
+            projects: [project],
+            tasks: [
+              {
+                ...task,
+                customFieldValues: ['not', 'a', 'record'],
+              },
+            ],
+          },
+        }),
+      setItem: () => undefined,
+    }
+
+    expect(() => loadWorkspace(store)).toThrow('Workspace storage is invalid')
+  })
+})

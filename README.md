@@ -9,14 +9,17 @@ The current implementation is intentionally small. It is being developed as a se
 Starting checkpoint for this batch:
 
 - branch: `main`
-- commit: `cda4f98` (`TDD 119-124: add Tags`)
-- TDD state: cycle 130 GREEN
-- tests: 253 passing
+- commit: `b5e0d5b` (`TDD 125-130: add local People and assignees`)
+- TDD state: cycle 136 GREEN
+- expected suite: 280 tests
 - production build: passing
 - lint: 0 warnings, 0 errors
 
-People are local workspace identities. Tasks reference zero or more People by
-ID through optional `assigneeIds`.
+Custom Fields are workspace-level typed definitions. Tasks store only field-ID
+to value mappings.
+
+Successful bundles now push `main` to the verified `origin` remote only after
+the local commit and clean-tree gate.
 
 See [`FEATURES.md`](./FEATURES.md) for the maintained feature-first roadmap.
 
@@ -404,3 +407,22 @@ Local People / assignees:
 - browser reload restores Task assignee checkbox state;
 - this is local identity only; accounts, email invitations, permissions,
   notifications, and remote membership remain later multiuser work.
+
+
+Custom Fields:
+
+- create, rename, and delete reusable workspace Custom Field definitions;
+- supported initial types are `text`, `number`, and `checkbox`;
+- definitions have durable IDs, names, types, and creation timestamps;
+- Tasks optionally store `customFieldValues` keyed by definition ID;
+- text values are trimmed, number values must be finite, and checkbox values
+  are boolean;
+- clear individual values without changing the field definition;
+- deleting a definition preserves Tasks and removes that value from every Task;
+- final value removal clears optional `customFieldValues`;
+- final definition deletion clears optional `customFields`;
+- persistence rejects invalid definitions, duplicate IDs, unknown references,
+  and values whose runtime type does not match their definition;
+- browser reload restores typed Task values;
+- field type mutation, select/dropdown options, date fields, formulas, and
+  custom-field filtering remain later extensions.

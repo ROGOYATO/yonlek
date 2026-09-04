@@ -607,3 +607,42 @@ Lint: 0 warnings, 0 errors
 
 People and assignee references are additive optional data in workspace storage
 version 1, so existing saved workspaces remain valid without migration.
+
+
+## Cycles 131-136
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 131 | Typed Custom Field definition/value domain | GREEN |
+| 132 | Workspace definition lifecycle and delete cleanup | GREEN |
+| 133 | Task typed Custom Field value integrity | GREEN |
+| 134 | Custom Field application commands | GREEN |
+| 135 | Bare-bone definition/value UI | GREEN |
+| 136 | Custom Field persistence validation and browser reload | GREEN |
+
+Prepared successful checkpoint:
+
+```text
+Expected tests: 280
+Build: passed
+Lint: 0 warnings, 0 errors
+Push: origin/main after local commit
+```
+
+The test count is an estimate; the actual runner count is authoritative.
+
+Workflow change beginning with this bundle: after a successful local commit and
+clean-tree check, the runner verifies `origin` and performs a non-force push to
+`main`. Push failure leaves the local commit intact.
+
+
+### TDD 135 controlled text-input draft correction
+
+The first GREEN implementation normalized a Text Custom Field on every
+`onChange`. Because normalization trims leading/trailing whitespace, a
+controlled input could erase the space while the user was still typing
+`Inspect mount`, producing `Inspectmount`.
+
+The behavior test was correct and unchanged. The implementation now keeps a
+local text draft while the input is focused and commits the normalized value on
+blur. Number and Checkbox values remain typed at their existing boundaries.

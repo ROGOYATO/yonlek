@@ -29,6 +29,18 @@ export function WorkspaceRoot({
       state={state}
       initialViewPreferences={initialViewPreferences}
       onViewPreferencesChange={onViewPreferencesChange}
+      onCreateCustomField={(name, type) => {
+        commands.addCustomField(name, type)
+      }}
+      onRenameCustomField={(fieldId, name) => {
+        commands.renameCustomField(fieldId, name)
+      }}
+      onDeleteCustomField={(fieldId) => {
+        commands.deleteCustomField(fieldId)
+      }}
+      onChangeTaskCustomFieldValue={(taskId, fieldId, value) => {
+        commands.changeTaskCustomFieldValue(taskId, fieldId, value)
+      }}
       onCreatePerson={(name) => {
         commands.addPerson(name)
       }}

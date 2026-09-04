@@ -1,4 +1,5 @@
 import type { ChecklistItem } from './checklist'
+import type { CustomFieldValue } from './custom-field'
 
 export type TaskStatus = 'todo' | 'doing' | 'done'
 export type TaskPriority = 'low' | 'normal' | 'high'
@@ -17,6 +18,7 @@ export interface Task {
   checklist?: ChecklistItem[]
   tagIds?: string[]
   assigneeIds?: string[]
+  customFieldValues?: Record<string, CustomFieldValue>
 }
 
 export interface CreateTaskInput {

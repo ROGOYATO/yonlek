@@ -1476,3 +1476,135 @@ describe('WorkspaceRoot people and assignees', () => {
     expect(store.getState().tasks[0]).not.toHaveProperty('assigneeIds')
   })
 })
+
+
+describe('WorkspaceRoot custom fields', () => {
+  it('lets a user create rename and delete a custom field definition', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['field-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T09:50:00.000Z',
+    })
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.type(screen.getByLabelText('Custom field name'), 'Notes')
+    await user.selectOptions(
+      screen.getByLabelText('Custom field type'),
+      'text',
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Add custom field' }),
+    )
+
+    expect(store.getState().customFields?.[0]).toMatchObject({
+      name: 'Notes',
+      type: 'text',
+    })
+
+    const input = screen.getByLabelText('Name for custom field Notes')
+    await user.clear(input)
+    await user.type(input, 'Findings')
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Save custom field name for Notes',
+      }),
+    )
+
+    expect(store.getState().customFields?.[0]?.name).toBe('Findings')
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Delete custom field Findings',
+      }),
+    )
+
+    expect(store.getState()).not.toHaveProperty('customFields')
+  })
+
+  it('lets a user edit text number and checkbox values without changing the task title', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = [
+      'field-text',
+      'field-number',
+      'field-checkbox',
+      'project-1',
+      'task-1',
+    ]
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T09:51:00.000Z',
+    })
+    const notes = commands.addCustomField('Notes', 'text')
+    const estimate = commands.addCustomField('Estimate', 'number')
+    const reviewed = commands.addCustomField('Reviewed', 'checkbox')
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.type(
+      screen.getByLabelText(
+        'Custom field Notes for Draft experiment plan',
+      ),
+      'Inspect mount',
+    )
+    await user.type(
+      screen.getByLabelText(
+        'Custom field Estimate for Draft experiment plan',
+      ),
+      '3.5',
+    )
+    await user.click(
+      screen.getByLabelText(
+        'Custom field Reviewed for Draft experiment plan',
+      ),
+    )
+
+    expect(store.getState().tasks[0]?.customFieldValues).toEqual({
+      [notes.id]: 'Inspect mount',
+      [estimate.id]: 3.5,
+      [reviewed.id]: true,
+    })
+    expect(screen.getByText('Draft experiment plan')).toBeTruthy()
+  })
+
+  it('clears text and number custom field values from the task', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = ['field-text', 'field-number', 'project-1', 'task-1']
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T09:52:00.000Z',
+    })
+    const notes = commands.addCustomField('Notes', 'text')
+    const estimate = commands.addCustomField('Estimate', 'number')
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+    commands.changeTaskCustomFieldValue(task.id, notes.id, 'Inspect')
+    commands.changeTaskCustomFieldValue(task.id, estimate.id, 2)
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.clear(
+      screen.getByLabelText(
+        'Custom field Notes for Draft experiment plan',
+      ),
+    )
+    await user.clear(
+      screen.getByLabelText(
+        'Custom field Estimate for Draft experiment plan',
+      ),
+    )
+
+    expect(store.getState().tasks[0]).not.toHaveProperty(
+      'customFieldValues',
+    )
+  })
+})

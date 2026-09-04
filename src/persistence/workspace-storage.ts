@@ -79,6 +79,21 @@ function isValidChecklistItem(value: unknown): boolean {
 }
 
 
+function isValidCustomField(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    value.id.trim().length > 0 &&
+    typeof value.name === 'string' &&
+    value.name.trim().length > 0 &&
+    (value.type === 'text' ||
+      value.type === 'number' ||
+      value.type === 'checkbox') &&
+    isIsoInstant(value.createdAt)
+  )
+}
+
+
 function isValidPerson(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -151,7 +166,10 @@ function isValidTask(value: unknown): boolean {
         !value.assigneeIds.every(
           (personId) =>
             typeof personId === 'string' && personId.trim().length > 0,
-        )))
+        ))) ||
+    (value.customFieldValues !== undefined &&
+      (!isRecord(value.customFieldValues) ||
+        Array.isArray(value.customFieldValues)))
   ) {
     return false
   }
@@ -202,6 +220,8 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     (workspace.lists !== undefined && !Array.isArray(workspace.lists)) ||
     (workspace.tags !== undefined && !Array.isArray(workspace.tags)) ||
     (workspace.people !== undefined && !Array.isArray(workspace.people)) ||
+    (workspace.customFields !== undefined &&
+      !Array.isArray(workspace.customFields)) ||
     !Array.isArray(workspace.projects) ||
     !Array.isArray(workspace.tasks)
   ) {
@@ -212,12 +232,14 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   const lists = workspace.lists ?? []
   const tags = workspace.tags ?? []
   const people = workspace.people ?? []
+  const customFields = workspace.customFields ?? []
 
   if (
     !areas.every(isValidArea) ||
     !lists.every(isValidTaskList) ||
     !tags.every(isValidTag) ||
     !people.every(isValidPerson) ||
+    !customFields.every(isValidCustomField) ||
     !workspace.projects.every(isValidProject) ||
     !workspace.tasks.every(isValidTask)
   ) {
@@ -257,6 +279,24 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   if (personIds.size !== people.length) {
     invalidStorage()
   }
+
+  const customFieldIds = new Set(
+    customFields.map((field) => (field as { id: string }).id),
+  )
+
+  if (customFieldIds.size !== customFields.length) {
+    invalidStorage()
+  }
+
+  const customFieldsById = new Map(
+    customFields.map((field) => [
+      (field as { id: string }).id,
+      field as {
+        id: string
+        type: 'text' | 'number' | 'checkbox'
+      },
+    ]),
+  )
 
   const projectIds = new Set(
     workspace.projects.map((project) => (project as { id: string }).id),
@@ -376,6 +416,43 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
         uniqueAssigneeIds.size !== assigneeIds.length ||
         assigneeIds.some((personId) => !personIds.has(personId))
       )
+    })
+  ) {
+    invalidStorage()
+  }
+
+  if (
+    workspace.tasks.some((task) => {
+      const values = (
+        task as {
+          customFieldValues?: Record<string, unknown>
+        }
+      ).customFieldValues
+
+      if (values === undefined) {
+        return false
+      }
+
+      return Object.entries(values).some(([fieldId, value]) => {
+        const field = customFieldsById.get(fieldId)
+
+        if (!field) {
+          return true
+        }
+
+        if (field.type === 'text') {
+          return typeof value !== 'string'
+        }
+
+        if (field.type === 'number') {
+          return (
+            typeof value !== 'number' ||
+            !Number.isFinite(value)
+          )
+        }
+
+        return typeof value !== 'boolean'
+      })
     })
   ) {
     invalidStorage()

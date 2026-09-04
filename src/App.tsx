@@ -13,10 +13,18 @@ import {
   type ViewPreferences,
 } from './domain/view-preferences'
 import type { TaskPriority, TaskStatus } from './domain/task'
+import type {
+  CustomFieldType,
+  CustomFieldValue,
+} from './domain/custom-field'
 import { emptyWorkspace, type WorkspaceState } from './domain/workspace'
 
 export interface AppProps {
   state?: WorkspaceState
+  onCreateCustomField?: (name: string, type: CustomFieldType) => void
+  onRenameCustomField?: (fieldId: string, name: string) => void
+  onDeleteCustomField?: (fieldId: string) => void
+  onChangeTaskCustomFieldValue?: (taskId: string, fieldId: string, value: CustomFieldValue | null) => void
   onCreatePerson?: (name: string) => void
   onRenamePerson?: (personId: string, name: string) => void
   onDeletePerson?: (personId: string) => void
@@ -65,6 +73,10 @@ function errorMessage(error: unknown): string {
 
 export function App({
   state = emptyWorkspace,
+  onCreateCustomField,
+  onRenameCustomField,
+  onDeleteCustomField,
+  onChangeTaskCustomFieldValue,
   onCreatePerson,
   onRenamePerson,
   onDeletePerson,
@@ -106,6 +118,12 @@ export function App({
   initialViewPreferences = createDefaultViewPreferences(),
   onViewPreferencesChange,
 }: AppProps) {
+  const [customFieldName, setCustomFieldName] = useState('')
+  const [customFieldType, setCustomFieldType] = useState<CustomFieldType>('text')
+  const [customFieldEdits, setCustomFieldEdits] = useState<Record<string, string>>({})
+  const [customFieldValueDrafts, setCustomFieldValueDrafts] = useState<
+    Record<string, string>
+  >({})
   const [personName, setPersonName] = useState('')
   const [personEdits, setPersonEdits] = useState<Record<string, string>>({})
   const [tagName, setTagName] = useState('')
@@ -144,6 +162,22 @@ export function App({
     })
   }
   const [error, setError] = useState<string | null>(null)
+
+  function submitCustomField(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!onCreateCustomField) {
+      return
+    }
+
+    try {
+      onCreateCustomField(customFieldName, customFieldType)
+      setCustomFieldName('')
+      setError(null)
+    } catch (caught) {
+      setError(errorMessage(caught))
+    }
+  }
 
   function submitPerson(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -209,6 +243,7 @@ export function App({
     }
   }
 
+  const customFields = state.customFields ?? []
   const people = state.people ?? []
   const tags = state.tags ?? []
   const areas = state.areas ?? []
@@ -440,6 +475,100 @@ export function App({
                         onClick={() => onDeleteArea(area.id)}
                       >
                         Delete area {area.name}
+                      </button>
+                    ) : null}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+      ) : null}
+
+      {onCreateCustomField ? (
+        <section>
+          <h2>Custom fields</h2>
+          <form onSubmit={submitCustomField}>
+            <label htmlFor="custom-field-name">Custom field name</label>
+            <input
+              id="custom-field-name"
+              value={customFieldName}
+              onChange={(event) =>
+                setCustomFieldName(event.target.value)
+              }
+            />
+            <label htmlFor="custom-field-type">Custom field type</label>
+            <select
+              id="custom-field-type"
+              value={customFieldType}
+              onChange={(event) =>
+                setCustomFieldType(
+                  event.target.value as CustomFieldType,
+                )
+              }
+            >
+              <option value="text">Text</option>
+              <option value="number">Number</option>
+              <option value="checkbox">Checkbox</option>
+            </select>
+            <button type="submit">Add custom field</button>
+          </form>
+
+          {customFields.length === 0 ? (
+            <p>No custom fields yet.</p>
+          ) : (
+            <ul>
+              {customFields.map((field) => {
+                const editedName =
+                  customFieldEdits[field.id] ?? field.name
+
+                return (
+                  <li key={field.id}>
+                    <span>
+                      {field.name} ({field.type})
+                    </span>
+                    {onRenameCustomField ? (
+                      <form
+                        onSubmit={(event) => {
+                          event.preventDefault()
+
+                          try {
+                            onRenameCustomField(field.id, editedName)
+                            setCustomFieldEdits((current) => {
+                              const next = { ...current }
+                              delete next[field.id]
+                              return next
+                            })
+                            setError(null)
+                          } catch (caught) {
+                            setError(errorMessage(caught))
+                          }
+                        }}
+                      >
+                        <label htmlFor={`custom-field-edit-${field.id}`}>
+                          Name for custom field {field.name}
+                        </label>
+                        <input
+                          id={`custom-field-edit-${field.id}`}
+                          value={editedName}
+                          onChange={(event) =>
+                            setCustomFieldEdits((current) => ({
+                              ...current,
+                              [field.id]: event.target.value,
+                            }))
+                          }
+                        />
+                        <button type="submit">
+                          Save custom field name for {field.name}
+                        </button>
+                      </form>
+                    ) : null}
+                    {onDeleteCustomField ? (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteCustomField(field.id)}
+                      >
+                        Delete custom field {field.name}
                       </button>
                     ) : null}
                   </li>
@@ -1004,6 +1133,104 @@ export function App({
                             ? 'subtask'
                             : 'subtasks'}
                         </span>
+                        {customFields.length > 0 &&
+                        onChangeTaskCustomFieldValue ? (
+                          <fieldset>
+                            <legend>Custom fields for {task.title}</legend>
+                            {customFields.map((field) => {
+                              const currentValue =
+                                task.customFieldValues?.[field.id]
+                              const draftKey = `${task.id}:${field.id}`
+                              const draftValue =
+                                customFieldValueDrafts[draftKey]
+
+                              if (field.type === 'checkbox') {
+                                return (
+                                  <label key={field.id}>
+                                    <input
+                                      type="checkbox"
+                                      checked={currentValue === true}
+                                      onChange={(event) =>
+                                        onChangeTaskCustomFieldValue(
+                                          task.id,
+                                          field.id,
+                                          event.target.checked,
+                                        )
+                                      }
+                                    />
+                                    Custom field {field.name} for {task.title}
+                                  </label>
+                                )
+                              }
+
+                              return (
+                                <label key={field.id}>
+                                  Custom field {field.name} for {task.title}
+                                  <input
+                                    type={
+                                      field.type === 'number'
+                                        ? 'number'
+                                        : 'text'
+                                    }
+                                    value={
+                                      field.type === 'text' &&
+                                      draftValue !== undefined
+                                        ? draftValue
+                                        : typeof currentValue === 'string' ||
+                                            typeof currentValue === 'number'
+                                          ? currentValue
+                                          : ''
+                                    }
+                                    onChange={(event) => {
+                                      const rawValue = event.target.value
+
+                                      if (field.type === 'text') {
+                                        setCustomFieldValueDrafts((current) => ({
+                                          ...current,
+                                          [draftKey]: rawValue,
+                                        }))
+                                        return
+                                      }
+
+                                      if (rawValue === '') {
+                                        onChangeTaskCustomFieldValue(
+                                          task.id,
+                                          field.id,
+                                          null,
+                                        )
+                                        return
+                                      }
+
+                                      onChangeTaskCustomFieldValue(
+                                        task.id,
+                                        field.id,
+                                        Number(rawValue),
+                                      )
+                                    }}
+                                    onBlur={(event) => {
+                                      if (field.type !== 'text') {
+                                        return
+                                      }
+
+                                      const rawValue = event.target.value
+
+                                      onChangeTaskCustomFieldValue(
+                                        task.id,
+                                        field.id,
+                                        rawValue === '' ? null : rawValue,
+                                      )
+                                      setCustomFieldValueDrafts((current) => {
+                                        const next = { ...current }
+                                        delete next[draftKey]
+                                        return next
+                                      })
+                                    }}
+                                  />
+                                </label>
+                              )
+                            })}
+                          </fieldset>
+                        ) : null}
                         {people.length > 0 &&
                         onChangeTaskAssignee ? (
                           <fieldset>

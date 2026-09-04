@@ -1237,3 +1237,198 @@ describe('task assignees', () => {
     expect(next.tasks[0]).not.toHaveProperty('assigneeIds')
   })
 })
+
+
+describe('workspace custom fields', () => {
+  const notes = {
+    id: 'field-1',
+    name: 'Notes',
+    type: 'text' as const,
+    createdAt: '2026-09-04T09:20:00.000Z',
+  }
+
+  it('adds and renames a custom field without mutating previous state', () => {
+    const state = {
+      projects: [project],
+      tasks: [task],
+    }
+
+    const added = workspaceReducer(state, {
+      type: 'customField/added',
+      field: notes,
+    } as never)
+    const renamed = workspaceReducer(added, {
+      type: 'customField/nameChanged',
+      fieldId: notes.id,
+      name: 'Findings',
+    } as never)
+
+    expect(added.customFields).toEqual([notes])
+    expect(renamed.customFields?.[0]?.name).toBe('Findings')
+    expect(state).not.toHaveProperty('customFields')
+  })
+
+  it('deleting a custom field preserves tasks and removes its values', () => {
+    const valuedTask = {
+      ...task,
+      customFieldValues: {
+        [notes.id]: 'Inspect mount',
+      },
+    }
+
+    const next = workspaceReducer(
+      {
+        customFields: [notes],
+        projects: [project],
+        tasks: [valuedTask],
+      },
+      {
+        type: 'customField/deleted',
+        fieldId: notes.id,
+      } as never,
+    )
+
+    expect(next.tasks[0]?.id).toBe(task.id)
+    expect(next.tasks[0]).not.toHaveProperty('customFieldValues')
+  })
+
+  it('deleting the final custom field removes the optional collection', () => {
+    const next = workspaceReducer(
+      {
+        customFields: [notes],
+        projects: [project],
+        tasks: [task],
+      },
+      {
+        type: 'customField/deleted',
+        fieldId: notes.id,
+      } as never,
+    )
+
+    expect(next).not.toHaveProperty('customFields')
+  })
+})
+
+
+describe('task custom field values', () => {
+  const notes = {
+    id: 'field-text',
+    name: 'Notes',
+    type: 'text' as const,
+    createdAt: '2026-09-04T09:30:00.000Z',
+  }
+  const estimate = {
+    id: 'field-number',
+    name: 'Estimate',
+    type: 'number' as const,
+    createdAt: '2026-09-04T09:31:00.000Z',
+  }
+  const reviewed = {
+    id: 'field-checkbox',
+    name: 'Reviewed',
+    type: 'checkbox' as const,
+    createdAt: '2026-09-04T09:32:00.000Z',
+  }
+
+  it('sets typed values on an existing task', () => {
+    let state = {
+      customFields: [notes, estimate, reviewed],
+      projects: [project],
+      tasks: [task],
+    }
+
+    state = workspaceReducer(state, {
+      type: 'task/customFieldValueChanged',
+      taskId: task.id,
+      fieldId: notes.id,
+      value: '  Inspect mount  ',
+    } as never) as typeof state
+    state = workspaceReducer(state, {
+      type: 'task/customFieldValueChanged',
+      taskId: task.id,
+      fieldId: estimate.id,
+      value: 3.5,
+    } as never) as typeof state
+    state = workspaceReducer(state, {
+      type: 'task/customFieldValueChanged',
+      taskId: task.id,
+      fieldId: reviewed.id,
+      value: true,
+    } as never) as typeof state
+
+    expect(state.tasks[0]?.customFieldValues).toEqual({
+      [notes.id]: 'Inspect mount',
+      [estimate.id]: 3.5,
+      [reviewed.id]: true,
+    })
+  })
+
+  it('rejects values that do not match the definition type', () => {
+    expect(() =>
+      workspaceReducer(
+        {
+          customFields: [estimate],
+          projects: [project],
+          tasks: [task],
+        },
+        {
+          type: 'task/customFieldValueChanged',
+          taskId: task.id,
+          fieldId: estimate.id,
+          value: '3.5',
+        } as never,
+      ),
+    ).toThrow('Custom field value does not match field type')
+  })
+
+  it('rejects a missing task or missing custom field', () => {
+    const state = {
+      customFields: [notes],
+      projects: [project],
+      tasks: [task],
+    }
+
+    expect(() =>
+      workspaceReducer(state, {
+        type: 'task/customFieldValueChanged',
+        taskId: 'missing-task',
+        fieldId: notes.id,
+        value: 'hello',
+      } as never),
+    ).toThrow('Cannot set a custom field on a missing task')
+
+    expect(() =>
+      workspaceReducer(state, {
+        type: 'task/customFieldValueChanged',
+        taskId: task.id,
+        fieldId: 'missing-field',
+        value: 'hello',
+      } as never),
+    ).toThrow('Cannot set a missing custom field')
+  })
+
+  it('clears a value and removes the optional value map when empty', () => {
+    const valuedTask = {
+      ...task,
+      customFieldValues: {
+        [notes.id]: 'Inspect mount',
+      },
+    }
+
+    const next = workspaceReducer(
+      {
+        customFields: [notes],
+        projects: [project],
+        tasks: [valuedTask],
+      },
+      {
+        type: 'task/customFieldValueChanged',
+        taskId: task.id,
+        fieldId: notes.id,
+        value: null,
+      } as never,
+    )
+
+    expect(next.tasks[0]).not.toHaveProperty('customFieldValues')
+  })
+})

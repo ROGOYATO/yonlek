@@ -5,6 +5,12 @@ import {
   type ChecklistItem,
 } from './checklist'
 import { renameTaskList, type TaskList } from './task-list'
+import {
+  normalizeCustomFieldValue,
+  renameCustomField,
+  type CustomFieldDefinition,
+  type CustomFieldValue,
+} from './custom-field'
 import { renamePerson, type Person } from './person'
 import { renameTag, type Tag } from './tag'
 import {
@@ -33,6 +39,7 @@ export interface WorkspaceState {
   lists?: TaskList[]
   tags?: Tag[]
   people?: Person[]
+  customFields?: CustomFieldDefinition[]
   projects: Project[]
   tasks: Task[]
 }
@@ -49,6 +56,9 @@ export type WorkspaceAction =
   | { type: 'area/deleted'; areaId: string }
   | { type: 'area/nameChanged'; areaId: string; name: string }
   | { type: 'area/moved'; areaId: string; direction: MoveDirection }
+  | { type: 'customField/added'; field: CustomFieldDefinition }
+  | { type: 'customField/deleted'; fieldId: string }
+  | { type: 'customField/nameChanged'; fieldId: string; name: string }
   | { type: 'person/added'; person: Person }
   | { type: 'person/deleted'; personId: string }
   | { type: 'person/nameChanged'; personId: string; name: string }
@@ -74,6 +84,7 @@ export type WorkspaceAction =
   | { type: 'task/projectChanged'; taskId: string; projectId: string }
   | { type: 'task/listChanged'; taskId: string; listId: string | null }
   | { type: 'task/moved'; taskId: string; direction: MoveDirection }
+  | { type: 'task/customFieldValueChanged'; taskId: string; fieldId: string; value: CustomFieldValue | null }
   | { type: 'task/assigneeAdded'; taskId: string; personId: string }
   | { type: 'task/assigneeRemoved'; taskId: string; personId: string }
   | { type: 'task/tagAdded'; taskId: string; tagId: string }
@@ -125,6 +136,56 @@ export function workspaceReducer(
             : project,
         ),
       }
+
+    case 'customField/added':
+      return {
+        ...state,
+        customFields: [...(state.customFields ?? []), action.field],
+      }
+
+    case 'customField/nameChanged':
+      return {
+        ...state,
+        customFields: (state.customFields ?? []).map((field) =>
+          field.id === action.fieldId
+            ? renameCustomField(field, action.name)
+            : field,
+        ),
+      }
+
+    case 'customField/deleted': {
+      const customFields = (state.customFields ?? []).filter(
+        (field) => field.id !== action.fieldId,
+      )
+      const next: WorkspaceState = {
+        ...state,
+        tasks: state.tasks.map((task) => {
+          if (task.customFieldValues === undefined) {
+            return task
+          }
+
+          const customFieldValues = { ...task.customFieldValues }
+          delete customFieldValues[action.fieldId]
+          const updated = { ...task }
+
+          if (Object.keys(customFieldValues).length === 0) {
+            delete updated.customFieldValues
+          } else {
+            updated.customFieldValues = customFieldValues
+          }
+
+          return updated
+        }),
+      }
+
+      if (customFields.length === 0) {
+        delete next.customFields
+      } else {
+        next.customFields = customFields
+      }
+
+      return next
+    }
 
     case 'person/added':
       return {
@@ -561,6 +622,54 @@ export function workspaceReducer(
             candidate.parentTaskId === target.parentTaskId,
         ),
       }
+
+    case 'task/customFieldValueChanged': {
+      const targetTask = state.tasks.find(
+        (task) => task.id === action.taskId,
+      )
+
+      if (!targetTask) {
+        throw new Error('Cannot set a custom field on a missing task')
+      }
+
+      const field = (state.customFields ?? []).find(
+        (candidate) => candidate.id === action.fieldId,
+      )
+
+      if (!field) {
+        throw new Error('Cannot set a missing custom field')
+      }
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) => {
+          if (task.id !== action.taskId) {
+            return task
+          }
+
+          const customFieldValues = {
+            ...(task.customFieldValues ?? {}),
+          }
+
+          if (action.value === null) {
+            delete customFieldValues[action.fieldId]
+          } else {
+            customFieldValues[action.fieldId] =
+              normalizeCustomFieldValue(field.type, action.value)
+          }
+
+          const next = { ...task }
+
+          if (Object.keys(customFieldValues).length === 0) {
+            delete next.customFieldValues
+          } else {
+            next.customFieldValues = customFieldValues
+          }
+
+          return next
+        }),
+      }
+    }
 
     case 'task/assigneeAdded': {
       const taskExists = state.tasks.some(
