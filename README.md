@@ -8,13 +8,13 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The latest user-confirmed behavior checkpoint is TDD 157.
+The confirmed starting checkpoint for TDD 163-167 is TDD 162.
 
 - branch: `main`
-- behavior commit: `3c0213c` (`TDD 153-157: add project archiving`)
+- behavior commit: `62740bb` (`TDD 158-162: add project templates`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 315 passed across 37 files
+- tests: 320 passed across 42 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
@@ -100,6 +100,15 @@ Current Task behavior includes:
 Subtask deletion cascades through descendants. Moving a parent across Projects
 moves its descendants with it. A Subtask cannot be moved away from its parent
 Project on its own.
+
+### Task templates
+
+Task templates snapshot one active Task subtree for reuse. The template keeps
+Task/Subtask titles, status, priority, description, and Checklist
+text/completion. It does not keep source Project/List IDs, due dates, Tags,
+People, Custom Field values, archive flags, relationship edges, or original
+identities. Creating from a template generates fresh IDs and attaches the whole
+subtree to one selected active Project and optional compatible List.
 
 ### Task-local data
 

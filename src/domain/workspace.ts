@@ -38,6 +38,7 @@ import {
   type Task,
   type TaskPriority,
   type TaskStatus,
+  type TaskTemplate,
 } from './task'
 
 export interface WorkspaceState {
@@ -49,6 +50,7 @@ export interface WorkspaceState {
   relationships?: TaskRelationship[]
   projects: Project[]
   projectTemplates?: ProjectTemplate[]
+  taskTemplates?: TaskTemplate[]
   tasks: Task[]
 }
 
@@ -82,6 +84,9 @@ export type WorkspaceAction =
   | { type: 'projectTemplate/added'; template: ProjectTemplate }
   | { type: 'projectTemplate/deleted'; templateId: string }
   | { type: 'projectTemplate/instantiated'; project: Project; lists: TaskList[]; tasks: Task[] }
+  | { type: 'taskTemplate/added'; template: TaskTemplate }
+  | { type: 'taskTemplate/deleted'; templateId: string }
+  | { type: 'taskTemplate/instantiated'; tasks: Task[] }
   | { type: 'project/added'; project: Project }
   | { type: 'project/archived'; projectId: string; archivedAt: string }
   | { type: 'project/restored'; projectId: string }
@@ -526,6 +531,33 @@ export function workspaceReducer(
         ...state,
         projects: [...state.projects, action.project],
         lists: [...(state.lists ?? []), ...action.lists],
+        tasks: [...state.tasks, ...action.tasks],
+      }
+
+    case 'taskTemplate/added':
+      return {
+        ...state,
+        taskTemplates: [...(state.taskTemplates ?? []), action.template],
+      }
+
+    case 'taskTemplate/deleted': {
+      const taskTemplates = (state.taskTemplates ?? []).filter(
+        (template) => template.id !== action.templateId,
+      )
+      const next = { ...state }
+
+      if (taskTemplates.length === 0) {
+        delete next.taskTemplates
+      } else {
+        next.taskTemplates = taskTemplates
+      }
+
+      return next
+    }
+
+    case 'taskTemplate/instantiated':
+      return {
+        ...state,
         tasks: [...state.tasks, ...action.tasks],
       }
 

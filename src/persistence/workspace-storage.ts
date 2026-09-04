@@ -54,6 +54,92 @@ function isValidProject(value: unknown): boolean {
 }
 
 
+function isValidTaskTemplateTask(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.key === 'string' &&
+    value.key.trim().length > 0 &&
+    typeof value.title === 'string' &&
+    value.title.trim().length > 0 &&
+    (value.status === 'todo' ||
+      value.status === 'doing' ||
+      value.status === 'done') &&
+    (value.priority === 'low' ||
+      value.priority === 'normal' ||
+      value.priority === 'high') &&
+    (value.description === undefined || typeof value.description === 'string') &&
+    (value.parentTaskKey === undefined ||
+      (typeof value.parentTaskKey === 'string' &&
+        value.parentTaskKey.trim().length > 0)) &&
+    (value.checklist === undefined ||
+      (Array.isArray(value.checklist) &&
+        value.checklist.every(isValidProjectTemplateChecklistItem)))
+  )
+}
+
+function isValidTaskTemplate(value: unknown): boolean {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== 'string' ||
+    value.id.trim().length === 0 ||
+    typeof value.name !== 'string' ||
+    value.name.trim().length === 0 ||
+    !isIsoInstant(value.createdAt) ||
+    typeof value.rootTaskKey !== 'string' ||
+    value.rootTaskKey.trim().length === 0 ||
+    !Array.isArray(value.tasks) ||
+    value.tasks.length === 0 ||
+    !value.tasks.every(isValidTaskTemplateTask)
+  ) {
+    return false
+  }
+
+  const tasks = value.tasks as Array<{
+    key: string
+    parentTaskKey?: string
+  }>
+  const taskKeys = new Set(tasks.map((task) => task.key))
+
+  if (
+    taskKeys.size !== tasks.length ||
+    !taskKeys.has(value.rootTaskKey as string)
+  ) {
+    return false
+  }
+
+  const tasksByKey = new Map(tasks.map((task) => [task.key, task]))
+  const root = tasksByKey.get(value.rootTaskKey as string)
+
+  if (root?.parentTaskKey !== undefined) {
+    return false
+  }
+
+  for (const task of tasks) {
+    const visited = new Set<string>()
+    let current = task
+
+    while (current.key !== value.rootTaskKey) {
+      if (
+        current.parentTaskKey === undefined ||
+        visited.has(current.key)
+      ) {
+        return false
+      }
+
+      visited.add(current.key)
+      const parent = tasksByKey.get(current.parentTaskKey)
+
+      if (parent === undefined) {
+        return false
+      }
+
+      current = parent
+    }
+  }
+
+  return true
+}
+
 function isValidProjectTemplateList(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -359,6 +445,8 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
       !Array.isArray(workspace.relationships)) ||
     (workspace.projectTemplates !== undefined &&
       !Array.isArray(workspace.projectTemplates)) ||
+    (workspace.taskTemplates !== undefined &&
+      !Array.isArray(workspace.taskTemplates)) ||
     !Array.isArray(workspace.projects) ||
     !Array.isArray(workspace.tasks)
   ) {
@@ -372,6 +460,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   const customFields = workspace.customFields ?? []
   const relationships = workspace.relationships ?? []
   const projectTemplates = workspace.projectTemplates ?? []
+  const taskTemplates = workspace.taskTemplates ?? []
 
   if (
     !areas.every(isValidArea) ||
@@ -381,6 +470,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     !customFields.every(isValidCustomField) ||
     !relationships.every(isValidTaskRelationship) ||
     !projectTemplates.every(isValidProjectTemplate) ||
+    !taskTemplates.every(isValidTaskTemplate) ||
     !workspace.projects.every(isValidProject) ||
     !workspace.tasks.every(isValidTask)
   ) {
@@ -454,6 +544,14 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   )
 
   if (projectTemplateIds.size !== projectTemplates.length) {
+    invalidStorage()
+  }
+
+  const taskTemplateIds = new Set(
+    taskTemplates.map((template) => (template as { id: string }).id),
+  )
+
+  if (taskTemplateIds.size !== taskTemplates.length) {
     invalidStorage()
   }
 

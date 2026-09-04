@@ -1217,3 +1217,127 @@ test inventory is otherwise unchanged. Live output remains authoritative. The
 runner must pass focused GREENs, zero-warning lint, the full suite, production
 build, LF audits, exact changed-file verification, and staged diff checks before
 commit or push.
+
+## Confirmed checkpoint after TDD 162
+
+The Project-template resume completed and created:
+
+```text
+62740bb  TDD 158-162: add project templates
+```
+
+Live verification:
+
+```text
+Tests: 320 passed across 42 files
+Lint: 0 warnings, 0 errors
+Build: passed
+Line-ending audit: 16 changed repository files passed
+Working tree: clean after commit
+Push: origin/main updated from 3c0213c to 62740bb
+```
+
+The TDD 159 repair kept the original field assertions and added a whole-state
+assertion before dereferencing the reducer result. That produced the intended
+AssertionError before GREEN and avoided repeating the earlier accidental
+TypeError pattern.
+
+
+### Runner precondition correction before TDD 163
+
+The first TDD 163-167 runner stopped before mutation because its scalar Git reads
+indexed one-line command output with `[0]`. PowerShell had unrolled branch output
+to the scalar string `main`, so `[0]` returned only `m`. The same pattern would
+have truncated HEAD and origin values. Resume r1 uses one `Invoke-GitScalar`
+helper that requires exactly one output line and returns the complete line.
+
+## TDD 163 - Task template value semantics
+
+**RED**
+
+Add focused domain coverage that snapshots one active Task/Subtask subtree and
+instantiates it with fresh Task and Checklist identities in a selected Project
+and optional List. Workspace-owned references, due dates, archive flags, and
+source identities must not be copied.
+
+Expected RED marker: `createTaskTemplate is not a function`.
+
+**GREEN**
+
+Add Task-template blueprint types plus snapshot and instantiation functions at
+the Task domain boundary. Template-local Task keys preserve parent references.
+
+## TDD 164 - Workspace Task template collection
+
+**RED**
+
+Add focused reducer coverage for storing a Task template, atomically adding one
+instantiated Task subtree, and deleting the template without deleting Tasks
+already created from it. The RED asserts the whole reducer result before field
+access so an unsupported action fails as AssertionError rather than TypeError.
+
+**GREEN**
+
+Add optional `taskTemplates` state and add/delete/instantiate actions.
+
+## TDD 165 - Task template persistence
+
+**RED**
+
+Add focused version-1 storage coverage that round-trips a Task template and
+rejects a blueprint with a missing parent reference.
+
+**GREEN**
+
+Validate the optional template collection, unique template IDs and Task keys,
+root identity, parent references, parent cycles, rooted ancestry, and Checklist
+values. No storage version bump is required because the collection is optional.
+
+## TDD 166 - Persisted Task template commands
+
+**RED**
+
+Add focused command coverage that saves a Task template, deletes its source Task
+subtree, creates a fresh subtree in a selected active Project/List, and deletes
+the retained template.
+
+Expected RED marker: `saveTaskTemplate is not a function`.
+
+**GREEN**
+
+Add save/create/delete Task-template commands using injected IDs and timestamps.
+Reject archived sources, archived/missing target Projects, and incompatible
+Lists.
+
+## TDD 167 - Task template UI
+
+**RED**
+
+Add a focused rendered interaction test for `Save task as template <title>`, a
+semantic `Task templates` section, Project/List placement controls,
+`Create task from template <name>`, and `Delete task template <name>`.
+
+Expected RED marker: `Save task as template Define protocol`.
+
+**GREEN**
+
+Wire Task-template commands through `WorkspaceRoot` and render the semantic Task
+template workflow.
+
+The first focused GREEN verification reached the implemented workflow but the
+test then counted `Define protocol` globally. The text correctly appeared in the
+source Task, the newly instantiated target Task, and the retained Task-template
+row, so the expected count of two was wrong. The user approved a test-only
+correction. The repaired test scopes the instantiated root and Subtask checks to
+the `Target project` section with `within(...)` and separately proves that the
+Task template remains visible until deletion. Production code is unchanged by
+this correction.
+
+## Prepared verification target after TDD 167
+
+This batch starts from clean `main` at `62740bb`. Five focused behavior tests
+are prepared, so the expected suite count is 325 across 47 test files if the
+live inventory is otherwise unchanged. Live output remains authoritative. The
+runner must pass each focused GREEN, zero-warning lint, the full suite,
+production build, LF audits, exact changed-file verification, and staged diff
+checks before commit or push.

@@ -139,6 +139,15 @@ export function WorkspaceRoot({
       onDeleteProjectTemplate={(templateId) => {
         commands.deleteProjectTemplate(templateId)
       }}
+      onSaveTaskTemplate={(taskId, name) => {
+        commands.saveTaskTemplate(taskId, name)
+      }}
+      onCreateTaskFromTemplate={(templateId, projectId, listId) => {
+        commands.createTaskFromTemplate(templateId, projectId, listId)
+      }}
+      onDeleteTaskTemplate={(templateId) => {
+        commands.deleteTaskTemplate(templateId)
+      }}
       onArchiveProject={(projectId) => {
         commands.archiveProject(projectId)
       }}

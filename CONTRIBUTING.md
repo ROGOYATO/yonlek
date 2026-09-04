@@ -5,10 +5,10 @@
 The current user-confirmed behavior baseline is:
 
 - branch: `main`
-- behavior commit: `3c0213c` (`TDD 153-157: add project archiving`)
+- confirmed starting commit for TDD 163-167: `62740bb` (`TDD 158-162: add project templates`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- verified suite: 315 tests across 37 files
+- verified suite at that checkpoint: 320 tests across 42 files
 - lint: 0 warnings and 0 errors
 - production build: passed
 - post-commit tree: clean
@@ -17,6 +17,26 @@ The current user-confirmed behavior baseline is:
 The repository, npm package, and product slug use `yonlek`. The browser storage
 keys intentionally keep the historical `workspace-app.*` prefix until a tested
 migration is added.
+
+## Checkpoint documentation
+
+Do not describe a parent commit SHA as the latest checkpoint inside a feature
+commit that supersedes it. A commit cannot contain its own final SHA without
+changing that SHA. Record the last confirmed starting commit explicitly, then
+record the new TDD range and live verification result after the runner finishes.
+
+For private-repository work, prefer a clean `git archive` of the confirmed HEAD
+as the preparation source. Live runners still precheck every existing-file patch
+against the checkout before creating the first RED file.
+
+
+## PowerShell Git scalar output
+
+PowerShell can unroll one-line command output to a scalar string. Indexing that
+result with `[0]` then returns the first character, so `main` can become `m`.
+When a Git command must return one scalar value, collect the output, require
+exactly one line, and return that complete line without indexing the string.
+Use the same helper for branch, HEAD, and remote guards.
 
 ## Test-first rule
 
@@ -48,6 +68,12 @@ If a test appears incorrect, malformed, outdated, or underspecified:
 Test-harness corrections such as DOM cleanup or build-boundary configuration
 may be made without changing behavior assertions, but they must be described
 explicitly.
+
+For rendered tests, scope assertions to the semantic section that owns the
+behavior when the same text can legitimately appear elsewhere. Prefer
+`within(...)` on the relevant Project, archive, or template section over global
+`getAllByText(...)` counts. A global count is brittle when another valid UI
+representation repeats the same domain text.
 
 ## Fail-fast bundle workflow
 

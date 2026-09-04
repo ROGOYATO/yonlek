@@ -240,3 +240,5 @@ export function createSubtask(input: CreateSubtaskInput): Task {
     parentTaskId: input.parent.id,
   }
 }
+
+export * from './task-template'

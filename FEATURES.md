@@ -4,11 +4,11 @@ This file tracks product behavior, not visual polish. A checkbox moves to
 complete only after the behavior has a confirmed GREEN cycle and the final
 verification gate has passed.
 
-Verified behavior baseline:
+Confirmed starting checkpoint for TDD 163-167:
 
-- commit: `3c0213c`
-- TDD: 157 GREEN
-- tests: 315 passed across 37 files
+- commit: `62740bb`
+- TDD: 162 GREEN
+- tests: 320 passed across 42 files
 - lint: 0 warnings, 0 errors
 - production build: passed
 
@@ -230,7 +230,15 @@ final navigation and visual system are still deferred.
 - [x] Duplicate Task
 - [ ] Bulk actions
 - [x] Project templates
-- [ ] Task templates
+- [x] Task templates
+
+Task templates keep reusable active Task/Subtask structure, title, status,
+priority, description, and Checklist text/completion. They omit Project/List
+placement, due dates, Tags, People, Custom Field values, archive flags,
+relationship edges, and original IDs. Instantiation generates fresh Task and
+Checklist IDs and attaches the new subtree to the selected active Project and
+optional compatible List.
+
 - [ ] Automation model with trigger, condition, and action
 - [ ] Goals or measurable targets
 - [ ] Dashboards and reporting

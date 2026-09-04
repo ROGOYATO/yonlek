@@ -56,6 +56,9 @@ export interface AppProps {
   onSaveProjectTemplate?: (projectId: string, name: string) => void
   onCreateProjectFromTemplate?: (templateId: string) => void
   onDeleteProjectTemplate?: (templateId: string) => void
+  onSaveTaskTemplate?: (taskId: string, name: string) => void
+  onCreateTaskFromTemplate?: (templateId: string, projectId: string, listId?: string) => void
+  onDeleteTaskTemplate?: (templateId: string) => void
   onArchiveProject?: (projectId: string) => void
   onRestoreProject?: (projectId: string) => void
   onRenameProject?: (projectId: string, name: string) => void
@@ -118,6 +121,9 @@ export function App({
   onSaveProjectTemplate,
   onCreateProjectFromTemplate,
   onDeleteProjectTemplate,
+  onSaveTaskTemplate,
+  onCreateTaskFromTemplate,
+  onDeleteTaskTemplate,
   onArchiveProject,
   onRestoreProject,
   onRenameProject,
@@ -169,6 +175,8 @@ export function App({
   const [checklistEdits, setChecklistEdits] = useState<Record<string, string>>({})
   const [taskEdits, setTaskEdits] = useState<Record<string, string>>({})
   const [taskDescriptions, setTaskDescriptions] = useState<Record<string, string>>({})
+  const [taskTemplateProjects, setTaskTemplateProjects] = useState<Record<string, string>>({})
+  const [taskTemplateLists, setTaskTemplateLists] = useState<Record<string, string>>({})
   const [viewPreferences, setViewPreferences] = useState<ViewPreferences>(
     initialViewPreferences,
   )
@@ -277,6 +285,7 @@ export function App({
   const areas = state.areas ?? []
   const lists = state.lists ?? []
   const projectTemplates = state.projectTemplates ?? []
+  const taskTemplates = state.taskTemplates ?? []
   const activeProjects = state.projects.filter(
     (project) => project.archivedAt === undefined,
   )
@@ -1946,6 +1955,21 @@ export function App({
                             Duplicate task {task.title}
                           </button>
                         ) : null}
+                        {onSaveTaskTemplate ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              try {
+                                onSaveTaskTemplate(task.id, task.title)
+                                setError(null)
+                              } catch (caught) {
+                                setError(errorMessage(caught))
+                              }
+                            }}
+                          >
+                            Save task as template {task.title}
+                          </button>
+                        ) : null}
                         {onArchiveTask ? (
                           <button
                             type="button"
@@ -1972,6 +1996,112 @@ export function App({
         })
       )}
 
+
+      {taskTemplates.length > 0 ? (
+        <section>
+          <h2>Task templates</h2>
+          <ul>
+            {taskTemplates.map((template) => {
+              const selectedProjectId =
+                taskTemplateProjects[template.id] !== undefined &&
+                activeProjects.some(
+                  (project) =>
+                    project.id === taskTemplateProjects[template.id],
+                )
+                  ? taskTemplateProjects[template.id]
+                  : activeProjects[0]?.id ?? ''
+              const templateLists = lists.filter(
+                (list) => list.projectId === selectedProjectId,
+              )
+              const selectedListId = templateLists.some(
+                (list) => list.id === taskTemplateLists[template.id],
+              )
+                ? taskTemplateLists[template.id]
+                : ''
+
+              return (
+                <li key={template.id}>
+                  <span>{template.name}</span>
+                  <label htmlFor={`task-template-project-${template.id}`}>
+                    Project for task template {template.name}
+                  </label>
+                  <select
+                    id={`task-template-project-${template.id}`}
+                    value={selectedProjectId}
+                    onChange={(event) => {
+                      setTaskTemplateProjects((current) => ({
+                        ...current,
+                        [template.id]: event.target.value,
+                      }))
+                      setTaskTemplateLists((current) => ({
+                        ...current,
+                        [template.id]: '',
+                      }))
+                    }}
+                  >
+                    {activeProjects.length === 0 ? (
+                      <option value="">No active projects</option>
+                    ) : null}
+                    {activeProjects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                  <label htmlFor={`task-template-list-${template.id}`}>
+                    List for task template {template.name}
+                  </label>
+                  <select
+                    id={`task-template-list-${template.id}`}
+                    value={selectedListId}
+                    onChange={(event) =>
+                      setTaskTemplateLists((current) => ({
+                        ...current,
+                        [template.id]: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">No list</option>
+                    {templateLists.map((list) => (
+                      <option key={list.id} value={list.id}>
+                        {list.name}
+                      </option>
+                    ))}
+                  </select>
+                  {onCreateTaskFromTemplate ? (
+                    <button
+                      type="button"
+                      disabled={!selectedProjectId}
+                      onClick={() => {
+                        try {
+                          onCreateTaskFromTemplate(
+                            template.id,
+                            selectedProjectId,
+                            selectedListId || undefined,
+                          )
+                          setError(null)
+                        } catch (caught) {
+                          setError(errorMessage(caught))
+                        }
+                      }}
+                    >
+                      Create task from template {template.name}
+                    </button>
+                  ) : null}
+                  {onDeleteTaskTemplate ? (
+                    <button
+                      type="button"
+                      onClick={() => onDeleteTaskTemplate(template.id)}
+                    >
+                      Delete task template {template.name}
+                    </button>
+                  ) : null}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      ) : null}
 
       {projectTemplates.length > 0 ? (
         <section>
