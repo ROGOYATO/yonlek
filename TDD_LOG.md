@@ -5,21 +5,21 @@
 The latest user-confirmed behavior commit is:
 
 ```text
-e71af4e  TDD 148-152: add task archiving
+3c0213c  TDD 153-157: add project archiving
 ```
 
 Verified on Windows from `C:\Users\yavuz\git\yonlek`:
 
 ```text
-Tests: 310 passed across 32 files
+Tests: 315 passed across 37 files
 Lint: 0 warnings, 0 errors
 Build: passed
 Working tree: clean after commit
-Push: origin/main updated from 1777db5 to e71af4e
+Push: origin/main updated from e71af4e to 3c0213c
 ```
 
-The preceding docs-only checkpoint was `1777db5`. TDD 148-152 then added Task
-archive/restore and advanced the behavior baseline to `e71af4e`.
+TDD 153-157 added Project archive/restore on top of the confirmed Task archive
+checkpoint and advanced the behavior baseline from `e71af4e` to `3c0213c`.
 
 This log records completed behavior cycles. RED was observed before the
 corresponding production implementation unless a row is explicitly marked as
@@ -1110,8 +1110,110 @@ an unarchived Task and an active owning Project. Project selectors, Area counts,
 Project focus, Task move targets, and archive surfaces use the same active
 Project boundary. Add semantic Project archive and restore controls.
 
-## Prepared verification target after TDD 157
+## Confirmed checkpoint after TDD 157
 
-This batch starts from clean `main` at `e71af4e`. Five focused behavior test files are prepared, so the expected suite count is 315 across 37 test files if the live test inventory is otherwise unchanged. The live runner remains authoritative and must pass focused
-GREENs, zero-warning lint, the full suite, production build, line-ending audits,
-and staged diff checks before commit or push.
+The corrected TDD 153-157 resume completed and created:
+
+```text
+3c0213c  TDD 153-157: add project archiving
+```
+
+Live verification:
+
+```text
+Tests: 315 passed across 37 files
+Lint: 0 warnings, 0 errors
+Build: passed
+Line-ending audit: 16 changed repository files passed
+Working tree: clean after commit
+Push: origin/main updated from e71af4e to 3c0213c
+```
+
+All five REDs failed for their intended causes before GREEN. `.gitattributes` is
+now tracked with `* text=auto eol=lf`.
+
+## TDD 158 - Project template value semantics
+
+**RED**
+
+Add focused domain coverage that snapshots reusable Project/List/active
+Task/Subtask/Checklist structure and instantiates it with fresh identities.
+Workspace-specific references, due dates, and archive flags must not be copied.
+
+Expected RED marker: `createProjectTemplate is not a function`.
+
+**GREEN**
+
+Add Project template blueprint types plus snapshot and instantiation functions at
+the Project domain boundary. Template-local keys preserve List and parent Task
+references while fresh runtime IDs replace live identities.
+
+## TDD 159 - Workspace Project template collection
+
+**RED**
+
+Add focused reducer coverage for storing a template, atomically adding a Project
+instance with its Lists and Tasks, and deleting the template without deleting an
+already-created Project.
+
+The first TDD 159 RED attempt in the Project-template resume dereferenced
+`withTemplate.projectTemplates` before proving that the reducer returned a state.
+Because an unsupported reducer action currently returns `undefined`, that attempt
+failed with `TypeError` instead of the intended assertion failure. The runner
+rejected it and stopped before TDD 159 GREEN. The repaired test adds a whole-state
+assertion first and leaves the original field assertions in place.
+
+**GREEN**
+
+Add optional `projectTemplates` state and template add/delete/instantiate actions.
+Instantiation adds one prepared Project/List/Task set in one reducer transition.
+
+## TDD 160 - Project template persistence
+
+**RED**
+
+Add focused version-1 storage coverage that round-trips a template and rejects a
+Task blueprint whose template-local List reference is missing.
+
+**GREEN**
+
+Validate the optional template collection, unique template/list/task keys, List
+references, parent references, parent cycles, and Checklist values. No storage
+version bump is required because the collection is optional and additive.
+
+## TDD 161 - Persisted Project template commands
+
+**RED**
+
+Add focused command coverage that saves a template, deletes its source Project,
+creates a fresh Project from the retained template, and deletes the template.
+
+Expected RED marker: `saveProjectTemplate is not a function`.
+
+**GREEN**
+
+Add save/create/delete Project-template commands using injected IDs/timestamps.
+The command boundary dispatches one atomic template-instance action.
+
+## TDD 162 - Project template UI
+
+**RED**
+
+Add a focused rendered interaction test for `Save project as template <name>`,
+`Create project from template <name>`, and `Delete project template <name>`.
+
+Expected RED marker: `Save project as template Robotics Research`.
+
+**GREEN**
+
+Wire Project-template commands through `WorkspaceRoot` and render a semantic
+`Project templates` section.
+
+## Prepared verification target after TDD 162
+
+This batch starts from clean `main` at `3c0213c`. Five focused behavior test files
+are prepared, so the expected suite count is 320 across 42 test files if the live
+test inventory is otherwise unchanged. Live output remains authoritative. The
+runner must pass focused GREENs, zero-warning lint, the full suite, production
+build, LF audits, exact changed-file verification, and staged diff checks before
+commit or push.

@@ -5,7 +5,11 @@ import {
   type CustomFieldValue,
 } from '../domain/custom-field'
 import { createArea } from '../domain/area'
-import { createProject } from '../domain/project'
+import {
+  createProject,
+  createProjectTemplate,
+  instantiateProjectTemplate,
+} from '../domain/project'
 import { createPerson } from '../domain/person'
 import { createTaskList } from '../domain/task-list'
 import {
@@ -62,6 +66,9 @@ export interface WorkspaceCommands {
   moveChecklistItem(taskId: string, itemId: string, direction: MoveDirection): void
   moveProject(projectId: string, direction: MoveDirection): void
   addProject(name: string): ReturnType<typeof createProject>
+  saveProjectTemplate(projectId: string, name: string): ReturnType<typeof createProjectTemplate>
+  createProjectFromTemplate(templateId: string): ReturnType<typeof createProject>
+  deleteProjectTemplate(templateId: string): void
   addTask(projectId: string, title: string, listId?: string): ReturnType<typeof createTask>
   addSubtask(parentTaskId: string, title: string): ReturnType<typeof createSubtask>
   duplicateTask(taskId: string): ReturnType<typeof duplicateTaskDomain>
@@ -407,6 +414,72 @@ export function createWorkspaceCommands(
       })
 
       return project
+    },
+
+    saveProjectTemplate(projectId, name) {
+      const state = store.getState()
+      const project = state.projects.find(
+        (candidate) =>
+          candidate.id === projectId && candidate.archivedAt === undefined,
+      )
+
+      if (!project) {
+        throw new Error('Cannot template a missing or archived project')
+      }
+
+      const template = createProjectTemplate({
+        id: runtime.nextId(),
+        name,
+        now: runtime.now(),
+        project,
+        lists: state.lists ?? [],
+        tasks: state.tasks,
+      })
+
+      store.dispatch({
+        type: 'projectTemplate/added',
+        template,
+      })
+
+      return template
+    },
+
+    createProjectFromTemplate(templateId) {
+      const template = (store.getState().projectTemplates ?? []).find(
+        (candidate) => candidate.id === templateId,
+      )
+
+      if (!template) {
+        throw new Error('Cannot create a project from a missing template')
+      }
+
+      const now = runtime.now()
+      const instance = instantiateProjectTemplate(template, {
+        now,
+        nextId: () => runtime.nextId(),
+      })
+
+      store.dispatch({
+        type: 'projectTemplate/instantiated',
+        ...instance,
+      })
+
+      return instance.project
+    },
+
+    deleteProjectTemplate(templateId) {
+      const exists = (store.getState().projectTemplates ?? []).some(
+        (template) => template.id === templateId,
+      )
+
+      if (!exists) {
+        throw new Error('Cannot delete a missing project template')
+      }
+
+      store.dispatch({
+        type: 'projectTemplate/deleted',
+        templateId,
+      })
     },
 
     addTask(projectId, title, listId) {

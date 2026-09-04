@@ -5,10 +5,10 @@
 The current user-confirmed behavior baseline is:
 
 - branch: `main`
-- behavior commit: `e71af4e` (`TDD 148-152: add task archiving`)
+- behavior commit: `3c0213c` (`TDD 153-157: add project archiving`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- verified suite: 310 tests across 32 files
+- verified suite: 315 tests across 37 files
 - lint: 0 warnings and 0 errors
 - production build: passed
 - post-commit tree: clean
@@ -848,6 +848,14 @@ printed the intended `AssertionError: expected [Function] to throw an error`,
 but the runner compared the marker against unsanitized captured output and
 falsely reported it missing. No production change was needed for that stop.
 
+Reducer RED tests need one more guard. This reducer has no default branch, so a
+new action that is not implemented yet returns `undefined`. A RED test must
+assert that whole return value before reading fields from it. Otherwise a field
+read such as `result.projectTemplates` turns the intended missing-action RED
+into a `TypeError`. Keep the field assertions after the whole-return assertion
+so GREEN still proves the full state shape. RED gates should reject the runtime
+error when the intended failure is an assertion.
+
 ## Repository line endings
 
 The repository defines text normalization in `.gitattributes`:
@@ -885,6 +893,23 @@ The first TDD 153 resume used `param([string[]]$Args)` and then splatted
 `e71af4e`. The runner stopped before any TDD 153 source change. Future bundle
 preflights should exercise the Git plumbing check against a known tracked file
 before the first patch.
+
+## Project template integrity
+
+Project templates are workspace-local reusable blueprints, not cloned live
+workspace graphs.
+
+- Keep template references local to the template. Do not store live List, Task,
+  Tag, Person, Custom Field, Area, or relationship IDs as reusable dependencies.
+- Snapshot only active Tasks. An archived Task is historical state, not default
+  work for a new Project.
+- Preserve reusable Task status, priority, description, Subtask structure, List
+  structure, and Checklist text/completion.
+- Do not copy due dates because an absolute calendar date is not a reusable
+  template offset.
+- Instantiation must allocate fresh Project, List, Task, and Checklist IDs and
+  persist the whole instance through one workspace action.
+- Deleting the source Project must not invalidate or delete its saved template.
 
 ## Project archive integrity
 

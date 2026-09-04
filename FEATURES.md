@@ -6,9 +6,9 @@ verification gate has passed.
 
 Verified behavior baseline:
 
-- commit: `d976d0d`
-- TDD: 147 GREEN
-- tests: 305 passed
+- commit: `3c0213c`
+- TDD: 157 GREEN
+- tests: 315 passed across 37 files
 - lint: 0 warnings, 0 errors
 - production build: passed
 
@@ -68,7 +68,7 @@ A Checklist item belongs to one Task and is not another hierarchy level.
 - [x] Clear Area assignment when an Area is deleted
 - [x] Manual ordering
 - [x] Archive and restore
-- [ ] Project templates
+- [x] Project templates
 
 Project archive is reversible and uses optional `archivedAt` state on the
 Project. Archiving a Project hides the Project and all of its Tasks from normal
@@ -77,6 +77,13 @@ assignment, Project description, Tasks, and relationship edges remain in
 workspace state and persistence. Restoring the Project makes independently
 active Tasks visible again while Tasks that were archived separately remain
 archived.
+
+
+Project templates snapshot reusable Project structure. They keep the Project
+name and description, List names, active Task/Subtask structure, status, priority,
+description, and Checklist text/completion. They omit Area assignment, due
+dates, Tags, People, Custom Field values, archive flags, and workspace-level
+relationships. Instantiation generates fresh IDs and timestamps.
 
 Project deletion is a selective cleanup operation. It must remove only data
 owned by the deleted Project or data that points to one of its deleted Tasks.
@@ -222,7 +229,8 @@ final navigation and visual system are still deferred.
 
 - [x] Duplicate Task
 - [ ] Bulk actions
-- [ ] Task and Project templates
+- [x] Project templates
+- [ ] Task templates
 - [ ] Automation model with trigger, condition, and action
 - [ ] Goals or measurable targets
 - [ ] Dashboards and reporting

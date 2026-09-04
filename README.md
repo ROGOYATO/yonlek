@@ -8,20 +8,20 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The latest user-confirmed behavior checkpoint is TDD 152.
+The latest user-confirmed behavior checkpoint is TDD 157.
 
 - branch: `main`
-- behavior commit: `e71af4e` (`TDD 148-152: add task archiving`)
+- behavior commit: `3c0213c` (`TDD 153-157: add project archiving`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 310 passed across 32 files
+- tests: 315 passed across 37 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
 - push: `origin/main` updated successfully
 
-This checkpoint includes Task duplication, Task archive/restore, persisted
-archive timestamps, and the active/archive UI split.
+This checkpoint includes Task duplication, Task archive/restore, Project
+archive/restore, persisted archive timestamps, and active/archive UI boundaries.
 
 ## Current product model
 
@@ -178,6 +178,26 @@ return only through the Task archive flow.
 
 The storage document remains version 1 because Project `archivedAt` is an
 optional additive field. Persisted values are validated as ISO instants.
+
+## Project template contract
+
+TDD 158-162 adds reusable workspace-local Project templates.
+
+Saving a Project as a template snapshots reusable structure rather than live
+workspace identity. A template keeps the Project name and description, List
+structure, active Task and Subtask titles, status, priority, description, and
+Checklist text/completion. Template-local keys preserve List and parent Task
+relationships.
+
+Templates deliberately omit Area assignment, due dates, Tags, People, Custom
+Field values, Project/Task archive flags, and workspace-level relationship edges.
+Those values are workspace-specific, time-specific, or reference identities that
+can disappear independently from the template.
+
+Creating a Project from a template generates fresh IDs for the Project, Lists,
+Tasks, and Checklist items and uses one fresh creation timestamp. The saved
+template remains independent from its source Project and can still be used after
+the source Project is deleted.
 
 ## Task archive and restore contract
 

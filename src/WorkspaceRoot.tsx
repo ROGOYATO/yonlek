@@ -130,6 +130,15 @@ export function WorkspaceRoot({
       onCreateProject={(name) => {
         commands.addProject(name)
       }}
+      onSaveProjectTemplate={(projectId, name) => {
+        commands.saveProjectTemplate(projectId, name)
+      }}
+      onCreateProjectFromTemplate={(templateId) => {
+        commands.createProjectFromTemplate(templateId)
+      }}
+      onDeleteProjectTemplate={(templateId) => {
+        commands.deleteProjectTemplate(templateId)
+      }}
       onArchiveProject={(projectId) => {
         commands.archiveProject(projectId)
       }}

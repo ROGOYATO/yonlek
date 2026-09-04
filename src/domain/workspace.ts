@@ -25,6 +25,7 @@ import {
   restoreProject,
   setProjectDescription,
   type Project,
+  type ProjectTemplate,
 } from './project'
 import {
   archiveTask,
@@ -47,6 +48,7 @@ export interface WorkspaceState {
   customFields?: CustomFieldDefinition[]
   relationships?: TaskRelationship[]
   projects: Project[]
+  projectTemplates?: ProjectTemplate[]
   tasks: Task[]
 }
 
@@ -77,6 +79,9 @@ export type WorkspaceAction =
   | { type: 'list/moved'; listId: string; direction: MoveDirection }
   | { type: 'relationship/added'; relationship: TaskRelationship }
   | { type: 'relationship/deleted'; relationshipId: string }
+  | { type: 'projectTemplate/added'; template: ProjectTemplate }
+  | { type: 'projectTemplate/deleted'; templateId: string }
+  | { type: 'projectTemplate/instantiated'; project: Project; lists: TaskList[]; tasks: Task[] }
   | { type: 'project/added'; project: Project }
   | { type: 'project/archived'; projectId: string; archivedAt: string }
   | { type: 'project/restored'; projectId: string }
@@ -491,6 +496,38 @@ export function workspaceReducer(
 
       return next
     }
+
+    case 'projectTemplate/added':
+      return {
+        ...state,
+        projectTemplates: [
+          ...(state.projectTemplates ?? []),
+          action.template,
+        ],
+      }
+
+    case 'projectTemplate/deleted': {
+      const projectTemplates = (state.projectTemplates ?? []).filter(
+        (template) => template.id !== action.templateId,
+      )
+      const next = { ...state }
+
+      if (projectTemplates.length === 0) {
+        delete next.projectTemplates
+      } else {
+        next.projectTemplates = projectTemplates
+      }
+
+      return next
+    }
+
+    case 'projectTemplate/instantiated':
+      return {
+        ...state,
+        projects: [...state.projects, action.project],
+        lists: [...(state.lists ?? []), ...action.lists],
+        tasks: [...state.tasks, ...action.tasks],
+      }
 
     case 'project/added':
       return {

@@ -53,6 +53,9 @@ export interface AppProps {
   onMoveChecklistItem?: (taskId: string, itemId: string, direction: MoveDirection) => void
   onMoveProject?: (projectId: string, direction: MoveDirection) => void
   onCreateProject?: (name: string) => void
+  onSaveProjectTemplate?: (projectId: string, name: string) => void
+  onCreateProjectFromTemplate?: (templateId: string) => void
+  onDeleteProjectTemplate?: (templateId: string) => void
   onArchiveProject?: (projectId: string) => void
   onRestoreProject?: (projectId: string) => void
   onRenameProject?: (projectId: string, name: string) => void
@@ -112,6 +115,9 @@ export function App({
   onMoveChecklistItem,
   onMoveProject,
   onCreateProject,
+  onSaveProjectTemplate,
+  onCreateProjectFromTemplate,
+  onDeleteProjectTemplate,
   onArchiveProject,
   onRestoreProject,
   onRenameProject,
@@ -270,6 +276,7 @@ export function App({
   const tags = state.tags ?? []
   const areas = state.areas ?? []
   const lists = state.lists ?? []
+  const projectTemplates = state.projectTemplates ?? []
   const activeProjects = state.projects.filter(
     (project) => project.archivedAt === undefined,
   )
@@ -1070,6 +1077,22 @@ export function App({
                     </ul>
                   )}
                 </section>
+              ) : null}
+
+              {onSaveProjectTemplate ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      onSaveProjectTemplate(project.id, project.name)
+                      setError(null)
+                    } catch (caught) {
+                      setError(errorMessage(caught))
+                    }
+                  }}
+                >
+                  Save project as template {project.name}
+                </button>
               ) : null}
 
               {onArchiveProject ? (
@@ -1949,6 +1972,42 @@ export function App({
         })
       )}
 
+
+      {projectTemplates.length > 0 ? (
+        <section>
+          <h2>Project templates</h2>
+          <ul>
+            {projectTemplates.map((template) => (
+              <li key={template.id}>
+                <span>{template.name}</span>
+                {onCreateProjectFromTemplate ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        onCreateProjectFromTemplate(template.id)
+                        setError(null)
+                      } catch (caught) {
+                        setError(errorMessage(caught))
+                      }
+                    }}
+                  >
+                    Create project from template {template.name}
+                  </button>
+                ) : null}
+                {onDeleteProjectTemplate ? (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteProjectTemplate(template.id)}
+                  >
+                    Delete project template {template.name}
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {archivedProjects.length > 0 ? (
         <section>

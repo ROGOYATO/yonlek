@@ -99,3 +99,5 @@ export function moveProjectToArea(
     areaId: normalizedAreaId,
   }
 }
+
+export * from './project-template'

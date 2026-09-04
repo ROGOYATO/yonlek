@@ -54,6 +54,122 @@ function isValidProject(value: unknown): boolean {
 }
 
 
+function isValidProjectTemplateList(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.key === 'string' &&
+    value.key.trim().length > 0 &&
+    typeof value.name === 'string' &&
+    value.name.trim().length > 0
+  )
+}
+
+function isValidProjectTemplateChecklistItem(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.text === 'string' &&
+    value.text.trim().length > 0 &&
+    typeof value.completed === 'boolean'
+  )
+}
+
+function isValidProjectTemplateTask(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.key === 'string' &&
+    value.key.trim().length > 0 &&
+    typeof value.title === 'string' &&
+    value.title.trim().length > 0 &&
+    (value.status === 'todo' ||
+      value.status === 'doing' ||
+      value.status === 'done') &&
+    (value.priority === 'low' ||
+      value.priority === 'normal' ||
+      value.priority === 'high') &&
+    (value.description === undefined ||
+      typeof value.description === 'string') &&
+    (value.listKey === undefined ||
+      (typeof value.listKey === 'string' && value.listKey.trim().length > 0)) &&
+    (value.parentTaskKey === undefined ||
+      (typeof value.parentTaskKey === 'string' &&
+        value.parentTaskKey.trim().length > 0)) &&
+    (value.checklist === undefined ||
+      (Array.isArray(value.checklist) &&
+        value.checklist.every(isValidProjectTemplateChecklistItem)))
+  )
+}
+
+function isValidProjectTemplate(value: unknown): boolean {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== 'string' ||
+    value.id.trim().length === 0 ||
+    typeof value.name !== 'string' ||
+    value.name.trim().length === 0 ||
+    !isIsoInstant(value.createdAt) ||
+    typeof value.projectName !== 'string' ||
+    value.projectName.trim().length === 0 ||
+    (value.projectDescription !== undefined &&
+      typeof value.projectDescription !== 'string') ||
+    !Array.isArray(value.lists) ||
+    !Array.isArray(value.tasks) ||
+    !value.lists.every(isValidProjectTemplateList) ||
+    !value.tasks.every(isValidProjectTemplateTask)
+  ) {
+    return false
+  }
+
+  const lists = value.lists as Array<{ key: string }>
+  const tasks = value.tasks as Array<{
+    key: string
+    listKey?: string
+    parentTaskKey?: string
+  }>
+  const listKeys = new Set(lists.map((list) => list.key))
+  const taskKeys = new Set(tasks.map((task) => task.key))
+
+  if (listKeys.size !== lists.length || taskKeys.size !== tasks.length) {
+    return false
+  }
+
+  if (
+    tasks.some(
+      (task) =>
+        (task.listKey !== undefined && !listKeys.has(task.listKey)) ||
+        (task.parentTaskKey !== undefined &&
+          (!taskKeys.has(task.parentTaskKey) ||
+            task.parentTaskKey === task.key)),
+    )
+  ) {
+    return false
+  }
+
+  const tasksByKey = new Map(tasks.map((task) => [task.key, task]))
+
+  for (const task of tasks) {
+    const visited = new Set<string>()
+    let current = task
+
+    while (current.parentTaskKey !== undefined) {
+      if (visited.has(current.key)) {
+        return false
+      }
+
+      visited.add(current.key)
+      const parent = tasksByKey.get(current.parentTaskKey)
+
+      if (parent === undefined) {
+        return false
+      }
+
+      current = parent
+    }
+  }
+
+  return true
+}
+
+
 function isValidTaskList(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -241,6 +357,8 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
       !Array.isArray(workspace.customFields)) ||
     (workspace.relationships !== undefined &&
       !Array.isArray(workspace.relationships)) ||
+    (workspace.projectTemplates !== undefined &&
+      !Array.isArray(workspace.projectTemplates)) ||
     !Array.isArray(workspace.projects) ||
     !Array.isArray(workspace.tasks)
   ) {
@@ -253,6 +371,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   const people = workspace.people ?? []
   const customFields = workspace.customFields ?? []
   const relationships = workspace.relationships ?? []
+  const projectTemplates = workspace.projectTemplates ?? []
 
   if (
     !areas.every(isValidArea) ||
@@ -261,6 +380,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     !people.every(isValidPerson) ||
     !customFields.every(isValidCustomField) ||
     !relationships.every(isValidTaskRelationship) ||
+    !projectTemplates.every(isValidProjectTemplate) ||
     !workspace.projects.every(isValidProject) ||
     !workspace.tasks.every(isValidTask)
   ) {
@@ -324,6 +444,16 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   )
 
   if (projectIds.size !== workspace.projects.length) {
+    invalidStorage()
+  }
+
+  const projectTemplateIds = new Set(
+    projectTemplates.map(
+      (template) => (template as { id: string }).id,
+    ),
+  )
+
+  if (projectTemplateIds.size !== projectTemplates.length) {
     invalidStorage()
   }
 
