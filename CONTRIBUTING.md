@@ -454,3 +454,31 @@ Rules:
 - Checklist progress is adjacent summary text and must not be appended to the
   stable Task title.
 - Existing Tasks without `checklist` remain valid and require no migration.
+
+
+## Manual ordering
+
+Manual order is represented by durable array order, not by numeric position
+fields.
+
+Sibling scopes:
+
+- Areas: all Areas.
+- Projects: same `areaId`, including the unassigned group.
+- Lists: same `projectId`.
+- Tasks/Subtasks: same `projectId`, `listId`, and `parentTaskId`.
+- Checklist items: same containing Task.
+
+Rules:
+
+- Reordering swaps the selected item with its nearest sibling in the requested
+  direction.
+- Items outside the sibling scope retain their array positions.
+- Boundary moves are no-ops and remain immutable.
+- Task reorder controls are exposed when Task sort is `manual`; other sort modes
+  continue to derive display order independently.
+- `created` remains the default Task sort.
+- Workspace arrays already round-trip in order through version-1 persistence;
+  do not add position fields solely for local manual ordering.
+- Drag-and-drop is a later interaction layer over these commands, not a separate
+  ordering model.

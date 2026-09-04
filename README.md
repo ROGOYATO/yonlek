@@ -9,13 +9,14 @@ The current implementation is intentionally small. It is being developed as a se
 Starting checkpoint for this batch:
 
 - branch: `main`
-- commit: `f444e9d` (`TDD 101-107: add Subtasks`)
-- TDD state: cycle 113 GREEN
-- tests: 206 passing
+- commit: `b4b9a9b` (`TDD 108-113: add Checklists`)
+- TDD state: cycle 118 GREEN
+- tests: 220 passing
 - production build: passing
 - lint: 0 warnings, 0 errors
 
-Checklists are lightweight Task-local data and remain distinct from Subtasks.
+Manual order uses existing persisted array order. No numeric position fields or
+storage migration were added.
 
 See [`FEATURES.md`](./FEATURES.md) for the maintained feature-first roadmap.
 
@@ -351,3 +352,21 @@ Checklists:
 - show completed/total Checklist progress separately from the stable Task title;
 - Checklists are not Subtasks and do not have Project/List/status/priority
   hierarchy of their own.
+
+
+Manual ordering:
+
+- reorder Areas globally;
+- reorder Projects only among Projects with the same Area assignment;
+- reorder Lists only within their Project;
+- reorder Tasks/Subtasks only among siblings with the same Project, List, and
+  parent;
+- reorder Checklist items only within their Task;
+- Task sort now includes a persisted `Manual` mode;
+- `Created` remains the default Task sort;
+- moving at a sibling boundary is a no-op;
+- unrelated items retain their positions while sibling items swap;
+- workspace persistence already preserves array order, so no schema migration
+  or numeric position field is required;
+- current UI uses explicit Move up / Move down controls. Drag-and-drop remains
+  deferred to the visual interaction phase.

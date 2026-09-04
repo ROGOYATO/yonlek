@@ -6,6 +6,10 @@ import {
 } from './checklist'
 import { renameTaskList, type TaskList } from './task-list'
 import {
+  moveItemWithinGroup,
+  type MoveDirection,
+} from './manual-order'
+import {
   moveProjectToArea,
   renameProject,
   setProjectDescription,
@@ -40,14 +44,17 @@ export type WorkspaceAction =
   | { type: 'area/added'; area: Area }
   | { type: 'area/deleted'; areaId: string }
   | { type: 'area/nameChanged'; areaId: string; name: string }
+  | { type: 'area/moved'; areaId: string; direction: MoveDirection }
   | { type: 'list/added'; list: TaskList }
   | { type: 'list/deleted'; listId: string }
   | { type: 'list/nameChanged'; listId: string; name: string }
+  | { type: 'list/moved'; listId: string; direction: MoveDirection }
   | { type: 'project/added'; project: Project }
   | { type: 'project/deleted'; projectId: string }
   | { type: 'project/nameChanged'; projectId: string; name: string }
   | { type: 'project/descriptionChanged'; projectId: string; description: string | null }
   | { type: 'project/areaChanged'; projectId: string; areaId: string | null }
+  | { type: 'project/moved'; projectId: string; direction: MoveDirection }
   | { type: 'task/added'; task: Task }
   | { type: 'task/statusChanged'; taskId: string; status: TaskStatus }
   | { type: 'task/titleChanged'; taskId: string; title: string }
@@ -56,10 +63,12 @@ export type WorkspaceAction =
   | { type: 'task/descriptionChanged'; taskId: string; description: string | null }
   | { type: 'task/projectChanged'; taskId: string; projectId: string }
   | { type: 'task/listChanged'; taskId: string; listId: string | null }
+  | { type: 'task/moved'; taskId: string; direction: MoveDirection }
   | { type: 'task/checklistItemAdded'; taskId: string; item: ChecklistItem }
   | { type: 'task/checklistItemTextChanged'; taskId: string; itemId: string; text: string }
   | { type: 'task/checklistItemCompletedChanged'; taskId: string; itemId: string; completed: boolean }
   | { type: 'task/checklistItemDeleted'; taskId: string; itemId: string }
+  | { type: 'task/checklistItemMoved'; taskId: string; itemId: string; direction: MoveDirection }
   | { type: 'task/deleted'; taskId: string }
 
 export function workspaceReducer(
@@ -78,6 +87,17 @@ export function workspaceReducer(
         ...state,
         areas: (state.areas ?? []).map((area) =>
           area.id === action.areaId ? renameArea(area, action.name) : area,
+        ),
+      }
+
+    case 'area/moved':
+      return {
+        ...state,
+        areas: moveItemWithinGroup(
+          state.areas ?? [],
+          action.areaId,
+          action.direction,
+          () => true,
         ),
       }
 
@@ -114,6 +134,18 @@ export function workspaceReducer(
           list.id === action.listId
             ? renameTaskList(list, action.name)
             : list,
+        ),
+      }
+
+    case 'list/moved':
+      return {
+        ...state,
+        lists: moveItemWithinGroup(
+          state.lists ?? [],
+          action.listId,
+          action.direction,
+          (candidate, target) =>
+            candidate.projectId === target.projectId,
         ),
       }
 
@@ -177,6 +209,18 @@ export function workspaceReducer(
         ),
       }
     }
+
+    case 'project/moved':
+      return {
+        ...state,
+        projects: moveItemWithinGroup(
+          state.projects,
+          action.projectId,
+          action.direction,
+          (candidate, target) =>
+            candidate.areaId === target.areaId,
+        ),
+      }
 
     case 'project/deleted': {
       const next: WorkspaceState = {
@@ -390,6 +434,20 @@ export function workspaceReducer(
       }
     }
 
+    case 'task/moved':
+      return {
+        ...state,
+        tasks: moveItemWithinGroup(
+          state.tasks,
+          action.taskId,
+          action.direction,
+          (candidate, target) =>
+            candidate.projectId === target.projectId &&
+            candidate.listId === target.listId &&
+            candidate.parentTaskId === target.parentTaskId,
+        ),
+      }
+
     case 'task/checklistItemAdded': {
       const target = state.tasks.find((task) => task.id === action.taskId)
 
@@ -449,6 +507,24 @@ export function workspaceReducer(
                         action.completed,
                       )
                     : item,
+                ),
+              }
+            : task,
+        ),
+      }
+
+    case 'task/checklistItemMoved':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId && task.checklist !== undefined
+            ? {
+                ...task,
+                checklist: moveItemWithinGroup(
+                  task.checklist,
+                  action.itemId,
+                  action.direction,
+                  () => true,
                 ),
               }
             : task,

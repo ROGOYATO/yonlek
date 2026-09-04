@@ -38,6 +38,9 @@ export function WorkspaceRoot({
       onDeleteArea={(areaId) => {
         commands.deleteArea(areaId)
       }}
+      onMoveArea={(areaId, direction) => {
+        commands.moveArea(areaId, direction)
+      }}
       onChangeProjectArea={(projectId, areaId) => {
         commands.changeProjectArea(projectId, areaId)
       }}
@@ -49,6 +52,9 @@ export function WorkspaceRoot({
       }}
       onDeleteTaskList={(listId) => {
         commands.deleteTaskList(listId)
+      }}
+      onMoveTaskList={(listId, direction) => {
+        commands.moveTaskList(listId, direction)
       }}
       onChangeTaskList={(taskId, listId) => {
         commands.changeTaskList(taskId, listId)
@@ -64,6 +70,12 @@ export function WorkspaceRoot({
       }}
       onDeleteChecklistItem={(taskId, itemId) => {
         commands.deleteChecklistItem(taskId, itemId)
+      }}
+      onMoveChecklistItem={(taskId, itemId, direction) => {
+        commands.moveChecklistItem(taskId, itemId, direction)
+      }}
+      onMoveProject={(projectId, direction) => {
+        commands.moveProject(projectId, direction)
       }}
       onCreateProject={(name) => {
         commands.addProject(name)
@@ -88,6 +100,9 @@ export function WorkspaceRoot({
       }}
       onDeleteTask={(taskId) => {
         commands.deleteTask(taskId)
+      }}
+      onMoveTask={(taskId, direction) => {
+        commands.moveTask(taskId, direction)
       }}
       onChangeTaskStatus={(taskId, status) => {
         commands.changeTaskStatus(taskId, status)

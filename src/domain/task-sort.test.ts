@@ -82,3 +82,13 @@ it('sorts high priority before normal and low without mutating the input', () =>
     'task-3',
   ])
 })
+
+
+it('preserves current task order for manual sorting', () => {
+  const tasks = [alpha, zebra]
+
+  const result = sortTasks(tasks, 'manual' as never)
+
+  expect(result.map((task) => task.id)).toEqual(['task-2', 'task-1'])
+  expect(result).not.toBe(tasks)
+})

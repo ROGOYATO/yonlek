@@ -346,3 +346,75 @@ describe('checklist commands', () => {
     expect(loadWorkspace(storage).tasks[0]).not.toHaveProperty('checklist')
   })
 })
+
+
+describe('manual order commands', () => {
+  it('moves areas projects lists tasks and checklist items through the store', () => {
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = [
+      'area-1',
+      'area-2',
+      'project-1',
+      'project-2',
+      'project-3',
+      'list-1',
+      'list-2',
+      'task-1',
+      'task-2',
+      'check-1',
+      'check-2',
+    ]
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T06:40:00.000Z',
+    })
+
+    const engineering = commands.addArea('Engineering')
+    const operations = commands.addArea('Operations')
+    const firstProject = commands.addProject('Robotics Research')
+    commands.addProject('Unassigned')
+    const secondProject = commands.addProject('Controls')
+    commands.changeProjectArea(firstProject.id, engineering.id)
+    commands.changeProjectArea(secondProject.id, engineering.id)
+
+    const firstList = commands.addTaskList(firstProject.id, 'Backlog')
+    const secondList = commands.addTaskList(firstProject.id, 'Sprint 1')
+    const firstTask = commands.addTask(
+      firstProject.id,
+      'Draft experiment plan',
+      firstList.id,
+    )
+    const secondTask = commands.addTask(
+      firstProject.id,
+      'Calibrate camera',
+      firstList.id,
+    )
+    const firstItem = commands.addChecklistItem(
+      firstTask.id,
+      'Review safety notes',
+    )
+    const secondItem = commands.addChecklistItem(
+      firstTask.id,
+      'Confirm camera mount',
+    )
+
+    commands.moveArea(operations.id, 'up')
+    commands.moveProject(secondProject.id, 'up')
+    commands.moveTaskList(secondList.id, 'up')
+    commands.moveTask(secondTask.id, 'up')
+    commands.moveChecklistItem(firstTask.id, secondItem.id, 'up')
+
+    expect(store.getState().areas?.map((area) => area.id)).toEqual([
+      operations.id,
+      engineering.id,
+    ])
+    expect(store.getState().projects[0]?.id).toBe(secondProject.id)
+    expect(store.getState().lists?.[0]?.id).toBe(secondList.id)
+    expect(store.getState().tasks[0]?.id).toBe(secondTask.id)
+    expect(
+      store.getState().tasks.find((task) => task.id === firstTask.id)
+        ?.checklist?.map((item) => item.id),
+    ).toEqual([secondItem.id, firstItem.id])
+  })
+})

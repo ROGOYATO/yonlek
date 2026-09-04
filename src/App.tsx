@@ -6,6 +6,7 @@ import {
 } from './domain/task-filter'
 import { sortTasks, type TaskSort } from './domain/task-sort'
 import { summarizeTasks } from './domain/task-summary'
+import type { MoveDirection } from './domain/manual-order'
 import {
   createDefaultViewPreferences,
   updateViewPreferences,
@@ -19,15 +20,19 @@ export interface AppProps {
   onCreateArea?: (name: string) => void
   onRenameArea?: (areaId: string, name: string) => void
   onDeleteArea?: (areaId: string) => void
+  onMoveArea?: (areaId: string, direction: MoveDirection) => void
   onChangeProjectArea?: (projectId: string, areaId: string | null) => void
   onCreateTaskList?: (projectId: string, name: string) => void
   onRenameTaskList?: (listId: string, name: string) => void
   onDeleteTaskList?: (listId: string) => void
+  onMoveTaskList?: (listId: string, direction: MoveDirection) => void
   onChangeTaskList?: (taskId: string, listId: string | null) => void
   onAddChecklistItem?: (taskId: string, text: string) => void
   onRenameChecklistItem?: (taskId: string, itemId: string, text: string) => void
   onChangeChecklistItemCompleted?: (taskId: string, itemId: string, completed: boolean) => void
   onDeleteChecklistItem?: (taskId: string, itemId: string) => void
+  onMoveChecklistItem?: (taskId: string, itemId: string, direction: MoveDirection) => void
+  onMoveProject?: (projectId: string, direction: MoveDirection) => void
   onCreateProject?: (name: string) => void
   onRenameProject?: (projectId: string, name: string) => void
   onChangeProjectDescription?: (projectId: string, description: string | null) => void
@@ -36,6 +41,7 @@ export interface AppProps {
   onDeleteProject?: (projectId: string) => void
   onRenameTask?: (taskId: string, title: string) => void
   onDeleteTask?: (taskId: string) => void
+  onMoveTask?: (taskId: string, direction: MoveDirection) => void
   onChangeTaskStatus?: (taskId: string, status: TaskStatus) => void
   onChangeTaskPriority?: (taskId: string, priority: TaskPriority) => void
   onChangeTaskDueDate?: (taskId: string, dueDate: string | null) => void
@@ -54,15 +60,19 @@ export function App({
   onCreateArea,
   onRenameArea,
   onDeleteArea,
+  onMoveArea,
   onChangeProjectArea,
   onCreateTaskList,
   onRenameTaskList,
   onDeleteTaskList,
+  onMoveTaskList,
   onChangeTaskList,
   onAddChecklistItem,
   onRenameChecklistItem,
   onChangeChecklistItemCompleted,
   onDeleteChecklistItem,
+  onMoveChecklistItem,
+  onMoveProject,
   onCreateProject,
   onRenameProject,
   onChangeProjectDescription,
@@ -71,6 +81,7 @@ export function App({
   onDeleteProject,
   onRenameTask,
   onDeleteTask,
+  onMoveTask,
   onChangeTaskStatus,
   onChangeTaskPriority,
   onChangeTaskDueDate,
@@ -262,6 +273,7 @@ export function App({
         <option value="title">Title</option>
         <option value="dueDate">Due date</option>
         <option value="priority">Priority</option>
+        <option value="manual">Manual</option>
       </select>
 
       <button
@@ -316,6 +328,22 @@ export function App({
                       }
                       )
                     </span>
+                    {onMoveArea ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onMoveArea(area.id, 'up')}
+                        >
+                          Move area {area.name} up
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onMoveArea(area.id, 'down')}
+                        >
+                          Move area {area.name} down
+                        </button>
+                      </>
+                    ) : null}
                     {onRenameArea ? (
                       <form
                         onSubmit={(event) => {
@@ -410,6 +438,22 @@ export function App({
           return (
             <section key={project.id}>
               <h2>{project.name}</h2>
+              {onMoveProject ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onMoveProject(project.id, 'up')}
+                  >
+                    Move project {project.name} up
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onMoveProject(project.id, 'down')}
+                  >
+                    Move project {project.name} down
+                  </button>
+                </>
+              ) : null}
               <p className="project-summary">
                 {projectSummary.done} of {projectSummary.total} tasks done
               </p>
@@ -577,6 +621,26 @@ export function App({
                               }
                               )
                             </span>
+                            {onMoveTaskList ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    onMoveTaskList(list.id, 'up')
+                                  }
+                                >
+                                  Move list {list.name} up
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    onMoveTaskList(list.id, 'down')
+                                  }
+                                >
+                                  Move list {list.name} down
+                                </button>
+                              </>
+                            ) : null}
                             {onRenameTaskList ? (
                               <form
                                 onSubmit={(event) => {
@@ -735,6 +799,22 @@ export function App({
                             ? 'subtask'
                             : 'subtasks'}
                         </span>
+                        {taskSort === 'manual' && onMoveTask ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => onMoveTask(task.id, 'up')}
+                            >
+                              Move task {task.title} up
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onMoveTask(task.id, 'down')}
+                            >
+                              Move task {task.title} down
+                            </button>
+                          </>
+                        ) : null}
                         {parentTask ? (
                           <span>Subtask of {parentTask.title}</span>
                         ) : null}
@@ -830,6 +910,34 @@ export function App({
                                   return (
                                     <li key={item.id}>
                                       <span>{item.text}</span>
+                                      {onMoveChecklistItem ? (
+                                        <>
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              onMoveChecklistItem(
+                                                task.id,
+                                                item.id,
+                                                'up',
+                                              )
+                                            }
+                                          >
+                                            Move checklist item {item.text} up in {task.title}
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              onMoveChecklistItem(
+                                                task.id,
+                                                item.id,
+                                                'down',
+                                              )
+                                            }
+                                          >
+                                            Move checklist item {item.text} down in {task.title}
+                                          </button>
+                                        </>
+                                      ) : null}
                                       {onChangeChecklistItemCompleted ? (
                                         <>
                                           <label

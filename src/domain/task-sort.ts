@@ -1,8 +1,12 @@
 import type { Task } from './task'
 
-export type TaskSort = 'created' | 'title' | 'dueDate' | 'priority'
+export type TaskSort = 'created' | 'title' | 'dueDate' | 'priority' | 'manual'
 
 export function sortTasks(tasks: Task[], sort: TaskSort): Task[] {
+  if (sort === 'manual') {
+    return [...tasks]
+  }
+
   return [...tasks].sort((left, right) => {
     if (sort === 'title') {
       return left.title.localeCompare(right.title, undefined, {

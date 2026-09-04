@@ -1207,3 +1207,140 @@ describe('WorkspaceRoot checklist progress', () => {
     ).toBe('1/2 checklist items complete')
   })
 })
+
+
+describe('WorkspaceRoot manual ordering', () => {
+  it('lets a user reorder areas and projects within their sibling scopes', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = [
+      'area-1',
+      'area-2',
+      'project-1',
+      'project-2',
+      'project-3',
+    ]
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T07:00:00.000Z',
+    })
+    const engineering = commands.addArea('Engineering')
+    const operations = commands.addArea('Operations')
+    const first = commands.addProject('Robotics Research')
+    commands.addProject('Unassigned')
+    const second = commands.addProject('Controls')
+    commands.changeProjectArea(first.id, engineering.id)
+    commands.changeProjectArea(second.id, engineering.id)
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.click(
+      screen.getByRole('button', { name: 'Move area Operations up' }),
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Move project Controls up' }),
+    )
+
+    expect(store.getState().areas?.map((area) => area.id)).toEqual([
+      operations.id,
+      engineering.id,
+    ])
+    expect(store.getState().projects.map((project) => project.id)).toEqual([
+      second.id,
+      'project-2',
+      first.id,
+    ])
+  })
+
+  it('lets a user choose Manual task sort and reorder lists and sibling tasks', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = [
+      'project-1',
+      'list-1',
+      'list-2',
+      'task-1',
+      'task-2',
+      'task-3',
+    ]
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T07:01:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const firstList = commands.addTaskList(project.id, 'Backlog')
+    const secondList = commands.addTaskList(project.id, 'Sprint 1')
+    const firstTask = commands.addTask(
+      project.id,
+      'Draft experiment plan',
+      firstList.id,
+    )
+    const secondTask = commands.addTask(
+      project.id,
+      'Calibrate camera',
+      firstList.id,
+    )
+    commands.addTask(project.id, 'Unrelated', secondList.id)
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.selectOptions(screen.getByLabelText('Sort tasks'), 'manual')
+    await user.click(
+      screen.getByRole('button', { name: 'Move list Sprint 1 up' }),
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Move task Calibrate camera up' }),
+    )
+
+    expect(store.getState().lists?.map((list) => list.id)).toEqual([
+      secondList.id,
+      firstList.id,
+    ])
+    expect(store.getState().tasks.map((task) => task.id)).toEqual([
+      secondTask.id,
+      firstTask.id,
+      'task-3',
+    ])
+  })
+
+  it('lets a user reorder checklist items without changing the task title', async () => {
+    const user = userEvent.setup()
+    const storage = new MemoryStore()
+    const store = createWorkspaceStore(storage)
+    const ids = [
+      'project-1',
+      'task-1',
+      'check-1',
+      'check-2',
+    ]
+    const commands = createWorkspaceCommands(store, {
+      nextId: () => ids.shift() ?? 'unexpected-id',
+      now: () => '2026-09-04T07:02:00.000Z',
+    })
+    const project = commands.addProject('Robotics Research')
+    const task = commands.addTask(project.id, 'Draft experiment plan')
+    const first = commands.addChecklistItem(
+      task.id,
+      'Review safety notes',
+    )
+    const second = commands.addChecklistItem(
+      task.id,
+      'Confirm camera mount',
+    )
+
+    render(<WorkspaceRoot store={store} commands={commands} />)
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Move checklist item Confirm camera mount up in Draft experiment plan',
+      }),
+    )
+
+    expect(screen.getByText('Draft experiment plan')).toBeTruthy()
+    expect(
+      store.getState().tasks[0]?.checklist?.map((item) => item.id),
+    ).toEqual([second.id, first.id])
+  })
+})

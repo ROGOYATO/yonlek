@@ -760,3 +760,202 @@ describe('task checklists', () => {
     expect(next.tasks[0]).not.toHaveProperty('checklist')
   })
 })
+
+
+describe('manual sibling ordering', () => {
+  it('moves areas globally', () => {
+    const engineering = {
+      id: 'area-1',
+      name: 'Engineering',
+      createdAt: '2026-09-04T06:20:00.000Z',
+    }
+    const operations = {
+      id: 'area-2',
+      name: 'Operations',
+      createdAt: '2026-09-04T06:21:00.000Z',
+    }
+
+    const next = workspaceReducer(
+      {
+        areas: [engineering, operations],
+        projects: [],
+        tasks: [],
+      },
+      {
+        type: 'area/moved',
+        areaId: operations.id,
+        direction: 'up',
+      } as never,
+    )
+
+    expect(next.areas?.map((area) => area.id)).toEqual([
+      operations.id,
+      engineering.id,
+    ])
+  })
+
+  it('moves projects only among projects in the same area', () => {
+    const area = {
+      id: 'area-1',
+      name: 'Engineering',
+      createdAt: '2026-09-04T06:22:00.000Z',
+    }
+    const first = { ...project, id: 'project-1', areaId: area.id }
+    const unrelated = {
+      ...project,
+      id: 'project-2',
+      name: 'Operations',
+    }
+    const second = {
+      ...project,
+      id: 'project-3',
+      name: 'Controls',
+      areaId: area.id,
+    }
+
+    const next = workspaceReducer(
+      {
+        areas: [area],
+        projects: [first, unrelated, second],
+        tasks: [],
+      },
+      {
+        type: 'project/moved',
+        projectId: second.id,
+        direction: 'up',
+      } as never,
+    )
+
+    expect(next.projects.map((item) => item.id)).toEqual([
+      second.id,
+      unrelated.id,
+      first.id,
+    ])
+  })
+
+  it('moves lists only among lists in the same project', () => {
+    const otherProject = createProject({
+      id: 'project-2',
+      name: 'Field Tests',
+      now: '2026-09-04T06:23:00.000Z',
+    })
+    const first = {
+      id: 'list-1',
+      projectId: project.id,
+      name: 'Backlog',
+      createdAt: '2026-09-04T06:24:00.000Z',
+    }
+    const unrelated = {
+      id: 'list-2',
+      projectId: otherProject.id,
+      name: 'Field Queue',
+      createdAt: '2026-09-04T06:25:00.000Z',
+    }
+    const second = {
+      id: 'list-3',
+      projectId: project.id,
+      name: 'Sprint 1',
+      createdAt: '2026-09-04T06:26:00.000Z',
+    }
+
+    const next = workspaceReducer(
+      {
+        lists: [first, unrelated, second],
+        projects: [project, otherProject],
+        tasks: [],
+      },
+      {
+        type: 'list/moved',
+        listId: second.id,
+        direction: 'up',
+      } as never,
+    )
+
+    expect(next.lists?.map((list) => list.id)).toEqual([
+      second.id,
+      unrelated.id,
+      first.id,
+    ])
+  })
+
+  it('moves tasks only among siblings in the same project list and parent', () => {
+    const list = {
+      id: 'list-1',
+      projectId: project.id,
+      name: 'Backlog',
+      createdAt: '2026-09-04T06:27:00.000Z',
+    }
+    const otherList = {
+      id: 'list-2',
+      projectId: project.id,
+      name: 'Sprint 1',
+      createdAt: '2026-09-04T06:28:00.000Z',
+    }
+    const first = { ...task, id: 'task-1', listId: list.id }
+    const unrelated = {
+      ...task,
+      id: 'task-2',
+      title: 'Unrelated',
+      listId: otherList.id,
+    }
+    const second = {
+      ...task,
+      id: 'task-3',
+      title: 'Second sibling',
+      listId: list.id,
+    }
+
+    const next = workspaceReducer(
+      {
+        lists: [list, otherList],
+        projects: [project],
+        tasks: [first, unrelated, second],
+      },
+      {
+        type: 'task/moved',
+        taskId: second.id,
+        direction: 'up',
+      } as never,
+    )
+
+    expect(next.tasks.map((item) => item.id)).toEqual([
+      second.id,
+      unrelated.id,
+      first.id,
+    ])
+  })
+
+  it('moves checklist items only inside their task', () => {
+    const first = {
+      id: 'check-1',
+      text: 'Review safety notes',
+      completed: false,
+    }
+    const second = {
+      id: 'check-2',
+      text: 'Confirm camera mount',
+      completed: false,
+    }
+    const listedTask = {
+      ...task,
+      checklist: [first, second],
+    }
+
+    const next = workspaceReducer(
+      {
+        projects: [project],
+        tasks: [listedTask],
+      },
+      {
+        type: 'task/checklistItemMoved',
+        taskId: task.id,
+        itemId: second.id,
+        direction: 'up',
+      } as never,
+    )
+
+    expect(
+      next.tasks[0]?.checklist?.map((item) => item.id),
+    ).toEqual([second.id, first.id])
+  })
+})

@@ -36,7 +36,8 @@ function isValidPreferences(value: unknown): value is ViewPreferences {
     (value.sort === 'created' ||
       value.sort === 'title' ||
       value.sort === 'dueDate' ||
-      value.sort === 'priority')
+      value.sort === 'priority' ||
+      value.sort === 'manual')
   )
 }
 

@@ -8,6 +8,7 @@ import {
   type TaskPriority,
   type TaskStatus,
 } from '../domain/task'
+import type { MoveDirection } from '../domain/manual-order'
 import type { WorkspaceStore } from './workspace-store'
 
 export interface WorkspaceRuntime {
@@ -19,15 +20,19 @@ export interface WorkspaceCommands {
   addArea(name: string): ReturnType<typeof createArea>
   renameArea(areaId: string, name: string): void
   deleteArea(areaId: string): void
+  moveArea(areaId: string, direction: MoveDirection): void
   changeProjectArea(projectId: string, areaId: string | null): void
   addTaskList(projectId: string, name: string): ReturnType<typeof createTaskList>
   renameTaskList(listId: string, name: string): void
   deleteTaskList(listId: string): void
+  moveTaskList(listId: string, direction: MoveDirection): void
   changeTaskList(taskId: string, listId: string | null): void
   addChecklistItem(taskId: string, text: string): ReturnType<typeof createChecklistItem>
   renameChecklistItem(taskId: string, itemId: string, text: string): void
   changeChecklistItemCompleted(taskId: string, itemId: string, completed: boolean): void
   deleteChecklistItem(taskId: string, itemId: string): void
+  moveChecklistItem(taskId: string, itemId: string, direction: MoveDirection): void
+  moveProject(projectId: string, direction: MoveDirection): void
   addProject(name: string): ReturnType<typeof createProject>
   addTask(projectId: string, title: string, listId?: string): ReturnType<typeof createTask>
   addSubtask(parentTaskId: string, title: string): ReturnType<typeof createSubtask>
@@ -39,6 +44,7 @@ export interface WorkspaceCommands {
   changeTaskDueDate(taskId: string, dueDate: string | null): void
   changeTaskDescription(taskId: string, description: string | null): void
   changeTaskProject(taskId: string, projectId: string): void
+  moveTask(taskId: string, direction: MoveDirection): void
   deleteTask(taskId: string): void
   deleteProject(projectId: string): void
 }
@@ -61,6 +67,14 @@ export function createWorkspaceCommands(
       })
 
       return area
+    },
+
+    moveArea(areaId, direction) {
+      store.dispatch({
+        type: 'area/moved',
+        areaId,
+        direction,
+      })
     },
 
     renameArea(areaId, name) {
@@ -102,6 +116,14 @@ export function createWorkspaceCommands(
       return list
     },
 
+    moveTaskList(listId, direction) {
+      store.dispatch({
+        type: 'list/moved',
+        listId,
+        direction,
+      })
+    },
+
     renameTaskList(listId, name) {
       store.dispatch({
         type: 'list/nameChanged',
@@ -122,6 +144,15 @@ export function createWorkspaceCommands(
         type: 'task/listChanged',
         taskId,
         listId,
+      })
+    },
+
+    moveChecklistItem(taskId, itemId, direction) {
+      store.dispatch({
+        type: 'task/checklistItemMoved',
+        taskId,
+        itemId,
+        direction,
       })
     },
 
@@ -163,6 +194,14 @@ export function createWorkspaceCommands(
         type: 'task/checklistItemDeleted',
         taskId,
         itemId,
+      })
+    },
+
+    moveProject(projectId, direction) {
+      store.dispatch({
+        type: 'project/moved',
+        projectId,
+        direction,
       })
     },
 
@@ -283,6 +322,14 @@ export function createWorkspaceCommands(
         type: 'task/projectChanged',
         taskId,
         projectId,
+      })
+    },
+
+    moveTask(taskId, direction) {
+      store.dispatch({
+        type: 'task/moved',
+        taskId,
+        direction,
       })
     },
 

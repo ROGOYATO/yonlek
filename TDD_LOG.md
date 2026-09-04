@@ -539,3 +539,25 @@ Lint: 0 warnings, 0 errors
 
 Checklist data is optional and nested under Task, so existing stored Tasks remain
 backward-compatible without a storage-version migration.
+
+
+## Cycles 114-118
+
+| Cycle | Behavior / boundary | Result |
+| --- | --- | --- |
+| 114 | Generic immutable sibling-order helper | GREEN |
+| 115 | Area/Project/List/Task/Checklist sibling-order reducer behavior | GREEN |
+| 116 | Manual-order application commands | GREEN |
+| 117 | Manual Task sort and view-preference persistence | GREEN |
+| 118 | Bare-bone Move up/down UI controls | GREEN |
+
+Expected successful checkpoint:
+
+```text
+Tests: 220 passed
+Build: passed
+Lint: 0 warnings, 0 errors
+```
+
+Manual ordering reuses persisted array order and does not change workspace
+storage version 1.

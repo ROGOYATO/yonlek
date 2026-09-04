@@ -100,3 +100,16 @@ it('falls back to defaults when preference storage cannot be read', () => {
 
   expect(loadViewPreferences(storage)).toEqual(createDefaultViewPreferences())
 })
+
+
+it('round-trips the manual task sort preference', () => {
+  const storage = new MemoryStore()
+  const preferences = {
+    ...createDefaultViewPreferences(),
+    sort: 'manual' as never,
+  }
+
+  saveViewPreferences(storage, preferences)
+
+  expect(loadViewPreferences(storage).sort).toBe('manual')
+})
