@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react'
 
+import { groupTasks, type TaskGroup } from './domain/task-group'
+
 import {
   filterTasks,
   type TaskDueDateFilter,
@@ -10,6 +12,7 @@ import type { MoveDirection } from './domain/manual-order'
 import type { TaskRelationshipType } from './domain/task-relationship'
 import {
   createDefaultViewPreferences,
+  getTaskGroup,
   updateViewPreferences,
   type ViewPreferences,
 } from './domain/view-preferences'
@@ -188,6 +191,7 @@ export function App({
     dueDate: dueDateFilter,
     sort: taskSort,
   } = viewPreferences
+  const taskGroup = getTaskGroup(viewPreferences)
 
   function updatePreferences(patch: Partial<ViewPreferences>) {
     setViewPreferences((current) => {
@@ -430,6 +434,20 @@ export function App({
         <option value="dueDate">Due date</option>
         <option value="priority">Priority</option>
         <option value="manual">Manual</option>
+      </select>
+
+      <label htmlFor="task-group">Group tasks</label>
+      <select
+        id="task-group"
+        value={taskGroup}
+        onChange={(event) =>
+          updatePreferences({ group: event.target.value as TaskGroup })
+        }
+      >
+        <option value="none">None</option>
+        <option value="status">Status</option>
+        <option value="priority">Priority</option>
+        <option value="list">List</option>
       </select>
 
       <button
@@ -828,6 +846,21 @@ export function App({
             }),
             taskSort,
           )
+          const taskGroups = groupTasks(tasks, taskGroup, projectLists)
+          const taskEntries =
+            taskGroup === 'none'
+              ? tasks.map((task) => ({ type: 'task' as const, task }))
+              : taskGroups.flatMap((group) => [
+                  {
+                    type: 'group' as const,
+                    key: group.key,
+                    label: group.label,
+                  },
+                  ...group.tasks.map((task) => ({
+                    type: 'task' as const,
+                    task,
+                  })),
+                ])
           const listName = listNames[project.id] ?? ''
           const taskTitle = taskTitles[project.id] ?? ''
           const newTaskListId = newTaskLists[project.id] ?? ''
@@ -1201,7 +1234,16 @@ export function App({
                 <p>{projectTasks.length === 0 ? 'No tasks yet.' : 'No matching tasks.'}</p>
               ) : (
                 <ul>
-                  {tasks.map((task) => {
+                  {taskEntries.map((entry) => {
+                    if (entry.type === 'group') {
+                      return (
+                        <li key={`task-group-${entry.key}`}>
+                          <h3>{entry.label}</h3>
+                        </li>
+                      )
+                    }
+
+                    const task = entry.task
                     const parentTask =
                       task.parentTaskId === undefined
                         ? undefined

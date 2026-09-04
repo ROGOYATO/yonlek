@@ -4,11 +4,11 @@ This file tracks product behavior, not visual polish. A checkbox moves to
 complete only after the behavior has a confirmed GREEN cycle and the final
 verification gate has passed.
 
-Confirmed starting checkpoint for TDD 163-167:
+Confirmed starting checkpoint for TDD 168-172:
 
-- commit: `62740bb`
-- TDD: 162 GREEN
-- tests: 320 passed across 42 files
+- commit: `f18d394`
+- TDD: 167 GREEN
+- tests: 325 passed across 47 files
 - lint: 0 warnings, 0 errors
 - production build: passed
 
@@ -132,7 +132,7 @@ restored under an archived parent through the UI.
 - [x] Sort by priority
 - [x] Manual sort mode
 - [x] Clear active Task filters together
-- [ ] Per-view grouping
+- [x] Per-view grouping
 - [ ] Saved filter sets
 
 ### Structure
@@ -222,8 +222,13 @@ final navigation and visual system are still deferred.
 - [ ] Timeline
 - [ ] Gantt foundation
 - [ ] Saved views
-- [ ] Per-view grouping
+- [x] Per-view grouping
 - [ ] Per-view filters and sorts
+
+Grouping is a view preference, not workspace data. The current list view can
+group the already filtered and sorted active Tasks by status, priority, or List.
+The `none` setting preserves the flat list, empty groups are omitted, and Task
+order inside each group stays equal to the incoming sorted order.
 
 ## Productivity
 

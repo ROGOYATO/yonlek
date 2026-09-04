@@ -2,24 +2,25 @@
 
 ## Current verified behavior checkpoint
 
-The latest user-confirmed behavior commit is:
+The latest user-confirmed behavior commit before TDD 168-172 is:
 
 ```text
-3c0213c  TDD 153-157: add project archiving
+f18d394  TDD 163-167: add task templates
 ```
 
 Verified on Windows from `C:\Users\yavuz\git\yonlek`:
 
 ```text
-Tests: 315 passed across 37 files
+Tests: 325 passed across 47 files
 Lint: 0 warnings, 0 errors
 Build: passed
 Working tree: clean after commit
-Push: origin/main updated from e71af4e to 3c0213c
+Push: origin/main updated from 62740bb to f18d394
 ```
 
-TDD 153-157 added Project archive/restore on top of the confirmed Task archive
-checkpoint and advanced the behavior baseline from `e71af4e` to `3c0213c`.
+TDD 163-167 added Task templates on top of the confirmed Project-template
+checkpoint. The approved TDD 167 test repair changed only query scope and left
+production behavior unchanged.
 
 This log records completed behavior cycles. RED was observed before the
 corresponding production implementation unless a row is explicitly marked as
@@ -1341,3 +1342,99 @@ live inventory is otherwise unchanged. Live output remains authoritative. The
 runner must pass each focused GREEN, zero-warning lint, the full suite,
 production build, LF audits, exact changed-file verification, and staged diff
 checks before commit or push.
+
+## Confirmed checkpoint after TDD 167
+
+The approved TDD 167 test-repair resume completed from `62740bb` and created:
+
+```text
+f18d394  TDD 163-167: add task templates
+```
+
+Live verification:
+
+```text
+Tests: 325 passed across 47 files
+Lint: 0 warnings, 0 errors
+Build: passed
+Line-ending audit: 16 changed repository files passed
+Working tree: clean after commit
+Push: origin/main updated from 62740bb to f18d394
+```
+
+The TDD 167 production behavior was already GREEN. The approved test-only repair
+replaced a global title count with `within(...)` queries scoped to the Target
+project and kept the template-retention/deletion assertions.
+
+## TDD 168 - Task grouping value semantics
+
+**RED**
+
+Add focused domain coverage for `none`, status, priority, and List grouping. The
+input Task order must remain stable inside every group. Empty groups are omitted.
+
+**GREEN**
+
+Add a Task-grouping module with one `groupTasks(...)` interface. Status group
+order is To do, Doing, Done. Priority group order is High, Normal, Low. List
+groups follow the supplied List order and put unlisted Tasks last.
+
+## TDD 169 - View preference grouping
+
+**RED**
+
+Add focused preference coverage that treats a missing grouping field as `none`
+and updates grouping without mutating the previous preference object.
+
+**GREEN**
+
+Add optional `group` state plus `getTaskGroup(...)`. Keeping the stored field
+optional preserves exact old version-1 defaults while giving callers one effective
+value.
+
+## TDD 170 - Grouping preference persistence
+
+**RED**
+
+Add focused storage coverage that round-trips a valid grouping value, accepts an
+old version-1 document with no grouping field, and rejects an invalid grouping
+value.
+
+**GREEN**
+
+Extend version-1 preference validation for `none`, status, priority, and List
+grouping. No preference-storage version bump is required.
+
+## TDD 171 - Persisted grouping control
+
+**RED**
+
+Add a focused BrowserApp interaction test for a `Group tasks` control that writes
+the grouping preference without changing workspace data.
+
+**GREEN**
+
+Render the grouping selector and update the existing view-preference path. The
+BrowserApp persistence adapter remains unchanged because it already stores the
+whole preference object.
+
+## TDD 172 - Grouped Task rendering
+
+**RED**
+
+Add focused rendered coverage for non-empty status headings and for returning to
+the flat list when grouping is set to `none`.
+
+**GREEN**
+
+Group the already filtered and sorted project Tasks before rendering. Grouping
+does not mutate workspace state or change the order inside a group.
+
+## Prepared verification target after TDD 172
+
+This batch starts from clean `main` at `f18d394`. Five focused behavior tests are
+prepared, so the expected suite count is 330 across 52 test files if the live
+inventory is otherwise unchanged. Live output remains authoritative. The runner
+must pass every focused GREEN, zero-warning lint, the full suite, production
+build, LF audits, exact changed-file verification, and staged diff checks before
+commit or push.

@@ -5,10 +5,10 @@
 The current user-confirmed behavior baseline is:
 
 - branch: `main`
-- confirmed starting commit for TDD 163-167: `62740bb` (`TDD 158-162: add project templates`)
+- confirmed starting commit for TDD 168-172: `f18d394` (`TDD 163-167: add task templates`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- verified suite at that checkpoint: 320 tests across 42 files
+- verified suite at that checkpoint: 325 tests across 47 files
 - lint: 0 warnings and 0 errors
 - production build: passed
 - post-commit tree: clean
@@ -28,6 +28,14 @@ record the new TDD range and live verification result after the runner finishes.
 For private-repository work, prefer a clean `git archive` of the confirmed HEAD
 as the preparation source. Live runners still precheck every existing-file patch
 against the checkout before creating the first RED file.
+
+## View preference compatibility
+
+View preferences use a separate version-1 document. Additive preference fields may
+remain optional when absence has one explicit effective default. The loader must
+accept old version-1 documents without the field, validate any supplied value, and
+keep workspace data unchanged. Do not bump the preference-storage version only to
+add an optional field with backward-compatible semantics.
 
 
 ## PowerShell Git scalar output

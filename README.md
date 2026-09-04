@@ -8,20 +8,20 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 163-167 is TDD 162.
+The confirmed starting checkpoint for TDD 168-172 is TDD 167.
 
 - branch: `main`
-- behavior commit: `62740bb` (`TDD 158-162: add project templates`)
+- behavior commit: `f18d394` (`TDD 163-167: add task templates`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 320 passed across 42 files
+- tests: 325 passed across 47 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
 - push: `origin/main` updated successfully
 
-This checkpoint includes Task duplication, Task archive/restore, Project
-archive/restore, persisted archive timestamps, and active/archive UI boundaries.
+This checkpoint includes Task and Project archive/restore, Project templates, Task
+templates, persisted archive timestamps, and active/archive UI boundaries.
 
 ## Current product model
 
@@ -93,6 +93,7 @@ Current Task behavior includes:
 - search by title and description;
 - status, priority, and due-date filters;
 - created, title, due-date, priority, and manual sort modes;
+- view-only grouping by status, priority, or List after filtering and sorting;
 - move between compatible Project and List containers;
 - nested Subtasks with cycle and parent integrity checks;
 - manual ordering among valid siblings.
