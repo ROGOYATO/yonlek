@@ -1,96 +1,288 @@
 # Yönlek
 
-A local-first project and task manager built with React, Vite, and TypeScript.
+Yönlek is a local-first project and task manager built with React, TypeScript,
+Vite, and browser `localStorage`.
 
-The current implementation is intentionally small. It is being developed as a sequence of tested vertical slices rather than as a broad clone of another product.
+The project is still in its feature-first phase. Core data rules and workflows
+are being added before a final visual design system or backend is introduced.
 
-## Current checkpoint
+## Verified behavior checkpoint
 
-Prepared checkpoint after TDD 147:
+The latest user-confirmed behavior checkpoint is TDD 147.
 
 - branch: `main`
-- batch start: `44a1087` (`TDD 137-144: add task relationships`)
-- TDD state: cycle 147 GREEN
-- expected suite: 305 tests
-- lint gate: zero warnings via `oxlint . --deny-warnings`
-- Git runner: pinned to `C:\Program Files\Git\cmd\git.exe`
+- behavior commit: `d976d0d` (`TDD 145-147: add task duplication`)
+- local repository: `C:\Users\yavuz\git\yonlek`
+- remote: `https://github.com/ROGOYATO/yonlek.git`
+- tests: 305 passed
+- lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
+- production build: passed
+- working tree after the feature commit: clean
+- push: `origin/main` updated successfully
 
-Task duplication creates one new Task with a new ID and creation timestamp. It
-preserves the source Task data but does not copy child Tasks or workspace-level
-relationship edges.
+This documentation refresh starts from that clean behavior checkpoint. It does
+not change application behavior.
 
-See [`FEATURES.md`](./FEATURES.md) for the maintained feature-first roadmap.
+## Current product model
 
-## Implemented behavior
+Yönlek currently uses this hierarchy:
 
-Areas:
+```text
+Workspace
+→ Area
+→ Project
+→ List
+→ Task
+→ Subtask
+```
 
-- create, rename, and delete Areas;
-- optionally assign Projects to Areas;
-- delete Areas without deleting Projects;
-- clear Project Area assignments when an Area is deleted;
-- show per-Area Project counts;
-- persist and validate Area records and Project-to-Area relationships.
+A Checklist item is Task-local data, not another hierarchy level.
 
-Projects:
+The model is intentionally independent. `Area`, `Project`, `List`, and `Task`
+are Yönlek domain concepts with their own validation and persistence rules.
 
-- create a project;
-- reject a blank project name;
-- rename a project with the same validation rule;
-- delete a project and its tasks;
-- show per-project completion and visible-task counts;
-- focus the workspace on one project by stable project ID;
-- fall back to all projects if the focused project is deleted;
-- show task counts in the project selector.
+### Areas
 
-Tasks:
+Areas are optional workspace-level groupings for Projects.
 
-- create a task inside an existing project;
-- reject a blank task title;
-- rename a task;
-- change task status between `todo`, `doing`, and `done`;
-- change priority between `low`, `normal`, and `high`;
-- set or clear an optional calendar due date;
-- set or clear an optional task description;
-- delete a task without deleting its project;
-- duplicate one Task with a new identity while preserving its Task-local data;
-- search task titles and descriptions;
-- filter tasks by status, priority, and due-date presence;
-- sort tasks by creation time, title, due date, or priority;
-- clear all task filters together.
+Current behavior:
 
-Application:
+- create, rename, move, and delete Areas;
+- assign and unassign Projects;
+- keep Projects when an Area is deleted;
+- clear affected Project `areaId` values when an Area is removed;
+- preserve version-1 workspaces that never had an `areas` field.
 
-- browser startup loads versioned workspace data from `localStorage`;
-- accepted workspace actions are persisted transactionally;
-- failed persistence writes do not advance in-memory state or subscribers;
-- stored project/task data and relationships are validated before loading;
-- invalid saved data has a browser recovery/reset path;
-- React subscribes to the workspace store;
-- project and task validation failures are shown to the user instead of escaping the event handler;
-- the project-focus selection is presentation state and is not persisted yet.
+### Projects
 
-## Architecture
+Projects own Lists and Tasks.
+
+Current behavior:
+
+- create, rename, describe, move, and delete Projects;
+- focus the UI on one Project by immutable Project ID;
+- show Project Task counts and completion summaries;
+- move Tasks between Projects;
+- delete a Project together with its Lists and Tasks;
+- preserve unrelated workspace metadata when a Project is deleted.
+
+### Lists
+
+Lists are optional Task containers inside one Project.
+
+Current behavior:
+
+- create, rename, move, and delete Lists;
+- assign a Task only to a List from the same Project;
+- create a Task directly in a List;
+- clear a Task's List when that Task moves to an incompatible Project;
+- keep Tasks when their List is deleted.
+
+### Tasks and subtasks
+
+A Subtask is a normal Task with `parentTaskId`.
+
+Current Task behavior includes:
+
+- create, rename, delete, and duplicate;
+- `todo`, `doing`, and `done` status;
+- `low`, `normal`, and `high` priority;
+- optional due date and description;
+- search by title and description;
+- status, priority, and due-date filters;
+- created, title, due-date, priority, and manual sort modes;
+- move between compatible Project and List containers;
+- nested Subtasks with cycle and parent integrity checks;
+- manual ordering among valid siblings.
+
+Subtask deletion cascades through descendants. Moving a parent across Projects
+moves its descendants with it. A Subtask cannot be moved away from its parent
+Project on its own.
+
+### Task-local data
+
+Tasks can also contain or reference:
+
+- Checklist items;
+- reusable Tags;
+- multiple local People as assignees;
+- text, number, and checkbox Custom Field values.
+
+Checklist arrays and Custom Field value records belong to the Task. Tags,
+People, and Custom Field definitions belong to the Workspace and Tasks refer to
+them by ID.
+
+### Task relationships
+
+Task relationships are workspace-level edges, not Task fields.
+
+Supported relationship types:
+
+- `blocks`, which is directional;
+- `related`, which is symmetric.
+
+The reducer and persistence loader reject missing endpoints, self-links,
+semantic duplicates, and dependency cycles. Deleting a Task or Project removes
+relationship edges that point to deleted Tasks.
+
+The UI shows `Blocks`, `Blocked by`, and `Related` summaries separately from the
+Task title. Relationship target option values remain Task IDs. Their visible
+text uses `Target: <task title>` so selector options do not create duplicate bare
+Task-title nodes.
+
+## Task duplication contract
+
+TDD 145-147 added Task duplication through the domain, application-command, and
+UI boundaries.
+
+Duplicating one Task:
+
+- creates a new Task ID;
+- records a new `createdAt` timestamp;
+- keeps the source Project, List, parent, status, priority, due date, and
+  description;
+- copies Checklist data;
+- copies Tag and assignee ID arrays;
+- copies Custom Field values;
+- creates separate nested arrays and records so editing the duplicate cannot
+  mutate the source through a shared JavaScript reference.
+
+It deliberately does not copy:
+
+- child Tasks;
+- workspace-level `blocks` edges;
+- workspace-level `related` edges.
+
+Those records do not belong to the Task object being copied. Copying them would
+change the workspace graph instead of copying only one Task.
+
+## Persistence and recovery
+
+There are two browser persistence documents.
+
+### Durable workspace data
+
+Key:
+
+```text
+workspace-app.workspace
+```
+
+Current storage version:
+
+```text
+1
+```
+
+The loader validates entity records, duplicate IDs, cross-entity references,
+timestamps, hierarchy constraints, relationship semantics, and dependency
+cycles before exposing saved data to the application.
+
+The `workspace-app` prefix is intentionally retained. It is an established data
+identifier from before the product was renamed to Yönlek. Renaming that key
+without a migration would make existing browser data appear to disappear.
+
+### View preferences
+
+Key:
+
+```text
+workspace-app.view-preferences
+```
+
+Current storage version:
+
+```text
+1
+```
+
+View preferences include selected Project, Task search text, filters, and Task
+sort mode.
+
+Preferences are deliberately less strict than workspace data. Invalid,
+unsupported, or unreadable preferences fall back to defaults instead of
+blocking application startup. If saved Project focus points to a deleted
+Project, Yönlek repairs it to `All projects`.
+
+Workspace data and view preferences stay separate because a Task is durable
+domain data while a filter selection is disposable UI state.
+
+## Application architecture
+
+The main runtime flow is:
 
 ```text
 BrowserApp
   |
+  +-- workspace persistence
+  |     +-- loadWorkspace
+  |     +-- saveWorkspace
+  |
   +-- WorkspaceStore
-  |     +-- loadWorkspace / saveWorkspace
   |     +-- workspaceReducer
+  |     +-- transactional persistence
   |     +-- subscriptions
   |
   +-- WorkspaceCommands
-  |     +-- project/task creation
-  |     +-- task mutations
-  |     +-- project/task deletion
+  |     +-- ID generation
+  |     +-- timestamp generation
+  |     +-- domain object creation
+  |     +-- reducer actions
   |
   +-- WorkspaceRoot
-        +-- React subscription boundary
+        +-- useSyncExternalStore subscription
+        +-- view-preference coordination
         +-- App UI
 ```
 
-Domain functions remain independent of browser APIs. IDs and timestamps are injected at the application-command boundary so domain tests stay deterministic.
+The domain layer does not read browser APIs. IDs and timestamps enter through
+the application-command boundary so tests can inject deterministic values.
+
+`WorkspaceStore` computes the next state, persists it, and only then publishes
+it to memory and subscribers. If persistence fails, the old in-memory state
+remains current.
+
+## Repository map
+
+The most important paths are:
+
+```text
+src/domain/
+  Core entities, pure helpers, validation rules, reducer behavior
+
+src/application/
+  WorkspaceStore and WorkspaceCommands
+
+src/persistence/
+  Versioned workspace and view-preference storage
+
+src/BrowserApp.tsx
+  Browser composition and recovery
+
+src/WorkspaceRoot.tsx
+  React store subscription and view-state coordination
+
+src/App.tsx
+  Current feature-first UI
+
+scripts/run-tdd-bundle.ps1
+  Shared fail-fast bundle runner
+
+FEATURES.md
+  Implemented and planned product capabilities
+
+CONTRIBUTING.md
+  Engineering rules and regression lessons
+
+TDD_LOG.md
+  Completed RED/GREEN history
+
+CLICKUP_REFERENCE.md
+  Competitor capability research with independence constraints
+
+BRAND_NAME_RESEARCH.md
+  Canonical working-name research
+```
 
 ## Development
 
@@ -100,348 +292,104 @@ Install dependencies:
 npm install
 ```
 
-Run the development server:
+Start Vite:
 
 ```powershell
 npm run dev
 ```
 
-Run the normal verification gate:
+Run the complete local gate:
 
 ```powershell
 npm run check
+git diff --check
 ```
 
-`npm run check` runs lint, tests, and the production build.
+`npm run check` runs, in order:
 
-## Test-first patch bundles
+```text
+lint
+tests
+production build
+```
 
-Behavioral production code is written test-first.
+The lint script uses `--deny-warnings`, so a warning fails the gate.
 
-Larger batches are delivered as ordered RED/GREEN patch bundles. Each bundle includes:
+## Test-first workflow
 
-- `run-tdd.ps1`;
-- `manifest.json`;
-- numbered RED and GREEN patches;
-- expected RED failure markers;
-- SHA-256 checksums;
-- a matching handoff ZIP when the batch is important.
+Behavioral production code is written only after a focused test has failed for
+the expected reason.
 
-The runner is fail-fast. Existing source files are updated through guarded normalized-content transforms so BOM or newline representation cannot silently bypass content checks.
+For one behavior:
 
-It stops on:
+1. write the test at a stable domain, application, persistence, or UI boundary;
+2. run the focused test and confirm the expected RED;
+3. add only the implementation needed for that behavior;
+4. rerun the focused test and require GREEN;
+5. refactor while the focused and relevant regression tests stay green;
+6. run the final lint, full test, production build, and diff gates before
+   commit.
 
-- an unexpected starting commit or branch;
-- a dirty starting tree when the bundle requires a clean tree;
-- a patch check/apply failure;
-- a RED test that unexpectedly passes;
-- a RED test that fails for a reason other than the expected one;
-- a GREEN test failure;
-- a full-suite, build, lint, or `git diff --check` failure;
-- a commit failure.
+Existing tests are not weakened to rescue an implementation. If an established
+test appears wrong, changing it requires an explicit review of the requirement
+first.
 
-The runner never calls `exit` and never resets or discards the working tree. If it stops, the terminal stays open and the repo is left at the failing stage for inspection.
+Multi-cycle work uses fail-fast PowerShell bundles. A stopped bundle leaves the
+repository at the exact failing stage. Do not reset or clean it. Resume bundles
+pin the expected branch, HEAD, dirty paths, and normalized file hashes before
+continuing.
 
-Logs are written under `.tdd-logs/` and ignored by Git.
+See `CONTRIBUTING.md` for the full workflow.
 
-See `CONTRIBUTING.md` for the development rules and `TDD_LOG.md` for the completed cycle history.
+## Current scope limits
 
+Yönlek is still browser-local.
 
-## Reliable bundle workflow
+Not implemented yet:
 
-The Windows PowerShell bundle workflow has a few rules that are now part of the project, not ad-hoc recovery steps:
+- authentication;
+- accounts or remote workspace members;
+- roles and permissions;
+- backend database or sync;
+- realtime collaboration;
+- comments and mentions;
+- notifications;
+- public API or webhooks;
+- file attachment storage;
+- recurring Tasks;
+- time estimates and tracking;
+- Board, Calendar, Table, Timeline, or Gantt views;
+- export/import backup;
+- final responsive design and keyboard-navigation pass.
 
-- RED is expected to fail. A RED phase passes only when the focused command exits non-zero and the expected test/file markers are present.
-- GREEN is expected to pass. The runner never applies later steps after a failed GREEN.
-- Never change or weaken an existing behavior test merely to make implementation pass. If a test itself appears wrong, explain the proposed test change and get approval first.
-- Every important bundle pins the branch and starting commit. A resume bundle additionally pins the exact dirty paths and content hashes left by the stopped run.
-- Do not reset or clean a stopped run. The runner leaves the failing state intact so a resume bundle can continue from it safely.
-- Existing source files are changed through guarded normalized-content transforms. The guard compares content while ignoring only UTF-8 BOM and newline representation, then writes canonical LF. This avoids BOM/CRLF-sensitive patch failures.
-- `git diff --check` is a required gate after each cycle and before commit.
-- Expected RED stderr is captured and shown; a non-zero native command during RED must not be converted into a terminating PowerShell error.
-- Optional manifest collections must behave as empty lists when absent. Current manifests declare empty checksum lists explicitly and runner v7 is null-safe.
-- Presentation-only work runs after behavioral cycles are GREEN, but it still has to pass the production build.
-- Vite browser entrypoints that import CSS need `src/vite-env.d.ts` with `/// <reference types="vite/client" />` so TypeScript accepts the side-effect CSS import.
-- Complete terminal output is saved under `.tdd-logs/`. The runner never calls `exit`, `git reset --hard`, or `git clean`.
+`FEATURES.md` is the maintained checklist for these gaps.
 
-If a bundle stops, use its log and current `git status --short` as the basis for the next resume bundle instead of manually applying later GREEN patches.
+## Hosting
 
+The frontend can be built as a static Vite application. GitHub Pages deployment
+and custom-domain automation are not part of the repository yet.
 
-## Living project documentation
+## Product independence
 
-`README.md`, `CONTRIBUTING.md`, `TDD_LOG.md`, and the aligned handoff are living
-project state. Durable workflow rules, failure modes, architecture decisions, and
-confirmed checkpoints are folded into the relevant Markdown/handoff instead of
-being left only in chat history. Handoffs distinguish user-confirmed live state
-from prepared target state.
+Yönlek may study established work-management products for generic capability
+coverage. That research does not authorize copying source code, assets, icons,
+screenshots, marketing text, branded feature names, or distinctive UI
+composition.
 
+`CLICKUP_REFERENCE.md` records the current research boundary.
 
-Project view state is intentionally not persisted yet. The selected project is
-held as React UI state keyed by immutable project ID, so project renames preserve
-focus and deleting the selected project can fall back to the all-projects view
-without a persistence migration.
+## Naming status
 
+`Yönlek` is the active working product name, npm package name, GitHub repository
+name, and local repository folder.
 
-View preferences:
+That implementation decision is not trademark clearance.
 
-- project focus, task search, task filters, and task sorting are stored under a
-  separate versioned `workspace-app.view-preferences` document;
-- preference corruption or unsupported preference versions fall back to
-  defaults and never block workspace startup;
-- preference writes do not modify the versioned workspace project/task
-  document;
-- deleting the currently focused project repairs the saved focus back to
-  `All projects`.
-
-This separation is deliberate: projects and tasks are durable workspace data;
-focus/filter/sort values are disposable UI preferences.
-
-
-Type ownership:
-
-- import domain types from the module that defines them;
-- a persistence or application boundary may consume a domain type without
-  becoming that type's public owner;
-- do not import a type through another boundary unless that boundary
-  intentionally re-exports it as part of its API.
-
-The TDD 068 build correction is the reference case: `ViewPreferences` is
-defined by `domain/view-preferences.ts`; `view-preferences-storage.ts` consumes
-it but does not re-export it.
-
-
-Persistence reliability:
-
-- view-preference reads and writes are best-effort; storage failures fall back
-  to defaults or keep the current UI usable;
-- stale saved project focus is repaired to `All projects` at startup;
-- resetting invalid workspace data also resets view preferences;
-- durable workspace loading rejects duplicate project IDs, duplicate task IDs,
-  and invalid `createdAt` ISO instants.
-
-The asymmetry is intentional: preferences are disposable UI state, while
-workspace entities are durable data whose identity and timestamps must remain
-internally consistent.
-
-
-Feature-first product direction:
-
-- tasks can move between existing projects without changing their identity;
-- project focus remains stable when a task moves out of the focused project;
-- moved task relationships persist through browser storage and reload;
-- projects support optional descriptions with storage validation;
-- `FEATURES.md` is the maintained product checklist;
-- visual styling is intentionally deferred while core bare-bone workflows are
-  still being added.
-
-## Hosting and backend status
-
-The app is intended to run as a static React/Vite frontend, including GitHub Pages with a custom domain. GitHub Pages deployment has not been added yet.
-
-The current persistence implementation is browser-local. Authentication, shared multi-user data, a remote database, realtime collaboration, and server-side APIs have not been added.
+Formal name clearance remains pending. See `BRAND_NAME_RESEARCH.md`, the repository's canonical naming and brand-research record.
 
 ## Licensing
 
-The project's own source-code license has not been chosen yet.
+The repository's own source-code license has not been selected yet.
 
-Do not assume that the repository is MIT-licensed merely because several dependencies are. Direct dependency licenses are tracked in `THIRD_PARTY_NOTICES.md`.
-
-No ClickUp source code, proprietary assets, branding, icons, screenshots, or copied UI text are used.
-
-
-## Product reference direction
-
-The product may pursue broad capability parity with established work-management
-tools, including ClickUp, but it must remain an independent product.
-
-Use `CLICKUP_REFERENCE.md` only as a capability and architecture reference.
-Do not copy ClickUp source code, protected assets, screenshots, icons, marketing
-copy, distinctive UI composition, or branded feature names.
-
-Our independent target hierarchy is:
-
-```text
-Workspace
-→ Area
-→ Project
-→ List
-→ Task
-→ Subtask
-```
-
-`BRAND_NAME_RESEARCH.md` records preliminary naming research. `Yönlek` is a
-working candidate only; it is not considered legally cleared until official
-trademark searches are completed.
-
-
-Hierarchy direction:
-
-```text
-Workspace
-→ Area
-→ Project
-→ List
-→ Task
-→ Subtask
-```
-
-The `areas` field is an additive optional field in storage version 1. Older
-saved workspaces without Areas remain valid.
-
-
-Lists:
-
-- create, rename, and delete Lists inside Projects;
-- optionally assign Tasks to a List in their own Project;
-- deleting a List preserves Tasks and clears their List assignment;
-- deleting a Project removes its Lists and Tasks while preserving unrelated
-  Areas;
-- moving a Task to another Project clears an incompatible List assignment;
-- create a Task directly in a selected List;
-- show per-List Task counts;
-- persist and validate Lists and Task-to-List relationships;
-- older version-1 workspaces without `lists` or Task `listId` remain valid.
-
-Hierarchy:
-
-```text
-Workspace
-→ Area
-→ Project
-→ List
-→ Task
-→ Subtask
-```
-
-
-Subtasks:
-
-- create Subtasks from any existing Task;
-- inherit Project and current List from the parent at creation time;
-- retain normal Task status, priority, due-date, description, and editing
-  behavior;
-- show the parent relationship in the bare-bone UI;
-- support nested parent chains;
-- deleting a Task cascades through all descendants;
-- persisted parent references must exist in the same Project;
-- persisted parent cycles are rejected;
-- moving a parent Task to another Project moves all descendants and clears
-  incompatible List assignments;
-- moving a Subtask away from its parent Project by itself is rejected;
-- show immediate Subtask counts.
-
-Hierarchy:
-
-```text
-Workspace
-→ Area
-→ Project
-→ List
-→ Task
-→ Subtask
-```
-
-
-Checklists:
-
-- each Task can optionally contain lightweight Checklist items;
-- Checklist items have an ID, text, and completion state;
-- create, rename, complete/uncomplete, and delete Checklist items;
-- deleting the final item removes the optional `checklist` field;
-- Checklist item IDs must be unique within their Task;
-- persist and validate Checklist items and completion state;
-- restore Checklist state through browser composition;
-- show completed/total Checklist progress separately from the stable Task title;
-- Checklists are not Subtasks and do not have Project/List/status/priority
-  hierarchy of their own.
-
-
-Manual ordering:
-
-- reorder Areas globally;
-- reorder Projects only among Projects with the same Area assignment;
-- reorder Lists only within their Project;
-- reorder Tasks/Subtasks only among siblings with the same Project, List, and
-  parent;
-- reorder Checklist items only within their Task;
-- Task sort now includes a persisted `Manual` mode;
-- `Created` remains the default Task sort;
-- moving at a sibling boundary is a no-op;
-- unrelated items retain their positions while sibling items swap;
-- workspace persistence already preserves array order, so no schema migration
-  or numeric position field is required;
-- current UI uses explicit Move up / Move down controls. Drag-and-drop remains
-  deferred to the visual interaction phase.
-
-
-Tags / labels:
-
-- create, rename, and delete reusable workspace Tags;
-- Tags have durable IDs, names, and creation timestamps;
-- Tasks optionally store `tagIds`;
-- assign/remove Tags through Task checkboxes;
-- duplicate assignment is idempotent;
-- deleting a Tag preserves Tasks and removes that Tag from every Task;
-- deleting the last assignment removes the optional `tagIds` field;
-- deleting the final workspace Tag removes the optional `tags` collection;
-- persisted Tags, duplicate Tag IDs, duplicate Task assignments, and missing
-  references are validated;
-- browser reload restores Task Tag assignment state;
-- Tags are semantic data only in this phase; visual colors/badges remain part of
-  later UI design work.
-
-
-Local People / assignees:
-
-- create, rename, and delete reusable workspace-local People;
-- People have durable IDs, names, and creation timestamps;
-- Tasks optionally store multiple `assigneeIds`;
-- assign/remove People through Task checkboxes;
-- duplicate assignment is idempotent;
-- deleting a Person preserves Tasks and removes that Person from every Task;
-- deleting the final assignment removes the optional `assigneeIds` field;
-- deleting the final Person removes the optional `people` collection;
-- persisted Person records, duplicate Person IDs, duplicate Task assignments,
-  and missing references are rejected;
-- browser reload restores Task assignee checkbox state;
-- this is local identity only; accounts, email invitations, permissions,
-  notifications, and remote membership remain later multiuser work.
-
-
-Custom Fields:
-
-- create, rename, and delete reusable workspace Custom Field definitions;
-- supported initial types are `text`, `number`, and `checkbox`;
-- definitions have durable IDs, names, types, and creation timestamps;
-- Tasks optionally store `customFieldValues` keyed by definition ID;
-- text values are trimmed, number values must be finite, and checkbox values
-  are boolean;
-- clear individual values without changing the field definition;
-- deleting a definition preserves Tasks and removes that value from every Task;
-- final value removal clears optional `customFieldValues`;
-- final definition deletion clears optional `customFields`;
-- persistence rejects invalid definitions, duplicate IDs, unknown references,
-  and values whose runtime type does not match their definition;
-- browser reload restores typed Task values;
-- field type mutation, select/dropdown options, date fields, formulas, and
-  custom-field filtering remain later extensions.
-
-Task dependencies and relationships:
-
-- workspace-level `TaskRelationship` edges with durable IDs and timestamps;
-- `blocks` is directional: source Task blocks target Task;
-- `related` is symmetric and stored with canonical endpoint order;
-- both endpoints must reference existing Tasks;
-- self relationships and semantic duplicates are rejected;
-- dependency cycles are rejected at reducer and persistence boundaries;
-- deleting a Task, Subtask cascade, or Project cleans affected relationships;
-- bare-bone Task UI can add/remove relationships and shows Blocks / Blocked by /
-  Related semantics;
-- browser reload restores relationships;
-- relationship summaries are separate from stable Task title text.
-
-Regression fixed before this slice:
-
-Project deletion now preserves newer workspace-level optional collections such
-as Tags, People, and Custom Fields instead of reconstructing an older partial
-state shape.
+Dependency licenses do not license this project's source. See
+`THIRD_PARTY_NOTICES.md` for the current direct-dependency summary.

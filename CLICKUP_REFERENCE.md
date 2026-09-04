@@ -1,218 +1,257 @@
 # ClickUp feature and architecture reference
 
-Status: research reference only. This is **not** a clone specification.
+Status: research reference only. This file is not a clone specification and does
+not define Yönlek's visual design.
 
-## Legal-safe design rule
+## Independence rule
 
-Use ClickUp as a source of general product-management concepts and capability
-coverage. Do not copy:
+ClickUp can be studied for generic work-management capabilities, data
+relationships, and publicly described product concepts.
 
-- ClickUp source code;
-- logos, icons, illustrations, screenshots, proprietary assets, or fonts;
-- distinctive marketing copy or feature names such as ClickUp Brain / ClickApps;
-- exact screen compositions, navigation treatment, card styling, color systems,
-  or other distinctive visual expression;
-- undocumented/internal implementation details obtained by reverse engineering.
+Do not copy:
 
-General ideas, systems, methods, and functional concepts can inform our own
-implementation, but the product needs its own code, information architecture,
-terminology, visual identity, and interaction details.
+- source code;
+- logos, icons, screenshots, illustrations, proprietary assets, or fonts;
+- branded feature names such as ClickUp Brain or ClickApps;
+- distinctive marketing wording;
+- exact navigation, card layout, screen composition, color systems, or other
+  recognizable visual expression;
+- undocumented implementation details obtained by reverse engineering.
 
-## Publicly documented ClickUp product architecture
+Yönlek must keep its own code, hierarchy, terminology, visual identity, and
+interaction choices.
 
-ClickUp documents a hierarchy centered around:
+## Publicly documented ClickUp concepts
 
+The public ClickUp documentation describes a hierarchy centered on:
+
+```text
 Workspace
-→ Spaces
-→ Folders / Subfolders
-→ Lists
-→ Tasks
-→ Subtasks
+→ Space
+→ Folder or Subfolder
+→ List
+→ Task
+→ Subtask
+```
 
-Tasks live inside Lists. Docs, Dashboards, Forms, and Whiteboards can also be
-attached throughout parts of the hierarchy.
+The useful product concepts are broader than the exact names in that hierarchy.
 
-Important architectural patterns:
+### Hierarchy-scoped configuration
 
-1. **Hierarchy-scoped configuration**
-   - settings can apply at higher hierarchy levels;
-   - lower levels can inherit or override behavior;
-   - Custom Fields can be attached by location.
+Higher-level locations can influence lower-level work. Public documentation
+describes location-aware settings and Custom Fields.
 
-2. **Hierarchy-scoped views**
-   - the same underlying tasks can be represented through List, Board, Calendar,
-     Gantt, Table, Timeline, Workload, Activity, Map, Mind Map, Dashboard, and
-     other views;
-   - views are presentation/query layers over shared work data rather than
-     separate copies of tasks.
+For Yönlek, the useful idea is scoped ownership and inheritance. The exact
+ClickUp hierarchy is not copied.
 
-3. **Rich task entity**
-   Public docs describe task sections and behavior including:
-   - title and description;
-   - status;
-   - priority;
-   - assignees;
-   - Custom Fields;
-   - subtasks and nested subtasks;
-   - task relationships;
-   - dependency relationships;
-   - checklists;
-   - comments and activity;
-   - attachments;
-   - recurring behavior;
-   - time estimates and time tracking.
+### Multiple views over shared work data
 
-4. **Search / filter / sort as first-class query behavior**
-   Search can use task names, descriptions, and visible Custom Fields. Views can
-   filter and sort by many task properties.
+ClickUp documents several views over the same underlying work, including List,
+Board, Calendar, Gantt, Table, Timeline, Workload, Activity, Map, Mind Map, and
+Dashboard-style views.
 
-5. **Automation engine**
-   ClickUp's public model is:
-   Trigger → optional Conditions → Actions.
-   Automations are scoped by hierarchy location.
+The reusable product idea is that a view should query and present shared Task
+data instead of creating a second copy of the Task.
 
-6. **Permissions inherited through hierarchy**
-   Access can be affected by workspace role, direct item permissions, privacy,
-   team membership, and inherited hierarchy permissions.
+### Rich task data
 
-7. **External integration boundary**
-   Public API documentation includes token/OAuth authentication and webhooks.
-   Webhooks can subscribe to workspace/location events and are signed.
+Public ClickUp documentation describes Task capabilities such as:
 
-## Publicly stated technical architecture
+- title and description;
+- status and priority;
+- assignees;
+- Custom Fields;
+- Subtasks;
+- relationships and dependencies;
+- Checklists;
+- comments and activity;
+- attachments;
+- recurring work;
+- time estimates and time tracking.
 
-ClickUp's engineering blog says ClickUp 3.0 involved a rebuilt database and a
-move to a service-based architecture for scalability, maintainability, fault
-tolerance, performance, and reliability.
+Yönlek uses this only as capability coverage. Its current Task model and
+terminology are defined by Yönlek's own domain code.
 
-That is only a high-level public principle. It is not enough information to
-reconstruct ClickUp's internal architecture and we should not attempt to do so.
+### Search, filter, and sort
 
-## Architecture for our product
+ClickUp treats search, filtering, sorting, and view configuration as core
+product behavior.
 
-We should take the general scalability pattern but use our own simpler model:
+Yönlek has already adopted the generic idea of query controls over shared Task
+data. The implementation is independent.
 
+### Automation
+
+ClickUp publicly describes an automation model based on:
+
+```text
+Trigger
+→ optional Conditions
+→ Actions
+```
+
+Yönlek has not implemented automation yet. If it does, the event and command
+model should be derived from Yönlek's own domain boundaries.
+
+### Permissions and collaboration
+
+ClickUp documents workspace roles, privacy, sharing, inherited permissions, and
+team membership.
+
+Yönlek does not have authenticated users or permissions yet. The current local
+Person model is only a Task-assignment identity and must not be treated as an
+account or authorization model.
+
+### Integration boundary
+
+ClickUp's developer documentation includes API authentication and webhooks.
+
+Yönlek does not have a public API or webhook model yet. Those belong to the
+later backend phase.
+
+## Publicly stated ClickUp technical direction
+
+ClickUp's engineering material has described ClickUp 3.0 as involving database
+changes and a move toward service-based architecture for scale and reliability.
+
+That statement is high-level product-engineering context. It is not detailed
+enough to reconstruct ClickUp internals, and Yönlek should not attempt to do so.
+
+## Yönlek's independent model
+
+Yönlek currently uses:
+
+```text
 Workspace
 → Area
 → Project
 → List
 → Task
 → Subtask
+```
 
-Notes:
+Key differences and ownership rules:
 
-- `Workspace` remains the top-level local/application boundary.
-- `Area` is an optional grouping for teams, departments, products, clients, or
-  other broad workflows.
-- `Project` is the project entity we already have.
-- `List` is an optional task container within a project.
-- Tasks belong to a List once Lists exist.
-- Subtasks are task children.
-- Checklists remain lightweight task-local items, distinct from subtasks.
+- `Area` is an optional Yönlek grouping above Projects.
+- `Project` remains the primary work container.
+- `List` is an optional Task container inside one Project.
+- a Subtask is a Task with `parentTaskId`;
+- a Checklist item is Task-local lightweight data;
+- Tags, People, Custom Field definitions, and Task relationships live at
+  Workspace level;
+- Tasks refer to reusable Workspace records by ID.
 
-This avoids copying ClickUp's exact hierarchy while preserving the useful
-scalability concept.
+This model is already implemented through local persistence and validation. It
+is not a placeholder copy of ClickUp's hierarchy.
 
-## Recommended feature sequence
+## Current Yönlek coverage
 
-### Foundation
+The following capability areas are already implemented:
 
-1. Areas
-2. Lists inside Projects
-3. Tasks move between Lists / Projects
-4. Subtasks
-5. Checklists
-6. Manual ordering
+- Areas;
+- Projects;
+- Lists;
+- Task movement between Projects and Lists;
+- nested Subtasks;
+- Checklists;
+- manual ordering;
+- Tags;
+- local People and multiple Task assignees;
+- text, number, and checkbox Custom Fields;
+- directional dependencies;
+- symmetric Task relationships;
+- Task duplication;
+- search, filter, and sort;
+- browser-local persistence and recovery;
+- separately persisted view preferences.
 
-### Rich task model
+Task duplication is a Yönlek-specific lifecycle behavior in the current roadmap.
+It copies one Task's owned data but not its child Tasks or workspace-level
+relationship graph.
 
-7. Assignees (local identities first; real accounts later)
-8. Tags / labels
-9. Custom Fields
-10. Dependencies
-11. General task relationships
-12. Recurring tasks
-13. Time estimates
-14. Time tracking
-15. Attachments metadata / local file references
-16. Activity history
+See `FEATURES.md` for the authoritative implementation checklist.
+
+## Remaining capability sequence
+
+This sequence is a planning aid, not a promise that every item will be built in
+this order.
+
+### Task lifecycle and productivity
+
+1. Task archive and restore
+2. Project archive and restore
+3. Recurring Tasks
+4. Time estimates
+5. Time tracking
+6. Attachments
+7. Activity history
+8. Bulk actions
+9. Templates
 
 ### Views
 
-17. Board view by status
-18. Calendar view
-19. Table view
-20. Timeline / Gantt foundation
-21. Saved views
-22. Per-view filters / grouping / sorting
+10. Board
+11. Calendar
+12. Table
+13. Timeline or Gantt foundation
+14. Saved views
+15. Per-view grouping, filters, and sorts
 
-### Productivity
+### Automation and reporting
 
-23. Bulk actions
-24. Templates
-25. Trigger / condition / action automation model
-26. Goals / measurable targets
-27. Dashboards / reporting
+16. Trigger, condition, and action automation
+17. Goals or measurable targets
+18. Dashboards and reporting
 
 ### Knowledge
 
-28. Notes / Docs
-29. Project-linked documents
-30. Wiki/source-of-truth markers
+19. Notes or Docs
+20. Project-linked documents
+21. Wiki or source-of-truth behavior
 
-### Multi-user / backend phase
+### Multi-user and backend
 
-31. Accounts
-32. Workspace members
-33. Roles / permissions
-34. Sharing
-35. Comments / mentions
-36. Notifications
-37. Backend sync
-38. Realtime collaboration
-39. Public API
-40. Webhooks / integrations
+22. Accounts
+23. Workspace members
+24. Roles and permissions
+25. Sharing
+26. Comments and mentions
+27. Notifications
+28. Backend persistence and sync
+29. Realtime collaboration
+30. Public API
+31. Webhooks and integrations
 
 ## What not to prioritize yet
 
-During the current bare-bone phase:
+Until the local domain model and core workflows settle:
 
 - do not chase visual similarity to ClickUp;
-- do not copy ClickUp's sidebar or task detail layout;
-- do not add backend complexity before the local domain model settles;
-- do not build dashboards before the underlying query/custom-field model exists;
-- do not build permissions before user/account concepts exist;
-- do not build automation before events/actions have stable domain boundaries.
+- do not copy ClickUp's sidebar, Task-detail composition, or styling;
+- do not add server architecture only to imitate a mature SaaS product;
+- do not build dashboards before their underlying data queries exist;
+- do not attach permissions to local People;
+- do not build automation before Yönlek has stable events and commands.
 
 ## Sources reviewed
 
-- ClickUp Help: Intro to the Hierarchy
-  https://help.clickup.com/hc/en-us/articles/13856392825367-Intro-to-the-Hierarchy
-- ClickUp Help: Intro to Lists
-  https://help.clickup.com/hc/en-us/articles/6311877646999-Intro-to-Lists
-- ClickUp Help: Intro to views
-  https://help.clickup.com/hc/en-us/articles/6329880717719-Intro-to-views
-- ClickUp Help: Views
-  https://help.clickup.com/hc/en-us/sections/39723873580823-Views
-- ClickUp Help: Intro to tasks
-  https://help.clickup.com/hc/en-us/articles/10552031987735-Intro-to-tasks
-- ClickUp Help: Intro to Custom Fields
-  https://help.clickup.com/hc/en-us/articles/6303536766231-Intro-to-Custom-Fields
-- ClickUp Help: Intro to Relationships
-  https://help.clickup.com/hc/en-us/articles/6304528030743-Intro-to-Relationships
-- ClickUp Help: Intro to Dependency Relationships
-  https://help.clickup.com/hc/en-us/articles/6309155073303-Intro-to-Dependency-Relationships
-- ClickUp Help: Intro to Automations
-  https://help.clickup.com/hc/en-us/articles/6312102752791-Intro-to-Automations
-- ClickUp Help: Intro to Docs
-  https://help.clickup.com/hc/en-us/articles/6328174371351-Intro-to-Docs
-- ClickUp Help: Intro to Dashboards
-  https://help.clickup.com/hc/en-us/articles/6312197753239-Intro-to-Dashboards
-- ClickUp Help: Intro to permissions
-  https://help.clickup.com/hc/en-us/articles/6309225399703-Intro-to-permissions
-- ClickUp Developer: Authentication
-  https://developer.clickup.com/docs/authentication
-- ClickUp Developer: Webhooks
-  https://developer.clickup.com/docs/webhooks
-- ClickUp Engineering: ClickUp 3.0 performance and reliability
-  https://clickup.com/blog/performance-and-reliability/
+The existing research used these public sources:
+
+- ClickUp Help, Intro to the Hierarchy: https://help.clickup.com/hc/en-us/articles/13856392825367-Intro-to-the-Hierarchy
+- ClickUp Help, Intro to Lists: https://help.clickup.com/hc/en-us/articles/6311877646999-Intro-to-Lists
+- ClickUp Help, Intro to views: https://help.clickup.com/hc/en-us/articles/6329880717719-Intro-to-views
+- ClickUp Help, Views: https://help.clickup.com/hc/en-us/sections/39723873580823-Views
+- ClickUp Help, Intro to tasks: https://help.clickup.com/hc/en-us/articles/10552031987735-Intro-to-tasks
+- ClickUp Help, Intro to Custom Fields: https://help.clickup.com/hc/en-us/articles/6303536766231-Intro-to-Custom-Fields
+- ClickUp Help, Intro to Relationships: https://help.clickup.com/hc/en-us/articles/6304528030743-Intro-to-Relationships
+- ClickUp Help, Intro to Dependency Relationships: https://help.clickup.com/hc/en-us/articles/6309155073303-Intro-to-Dependency-Relationships
+- ClickUp Help, Intro to Automations: https://help.clickup.com/hc/en-us/articles/6312102752791-Intro-to-Automations
+- ClickUp Help, Intro to Docs: https://help.clickup.com/hc/en-us/articles/6328174371351-Intro-to-Docs
+- ClickUp Help, Intro to Dashboards: https://help.clickup.com/hc/en-us/articles/6312197753239-Intro-to-Dashboards
+- ClickUp Help, Intro to permissions: https://help.clickup.com/hc/en-us/articles/6309225399703-Intro-to-permissions
+- ClickUp Developer, Authentication: https://developer.clickup.com/docs/authentication
+- ClickUp Developer, Webhooks: https://developer.clickup.com/docs/webhooks
+- ClickUp Engineering, ClickUp 3.0 performance and reliability: https://clickup.com/blog/performance-and-reliability/
+
+These links are a research snapshot. Recheck them before relying on them for a
+future product decision because public documentation can change.

@@ -1,6 +1,34 @@
-# TDD Log
+# TDD log
 
-This log records completed behavior cycles. RED was observed before the corresponding production implementation unless a row is explicitly marked as workflow/configuration work.
+## Current verified behavior checkpoint
+
+The latest user-confirmed behavior commit is:
+
+```text
+d976d0d  TDD 145-147: add task duplication
+```
+
+Verified on Windows from `C:\Users\yavuz\git\yonlek`:
+
+```text
+Tests: 305 passed
+Lint: 0 warnings, 0 errors
+Build: passed
+Working tree: clean after commit
+Push: origin/main updated
+```
+
+The repository folder was renamed from `workspace-app` to `yonlek` before this
+batch. The first rename attempt failed because the interactive PowerShell shell
+was still inside the directory. After moving to `C:\Users\yavuz\git`, the
+rename succeeded without changing Git history or repository contents.
+
+A later documentation-only commit can advance repository HEAD without changing
+this behavior checkpoint.
+
+This log records completed behavior cycles. RED was observed before the
+corresponding production implementation unless a row is explicitly marked as
+workflow or configuration work.
 
 | Cycle | Behavior / boundary | Result |
 | --- | --- | --- |
@@ -49,8 +77,8 @@ Working tree: clean after commit
 
 Beginning with the next batch, multi-cycle TDD work uses the fail-fast bundle runner documented in `CONTRIBUTING.md`.
 
-The runner enforces the same RED/GREEN order; it automates the repetitive patch application and verification steps. It does not weaken the test-first requirement.
-
+The runner enforces the same RED/GREEN order. It automates patch application and
+verification, but it does not weaken the test-first requirement.
 
 ## Cycles 022-030
 
@@ -77,7 +105,6 @@ Lint: 0 warnings, 0 errors
 Workflow maintenance 003 adds exact partial-state validation for safe resume
 bundles. Cycle 022 was moved to a new test file so the historical BOM in
 `src/domain/project.test.ts` remains untouched.
-
 
 ## Cycles 031-038
 
@@ -111,7 +138,6 @@ Configuration correction after cycle 038:
 
 The post-step adds presentation-only CSS and imports it from the browser entrypoint. No dependency is added.
 
-
 ## Bundle workflow corrections recorded through cycle 038
 
 | Maintenance | Correction |
@@ -124,8 +150,10 @@ The post-step adds presentation-only CSS and imports it from the browser entrypo
 | runner v7 | optional manifest collections are null-safe; clean bundles use explicit empty checksum arrays |
 | build fix after 038 | Vite client type declaration added for the CSS side-effect import |
 
-Important operational rule: a failed RED is expected; an unexpected RED, failed GREEN, failed diff check, lint failure, test failure, or build failure stops the batch. Stopped state is preserved and resumed from exact Git state rather than reset.
-
+Operational rule: an expected RED failure is part of the cycle. An unexpected
+RED, failed GREEN, failed diff check, lint failure, test failure, or build
+failure stops the batch. Preserve that stopped state and resume from the exact
+Git state instead of resetting it.
 
 ## Cycles 039-045
 
@@ -152,7 +180,6 @@ expectations in one RED cycle because one filter implementation satisfies both.
 A separate later browser RED would already have been GREEN and would violate the
 test-first sequencing rule.
 
-
 ## Cycles 046-053
 
 | Cycle | Behavior / boundary | Result |
@@ -178,7 +205,6 @@ The persistence parser deliberately distinguishes an unsupported version from
 invalid data. BrowserApp does not parse storage independently; it catches the
 storage boundary's stable error and owns the user-facing recovery action.
 
-
 ## Confirmed checkpoint after cycle 053
 
 User-confirmed at commit `ab244c6`:
@@ -190,7 +216,6 @@ Lint: 0 warnings, 0 errors
 git diff --check: passed
 Working tree: clean after commit
 ```
-
 
 ## Cycles 054-060
 
@@ -218,7 +243,6 @@ uses a derived fallback when the selected project disappears.
 Documentation/handoff maintenance is a living-project rule from the confirmed
 TDD 053 checkpoint onward.
 
-
 ## TDD 056 test synchronization correction
 
 The first TDD 056 GREEN verification exposed a React test synchronization issue,
@@ -230,7 +254,6 @@ render and asserted the renamed heading before React flushed the
 With user approval, only that mutation was wrapped in `act(...)`. Behavioral
 assertions were left unchanged. The corrected focused GREEN must pass before
 TDD 057 begins.
-
 
 ## Cycles 061-068
 
@@ -257,7 +280,6 @@ The preference document is intentionally separate from `workspace-app.workspace`
 Invalid workspace data remains a recovery/error condition; invalid view
 preferences are disposable and fall back to defaults.
 
-
 ## TDD 068 production-build correction
 
 All TDD 061-068 focused GREENs completed and the final test suite reached
@@ -272,7 +294,6 @@ reruns the production build, full `npm run check`, and diff gates before commit.
 
 Durable rule: type ownership follows the defining module unless another
 boundary intentionally re-exports the type as public API.
-
 
 ## Cycles 069-075
 
@@ -297,7 +318,6 @@ Lint: 0 warnings, 0 errors
 The persistence policy is intentionally asymmetric: view preferences degrade to
 defaults or best-effort saves, while durable workspace data fails closed when
 identity or timestamp invariants are invalid.
-
 
 ## Cycles 076-084
 
@@ -325,7 +345,6 @@ Product sequencing decision: continue building bare-bone features before a
 dedicated styling/UI-polish phase. `FEATURES.md` is the checklist for that
 sequence and must remain aligned with confirmed implementation state.
 
-
 ## Product-direction research after TDD 075
 
 Public ClickUp documentation was reviewed for feature breadth and architecture.
@@ -342,7 +361,6 @@ Durable decisions:
 - keep `FEATURES.md` as the roadmap;
 - use `CLICKUP_REFERENCE.md` as a legal-safe capability reference;
 - keep `Yönlek` as a preliminary working name only until trademark clearance.
-
 
 ## Cycles 085-092
 
@@ -367,7 +385,6 @@ Lint: 0 warnings, 0 errors
 
 No styling-system or visual redesign is part of this batch.
 
-
 ## TDD 085 test-harness correction
 
 The first TDD 085 GREEN verification stopped after the product-facing Yönlek
@@ -387,7 +404,6 @@ to `resolve(process.cwd(), ...)`. No product assertion was weakened or removed.
 
 The corrected TDD 085 focused GREEN must pass before TDD 086 begins.
 
-
 ## TDD 086 RED-marker correction
 
 The first TDD 086 run stopped even though the new Area test failed for the
@@ -406,7 +422,6 @@ Cannot find module './area'
 
 Durable rule: collection-time REDs use collection/file/module evidence rather
 than assertions that cannot run before import succeeds.
-
 
 ## Cycles 093-100
 
@@ -431,7 +446,6 @@ Lint: 0 warnings, 0 errors
 
 Lists remain optional in storage version 1 so existing saved workspaces continue
 to load without migration.
-
 
 ## TDD 096 GREEN compatibility correction
 
@@ -466,7 +480,6 @@ Implementation correction:
 The corrected reducer must satisfy both the existing command test and the new
 Project-delete hierarchy test before TDD 097 begins.
 
-
 ## Cycles 101-107
 
 | Cycle | Behavior / boundary | Result |
@@ -489,7 +502,6 @@ Lint: 0 warnings, 0 errors
 
 Subtasks reuse Task behavior and remain backward-compatible through optional
 `parentTaskId`.
-
 
 ## TDD 107 GREEN title/count correction
 
@@ -517,7 +529,6 @@ Draft experiment plan
 The implementation was changed accordingly. The full WorkspaceRoot suite must
 pass before post-107 documentation and final checks run.
 
-
 ## Cycles 108-113
 
 | Cycle | Behavior / boundary | Result |
@@ -540,7 +551,6 @@ Lint: 0 warnings, 0 errors
 Checklist data is optional and nested under Task, so existing stored Tasks remain
 backward-compatible without a storage-version migration.
 
-
 ## Cycles 114-118
 
 | Cycle | Behavior / boundary | Result |
@@ -561,7 +571,6 @@ Lint: 0 warnings, 0 errors
 
 Manual ordering reuses persisted array order and does not change workspace
 storage version 1.
-
 
 ## Cycles 119-124
 
@@ -585,7 +594,6 @@ Lint: 0 warnings, 0 errors
 Tags are additive optional data in workspace storage version 1, so existing
 saved workspaces remain valid without migration.
 
-
 ## Cycles 125-130
 
 | Cycle | Behavior / boundary | Result |
@@ -607,7 +615,6 @@ Lint: 0 warnings, 0 errors
 
 People and assignee references are additive optional data in workspace storage
 version 1, so existing saved workspaces remain valid without migration.
-
 
 ## Cycles 131-136
 
@@ -635,7 +642,6 @@ Workflow change beginning with this bundle: after a successful local commit and
 clean-tree check, the runner verifies `origin` and performs a non-force push to
 `main`. Push failure leaves the local commit intact.
 
-
 ### TDD 135 controlled text-input draft correction
 
 The first GREEN implementation normalized a Text Custom Field on every
@@ -646,7 +652,6 @@ controlled input could erase the space while the user was still typing
 The behavior test was correct and unchanged. The implementation now keeps a
 local text draft while the input is focused and commits the normalized value on
 blur. Number and Checkbox values remain typed at their existing boundaries.
-
 
 ## Post-TDD 136 lint and push maintenance
 
@@ -681,20 +686,19 @@ Maintenance:
 | 143 | Persistence validation and browser reload | GREEN |
 | 144 | Blocks / Blocked-by / Related summaries | GREEN |
 
-Prepared successful checkpoint:
+Confirmed checkpoint:
 
 ```text
-Expected tests: 302
+44a1087  TDD 137-144: add task relationships
+Tests: 302 passed
 Lint: 0 warnings, 0 errors
 Build: passed
-Push: verified origin/main
+Working tree: clean after commit
+Push: origin/main updated
 ```
-
-The actual runner count is authoritative.
 
 Runner workflow from this batch forward pins Git for Windows at
 `C:\Program Files\Git\cmd\git.exe` for every Git operation.
-
 
 ### TDD 141 GREEN compatibility correction
 
@@ -712,7 +716,6 @@ workspace state and therefore preserved already-empty optional `areas` and
 
 No test changed. The reducer now preserves newer workspace metadata while
 retaining the established optional-shape behavior for Areas and Lists.
-
 
 ### TDD 142 GREEN title-semantic correction
 
@@ -734,17 +737,140 @@ value remains the Task ID.
 | 146 | Persisted Task duplication command through existing `task/added` path | GREEN |
 | 147 | Bare-bone Duplicate Task UI control | GREEN |
 
-Prepared successful checkpoint:
+Confirmed checkpoint:
 
 ```text
-Expected tests: 305
+d976d0d  TDD 145-147: add task duplication
+Tests: 305 passed
 Lint: 0 warnings, 0 errors
 Build: passed
-Push: origin/main after local commit
+Working tree: clean after commit
+Push: origin/main updated
 ```
 
-The test count is an estimate; the live runner count is authoritative.
+### TDD 145
 
-Task duplication copies one Task. The duplicate receives a new ID and creation
-timestamp, keeps Task-local data, and owns separate copies of nested arrays and
-records. Child Tasks and workspace-level Task relationship edges are not copied.
+The domain RED failed because `duplicateTask` did not exist. GREEN added a pure
+Task copy operation that accepts the new ID and timestamp as inputs.
+
+The duplicate keeps the source Task's Project, List, parent, status, priority,
+due date, description, Checklist, Tag IDs, assignee IDs, and Custom Field
+values. Task-owned arrays and records are copied into separate containers.
+
+### TDD 146
+
+The application RED failed because `WorkspaceCommands.duplicateTask` did not
+exist. GREEN made the command obtain a new ID and timestamp from the injected
+runtime, call the Task domain function, and persist the result through the
+existing `task/added` action.
+
+This reuses the established Task-add validation and transactional persistence
+path instead of introducing a second way to insert Tasks.
+
+### TDD 147
+
+The UI RED failed because no accessible `Duplicate task <title>` button existed.
+GREEN added that Task control and wired it to the command boundary.
+
+The full WorkspaceRoot suite then passed with 58 tests.
+
+### Duplication boundary
+
+Duplicating a Task copies one Task entity only.
+
+It does not copy child Tasks because they are separate Task records with
+`parentTaskId` references. It does not copy `blocks` or `related` relationships
+because those edges are workspace-level records. Copying either would modify the
+workspace graph rather than duplicate one Task.
+
+### Repository rename before TDD 145
+
+The local folder rename was intentionally separate from product behavior.
+
+The first Windows rename attempt failed while PowerShell was still located in:
+
+```text
+C:\Users\yavuz\git\workspace-app
+```
+
+After `cd ..`, the same guarded rename succeeded:
+
+```text
+C:\Users\yavuz\git\workspace-app
+→ C:\Users\yavuz\git\yonlek
+```
+
+The branch remained `main`, HEAD remained `44a1087`, and `origin` remained
+`https://github.com/ROGOYATO/yonlek.git`.
+
+## Documentation refresh after TDD 147
+
+This maintenance pass updates all seven tracked root Markdown files from the confirmed
+`d976d0d` behavior baseline.
+
+The purpose is documentation consistency, not product behavior:
+
+- make the `yonlek` repository and local-folder rename explicit;
+- replace prepared TDD 137-147 checkpoints with the user-confirmed commits and
+  actual test counts;
+- explain Task duplication across domain, command, and UI boundaries;
+- explain why `workspace-app.*` browser storage keys remain unchanged;
+- separate current product state from competitor research and future work;
+- keep naming research preliminary until formal trademark clearance;
+- retain the historical TDD and regression lessons instead of rewriting them as
+  if they were new behavior.
+
+No application or test file is part of this documentation change. The docs-only
+bundle still runs the normal lint, full test, production build, and diff gates
+before it can commit.
+
+The first prepared docs bundle had a PowerShell parser error and never executed.
+The corrected r2 runner passed syntax preflight, then stopped before writing. Its
+reconstructed handoff snapshot incorrectly treated `YONLEK_NAME_RESEARCH.md` as
+a tracked repository file. The seven real docs had already passed existence and
+baseline-hash checks when the missing-file guard stopped the run. The corrected
+workflow now verifies Git's tracked Markdown set before any write and uses
+`BRAND_NAME_RESEARCH.md` as the single naming record.
+
+The r2 invocation also exposed a separate PSReadLine rendering failure while a
+long multi-line command was being pasted. The bundle had not started during
+those console exceptions. Future bundles should ship a standalone launcher so
+the operator can use one short PowerShell command instead of an interactive
+continuation block.
+
+### Docs refresh r3 warning-capture stop
+
+The r3 docs runner started from clean `d976d0d`, verified the exact seven-file
+tracked Markdown set, and wrote all seven guarded documentation targets. It then
+stopped at the first documentation-consistency Git query before staging.
+
+The repository was left in a known dirty state with those seven Markdown files
+modified and nothing staged, committed, or pushed.
+
+The failure was in the runner's Git-output helper, not in Git or the docs. The
+helper used `2>&1` while `$ErrorActionPreference = 'Stop'`. Git emitted the
+normal Windows warning that LF would be replaced by CRLF the next time Git
+touched `BRAND_NAME_RESEARCH.md`. Windows PowerShell 5.1 promoted that stderr
+line to `NativeCommandError` even though the Git command itself had not reported
+a failing exit code.
+
+The resume runner keeps stderr visible instead of merging it into parsed stdout
+and uses `$LASTEXITCODE` as the native-command result. It also pins the exact
+seven-file dirty status and normalized hashes before continuing, so the resume
+cannot overwrite unrelated work.
+### Docs refresh r4 source-encoding stop
+
+The r4 resume runner correctly recognized the exact seven-file dirty state left
+by r3, applied the guarded documentation target, and reached documentation
+consistency checks. It then stopped before staging because one runner assertion
+contained the literal product name in UTF-8 source.
+
+The Markdown payload was valid UTF-8. The failure was in Windows PowerShell 5.1
+source decoding: a UTF-8-without-BOM `.ps1` file can be read through legacy
+code-page rules, so the assertion string became mojibake before `ReadAllText`
+compared it with the correctly decoded Markdown file.
+
+The next resume keeps executable PowerShell source ASCII-only. Its preflight
+checks raw script bytes for values above `0x7F` and then runs the normal parser
+check. Unicode documentation assertions use ASCII substrings unless the exact
+code point is itself part of the contract.

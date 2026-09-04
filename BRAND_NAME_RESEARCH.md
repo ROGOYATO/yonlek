@@ -1,49 +1,79 @@
 # Yönlek naming research
 
-Status: preliminary collision research only. This is not trademark clearance
-or legal advice.
+This file is the repository's canonical naming and brand-research record. It
+keeps the active naming decision, technical slug, compatibility constraints, and
+unresolved clearance work in one tracked place.
 
-## Preferred working name
+Status: preliminary collision research only. This is not trademark clearance or
+legal advice.
 
-**Yönlek**
+## Current naming state
 
-Possible future technical slug: `yonlek`.
+**Yönlek** is the active working product name.
 
-Keep the internal repository/package name `workspace-app` until formal
-trademark clearance is complete.
+The technical slug is now `yonlek`. The current implementation uses it for:
 
-## Why Yönlek
+- the npm package name;
+- the GitHub repository name;
+- the local repository folder;
+- product-facing application metadata and headings.
 
-- Turkish-derived around the familiar root `yön`;
-- short and easy to pronounce in Turkish;
-- visually and phonetically independent from ClickUp;
-- broad exact-name web searches for `Yönlek` and `Yonlek` did not surface an
-  obvious active software product, app, or company using the exact name;
-- surfaced hits were unrelated historical/OCR text, linguistic usage, or a
-  geographic reference rather than a software brand.
+The two browser persistence keys remain:
+
+```text
+workspace-app.workspace
+workspace-app.view-preferences
+```
+
+Those identifiers predate the Yönlek name. They are kept so existing browser
+data remains discoverable. A future rename of the keys needs a tested data
+migration.
+
+Using Yönlek in code and repository names does not mean the name has passed
+formal trademark clearance.
+
+## Why Yönlek was selected as the working name
+
+The preliminary search favored Yönlek because:
+
+- it is short;
+- it is easy to pronounce in Turkish;
+- it is built around the familiar Turkish root `yön`;
+- it is visually and phonetically distinct from ClickUp;
+- broad exact-name web searches for `Yönlek` and `Yonlek` did not reveal an
+  obvious active software product, app, or company using the exact name at the
+  time of the research;
+- the surfaced exact-name results were unrelated linguistic, historical, OCR,
+  or geographic references.
+
+This is only collision screening. Ordinary web search cannot establish
+trademark availability.
 
 ## Rejected Turkish candidates
 
 ### Görevce
 
-Rejected because an active Google Play app named `Görevce` exists.
+Rejected because an active Google Play application named `Görevce` was found.
 
 ### İşlek
 
-Rejected because `işlek` is an active Turkish software product whose site says
-the `işlek®` mark is registered in Class 42.
+Rejected because `işlek` was already used by an active Turkish software product
+whose site stated that the `işlek®` mark was registered in Class 42.
 
 ### Dizge
 
-Rejected because `Dizge` is already used by active Turkish software/app
+Rejected because `Dizge` was already used by active Turkish software and app
 products.
 
 ### Düzence
 
 Not preferred because it is an existing Turkish dictionary word meaning
-discipline, making it more descriptive and less distinctive as a software mark.
+discipline. That makes it more descriptive and less distinctive as a software
+mark.
 
-## Search variants checked
+## Search variants used in the preliminary review
+
+The working-name review included:
 
 - `Yönlek`
 - `Yonlek`
@@ -58,43 +88,45 @@ discipline, making it more descriptive and less distinctive as a software mark.
 - site-scoped searches against TÜRKPATENT-indexed pages and common software
   platforms
 
-No obvious current software/app/company collision surfaced in ordinary web
-search. This does not prove trademark availability because trademark databases
-are not fully represented by ordinary search indexing.
+No obvious exact-name software, app, or company collision appeared in those
+ordinary searches. That result should be treated as a reason to continue the
+clearance process, not as proof that the mark is available.
 
-## Required formal clearance before public launch
+## Formal clearance still required
+
+Before a public launch or significant branding spend, review at least:
 
 - [ ] TÜRKPATENT Marka Araştırma
 - [ ] WIPO Global Brand Database
-- [ ] EUIPO / TMview
-- [ ] USPTO if the United States is a launch market
-- [ ] Turkish company/trade-name search
-- [ ] domain-name search
-- [ ] Apple App Store / Google Play search
-- [ ] npm / GitHub / major software directory search
-- [ ] phonetic, visual, and semantic near-match review
+- [ ] EUIPO or TMview
+- [ ] USPTO if the United States becomes a launch market
+- [ ] Turkish company and trade-name records
+- [ ] relevant domain names
+- [ ] Apple App Store and Google Play
+- [ ] npm, GitHub, and major software directories
+- [ ] phonetic, visual, and semantic near matches
 
-Likely Nice-class areas to inspect with a trademark professional:
+Likely Nice classes to review with a trademark professional include:
 
-- Class 9: downloadable/recorded software
-- Class 42: SaaS/PaaS/software services
+- Class 9 for downloadable or recorded software;
+- Class 42 for SaaS, PaaS, and software services.
+
+The exact filing strategy depends on the final product and launch markets.
 
 ## Working-name rule
 
-Until formal clearance:
+Until formal clearance is complete:
 
-- documentation/display working name: **Yönlek**
-- internal repo/package: `workspace-app`
-- do not claim registration or legal clearance
-- do not spend heavily on final branding around the name
+- use **Yönlek** as the working product name;
+- use `yonlek` for the repository and package slug;
+- do not describe the name as registered, cleared, or protected unless that is
+  formally established;
+- do not rename established browser storage keys without a migration;
+- rerun collision searches before public launch because name availability can
+  change over time.
 
+## Documentation rule
 
-## Implementation status
-
-The user selected **Yönlek** as the working product name.
-
-The application heading, recovery heading, HTML metadata, and npm package name
-use Yönlek / `yonlek`. Existing browser persistence keys intentionally remain
-under `workspace-app.*` until a deliberate data migration exists.
-
-Formal trademark clearance remains pending.
+`BRAND_NAME_RESEARCH.md` is the canonical naming and brand-research record. Do
+not create a second naming document with overlapping conclusions. Update this
+file so repository guidance has one source of truth.

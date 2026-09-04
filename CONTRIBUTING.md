@@ -1,5 +1,25 @@
 # Contributing
 
+## Current repository contract
+
+The current user-confirmed behavior baseline is:
+
+- branch: `main`
+- behavior commit: `d976d0d`
+- local repository: `C:\Users\yavuz\git\yonlek`
+- remote: `https://github.com/ROGOYATO/yonlek.git`
+- verified suite: 305 tests
+- lint: 0 warnings and 0 errors
+- production build: passed
+
+The repository, npm package, and product slug now use `yonlek`. The browser
+storage keys intentionally keep the historical `workspace-app.*` prefix until a
+tested migration is added.
+
+Documentation-only maintenance may start from this behavior commit and create a
+later docs commit. In that case, `d976d0d` remains the behavior baseline even
+when repository HEAD advances through documentation changes.
+
 ## Test-first rule
 
 Behavioral production code must not be written before its failing test.
@@ -27,7 +47,9 @@ If a test appears incorrect, malformed, outdated, or underspecified:
 3. explain the proposed test change and its effect on the requirement;
 4. wait for user approval before changing that test.
 
-Test-harness corrections such as DOM cleanup or build-boundary configuration may be made without changing behavior assertions, but they must be described explicitly.
+Test-harness corrections such as DOM cleanup or build-boundary configuration
+may be made without changing behavior assertions, but they must be described
+explicitly.
 
 ## Fail-fast bundle workflow
 
@@ -73,15 +95,19 @@ Failure logs are written to `.tdd-logs/`.
 
 Important batches start from a known clean commit.
 
-The runner checks preconditions before applying patches. If the repo is on the wrong branch, at the wrong checkpoint, or unexpectedly dirty, fix or inspect that condition rather than bypassing the check.
+The runner checks preconditions before applying patches. If the repo is on the
+wrong branch, at the wrong checkpoint, or unexpectedly dirty, inspect that
+condition instead of bypassing the check.
 
-Automatic commits are allowed only after every final gate passes. If a bundle stops before that point, leave its partial state intact for review.
+Automatic commits are allowed only after every final gate passes. If a bundle
+stops before that point, leave its partial state intact for review.
 
 ## Scope and architecture discipline
 
 Prefer observable domain, application, persistence, and UI seams over speculative abstractions.
 
-Do not add a dependency because it might be useful later. Add one only when a selected feature requires it, and review its license before adding it.
+Do not add a dependency because it might be useful later. Add one only when a
+selected feature requires it, and review its license before adding it.
 
 Keep browser/storage details out of domain code. Keep ID and time generation injectable where deterministic behavior matters.
 
@@ -89,7 +115,9 @@ Keep browser/storage details out of domain code. Keep ID and time generation inj
 
 Do not copy another product's source code, design assets, icons, screenshots, text, or branding.
 
-General project-management concepts such as projects, tasks, statuses, priorities, filters, calendars, and boards may be implemented independently with original code and product wording.
+General project-management concepts such as projects, tasks, statuses,
+priorities, filters, calendars, and boards may be implemented independently
+with original code and product wording.
 
 ## Verification
 
@@ -102,16 +130,38 @@ git diff --check
 
 For a TDD bundle, use the bundle runner instead of manually skipping between patches.
 
-
 ## Resuming a stopped bundle
 
-A resume bundle may intentionally start from one known dirty file left by an
-earlier stopped run. In that case the manifest must list the exact expected
-`git status --porcelain` line and the SHA-256 of the expected modified file.
+A resume bundle may intentionally start from a known dirty state left by an
+earlier stopped run. The manifest must list every expected
+`git status --porcelain` entry and pin the normalized SHA-256 of each modified
+or untracked file whose content matters to the continuation.
 
-Do not disable the clean-tree guard generally. Resume exceptions must be pinned
-to the exact partial state they are designed to continue from.
+A resume guard is not permission to accept arbitrary local changes. It describes
+one exact stopped state. Do not disable the clean-tree guard generally, and do
+not reset or clean the repository to make a resume bundle fit.
 
+## Documentation-only maintenance
+
+Documentation changes do not need invented RED/GREEN behavior cycles.
+
+A docs-only bundle should still:
+
+1. pin the branch and starting behavior commit;
+2. require a clean tree unless it is an exact resume;
+3. derive the tracked Markdown set from Git, not from a reconstructed handoff snapshot;
+4. verify that exact Markdown set before any write;
+5. guard every Markdown file it intends to replace by normalized SHA-256;
+6. run a documentation consistency check;
+7. run `git diff --check`;
+8. run the full `npm run check` gate even though production code did not change;
+9. stage only the intended documentation files;
+10. run the staged diff check;
+11. commit only after every gate passes;
+12. verify `origin` and use a non-force push when push is authorized.
+
+This keeps documentation from drifting away from the code checkpoint it
+describes.
 
 ## Presentation-only post-steps
 
@@ -119,21 +169,44 @@ CSS and other presentation-only changes may be applied after the behavioral TDD
 cycles are green. They must not add JavaScript behavior or alter a behavior test.
 The final lint, test, build, and diff gates still apply.
 
-
 ## Bundle implementation rules learned on Windows
 
 These are required for future generated bundles:
 
-1. **RED semantics:** non-zero exit is required. The runner must also match stable test/file identifiers so an unrelated failure cannot count as RED.
+1. **RED semantics.** Non-zero exit is required. The runner must also match
+   stable test or file identifiers so an unrelated failure cannot count as RED.
 2. **GREEN semantics:** zero exit is required. Never continue after a failed focused GREEN.
-3. **Native stderr:** expected Vitest stderr during RED must be captured as output, not promoted to a terminating PowerShell exception.
-4. **Guarded edits:** prefer guarded file transforms for existing source files. Compare normalized text SHA-256, ignoring only BOM and CR/LF representation; write canonical LF and preserve an existing UTF-8 BOM only when necessary.
-5. **Resume state:** do not reset a stopped batch. A resume manifest must pin branch, HEAD, exact `git status --porcelain` entries, and hashes for the partial files it expects.
-6. **Manifest optionals:** omitted optional collections must be treated as empty. Prefer explicitly writing `[]` for `expectedStatus`, `expectedFileSha256`, and `expectedNormalizedFileSha256` on clean-start bundles.
-7. **Post-steps:** documentation and CSS may run only after behavioral cycles are GREEN. They still must pass lint, tests, production build, and `git diff --check`.
-8. **Vite CSS typing:** if the browser entry imports CSS, keep `src/vite-env.d.ts` with `/// <reference types="vite/client" />`; otherwise TypeScript 6 with the current config can reject the side-effect CSS import with TS2882.
+3. **Native stderr.** Treat a native program's exit code as the success signal.
+   For commands whose stdout the runner parses, do not merge stderr into stdout
+   with `2>&1` while `$ErrorActionPreference = 'Stop'`. Windows PowerShell 5.1
+   can promote a harmless native stderr line, including Git's LF-to-CRLF
+   warning, to `NativeCommandError` even when Git exits with code 0. Capture
+   stdout only, leave stderr visible in the console, and check `$LASTEXITCODE`.
+   Intentional RED output may still be captured when the runner needs to match
+   the expected failure, but its capture path must not turn expected stderr into
+   a runner failure.
+4. **Guarded edits.** Prefer guarded file transforms for existing source files.
+   Compare normalized text SHA-256 and ignore only BOM and CR/LF representation.
+   Write canonical LF and preserve an existing UTF-8 BOM only when necessary.
+5. **Resume state.** Do not reset a stopped batch. A resume manifest must pin
+   branch, HEAD, exact `git status --porcelain` entries, and hashes for the
+   partial files it expects.
+6. **Manifest optionals.** Treat omitted optional collections as empty. Prefer
+   explicit `[]` values for `expectedStatus`, `expectedFileSha256`, and
+   `expectedNormalizedFileSha256` on clean-start bundles.
+7. **Post-steps.** Documentation and CSS may run only after behavioral cycles
+   are GREEN. They still must pass lint, tests, production build, and
+   `git diff --check`.
+8. **Vite CSS typing.** If the browser entry imports CSS, keep
+   `src/vite-env.d.ts` with `/// <reference types="vite/client" />`. Without it,
+   TypeScript 6 with the current config can reject the side-effect CSS import
+   with TS2882.
 9. **Logs and terminal:** write logs to `.tdd-logs/`, never call `exit`, and never use destructive cleanup commands.
 10. **Automatic commit:** commit only after focused GREENs and all final gates pass. A stopped batch remains uncommitted.
+11. **Operator invocation.** Prefer a standalone launcher invoked with one short
+    PowerShell command. Long pasted blocks with backtick continuations can
+    trigger PSReadLine rendering failures before the bundle starts. The launcher
+    must still leave the interactive shell open on failure.
 
 ### What to send after a stop
 
@@ -146,14 +219,12 @@ git status --short
 
 Do not manually apply the next GREEN patch. The resume bundle should encode the exact continuation.
 
-
 ## Vertical integration test rule
 
 When one minimal implementation naturally satisfies both a domain test and its
 browser interaction, put both expectations in the same RED cycle. Do not invent
 a later RED that would already pass after the domain GREEN. Description search
 in TDD 043 is the reference example.
-
 
 ## Persistence boundary rules
 
@@ -170,7 +241,6 @@ stable `Workspace storage is invalid` contract; BrowserApp converts that failure
 to a user-facing recovery state and can deliberately replace invalid saved data
 with an empty versioned workspace.
 
-
 ## Project-focus view state
 
 Project focus is presentation state keyed by immutable project ID, not by project
@@ -183,12 +253,34 @@ storage design/migration decision.
 
 ## Living documentation and handoff
 
-When a run teaches a durable rule, confirms a checkpoint, exposes a useful
-failure mode, or changes architecture/behavior, update the relevant Markdown in
-the next applicable bundle/maintenance step and update the aligned handoff.
-Preserve useful historical fixes and always distinguish user-confirmed live state
-from prepared target state.
+The root Markdown files are part of the maintained project state, not release
+notes copied from chat.
 
+When a run teaches a durable rule, confirms a checkpoint, exposes a useful
+failure mode, or changes architecture or behavior, update the relevant Markdown
+in the next applicable bundle or maintenance step and update the aligned
+handoff.
+
+Keep these roles distinct:
+
+- `README.md` explains the current product and architecture;
+- `FEATURES.md` tracks implemented and planned capability;
+- `CONTRIBUTING.md` records engineering rules and regression lessons;
+- `TDD_LOG.md` preserves RED/GREEN history and confirmed checkpoints;
+- `CLICKUP_REFERENCE.md` records competitor research and independence limits;
+- `BRAND_NAME_RESEARCH.md` is the canonical naming and brand-research record;
+- `THIRD_PARTY_NOTICES.md` records dependency-license information.
+
+Preserve useful historical fixes. Never rewrite a prepared target as if it were
+live. Handoffs must separate user-confirmed live state from work that is only
+prepared.
+
+A handoff snapshot is evidence about the handoff. It does not prove that every
+snapshot file is tracked in the live repository. During the post-TDD-147 docs
+refresh, a reconstructed handoff contained `YONLEK_NAME_RESEARCH.md` even though
+clean `d976d0d` did not. The live file and hash guard stopped before any write.
+Future maintenance bundles must use Git's tracked file set as the repository
+source of truth.
 
 ## React external-store test synchronization
 
@@ -204,7 +296,6 @@ TDD 056 is the reference case: a direct `commands.renameProject(...)` call after
 render was wrapped in `act(...)`, while the selected-project and renamed-heading
 assertions stayed unchanged.
 
-
 ## View-preference persistence boundary
 
 Do not add UI filters, search text, sort order, or selected-project focus to the
@@ -217,7 +308,6 @@ defaults.
 
 When a project referenced by saved focus is deleted, repair the preference to
 `all` at the user action boundary so the persisted view does not remain stale.
-
 
 ## Type ownership across boundaries
 
@@ -233,7 +323,6 @@ Only import a type through another layer when that layer intentionally exports
 it as part of its public API. This keeps dependency direction explicit and lets
 the production TypeScript build catch accidental boundary assumptions that
 transpile-only tests may not.
-
 
 ## Disposable preferences vs durable workspace data
 
@@ -251,7 +340,6 @@ the normalized in-memory view anyway.
 
 Resetting invalid workspace data also resets view preferences so recovery does
 not immediately reapply stale filters or focus.
-
 
 ## Feature-first phase and FEATURES.md
 
@@ -273,7 +361,6 @@ Task movement is a relationship change, not task recreation: keep the same task
 ID and metadata, validate that the target project exists, and let the normal
 transactional workspace store persist the new relationship.
 
-
 ## Legal-safe competitor reference work
 
 Competitor research may inform generic features, workflows, data relationships,
@@ -290,16 +377,21 @@ Do not copy:
 Prefer our own hierarchy, terminology, interaction details, and visual identity.
 Use `CLICKUP_REFERENCE.md` as the maintained reference for this rule.
 
-
 ## Product identity and persistence identifiers
 
-The visible working product name is **Yönlek** and the npm package name is
-`yonlek`.
+The visible working product name is **Yönlek**. The npm package, GitHub
+repository, and local repository folder use `yonlek`.
+
+The local repository was renamed from
+`C:\Users\yavuz\git\workspace-app` to `C:\Users\yavuz\git\yonlek` after
+the clean `44a1087` checkpoint. On Windows, renaming the directory failed while
+the interactive shell was still inside it. Moving the shell to the parent
+directory with `cd ..` released that handle and the rename then succeeded.
 
 Do not rename `workspace-app.workspace` or
 `workspace-app.view-preferences` merely for branding. They are established
-persistence identifiers; changing them without migration would strand existing
-local data.
+persistence identifiers. Changing them without migration would make existing
+local data unreachable through the new key.
 
 ## Areas
 
@@ -311,7 +403,6 @@ Areas are optional durable groupings above Projects.
 - When Areas are present, validate records, duplicate Area IDs, and
   Project-to-Area references.
 - Keep Area behavior separate from the eventual visual navigation design.
-
 
 ## Repository-file access in jsdom tests
 
@@ -334,7 +425,6 @@ product assertions because the URL scheme was not `file:` under the jsdom
 execution. The approved correction changed only file location; all Yönlek and
 storage-key assertions remained unchanged.
 
-
 ## RED markers for missing-module cycles
 
 When the intended first RED is that a new module does not exist yet, Vitest can
@@ -347,7 +437,6 @@ RED because those names may never appear in output.
 
 TDD 086 is the reference case. The test itself was correct and remained
 unchanged; only the fail-fast runner's expected RED markers were corrected.
-
 
 ## Lists and task-container integrity
 
@@ -369,7 +458,6 @@ Automated commit messages should prefer ASCII-only wording while nested
 PowerShell/Git output still displays Unicode inconsistently. This affects
 terminal display only; product files continue to use `Yönlek`.
 
-
 ## Optional collection shape compatibility
 
 `areas` and `lists` remain optional fields in `WorkspaceState` for storage and
@@ -390,7 +478,6 @@ preserved hierarchy data but also introduced empty `areas`/`lists` arrays into
 an older command test's exact state shape. The correction was implementation
 only; the existing behavior test was not changed.
 
-
 ## Subtask hierarchy integrity
 
 Subtasks use the existing `Task` entity with optional `parentTaskId`.
@@ -407,7 +494,6 @@ Subtasks use the existing `Task` entity with optional `parentTaskId`.
 
 Do not create a parallel `Subtask` entity unless a later invariant requires
 data that cannot be represented by Task + parent relationship.
-
 
 ## Stable task-title semantics for adjacent summaries
 
@@ -431,7 +517,6 @@ interaction tests could no longer locate Tasks by their exact titles. With user
 approval, only the new TDD 107 assertion was corrected; existing tests were not
 changed or weakened.
 
-
 ## Checklist integrity
 
 Checklists are Task-local lightweight data, distinct from Subtasks.
@@ -454,7 +539,6 @@ Rules:
 - Checklist progress is adjacent summary text and must not be appended to the
   stable Task title.
 - Existing Tasks without `checklist` remain valid and require no migration.
-
 
 ## Manual ordering
 
@@ -483,7 +567,6 @@ Rules:
 - Drag-and-drop is a later interaction layer over these commands, not a separate
   ordering model.
 
-
 ## Tag integrity
 
 Tags are reusable workspace-level definitions. Tasks reference them by ID.
@@ -504,8 +587,7 @@ Rules:
 - Tag colors and visual badge styling are deferred; do not couple semantic Tag
   identity to a presentation color.
 
-
-## Local Person and assignee integrity
+## Local person and assignee integrity
 
 People are workspace-level local identities. Tasks reference them by ID.
 
@@ -524,8 +606,7 @@ Rules:
 - A local Person is not an authenticated account. Do not attach authorization,
   invitation, notification, or remote identity semantics to this model.
 
-
-## Custom Field integrity
+## Custom field integrity
 
 Custom Field definitions live at workspace level. Tasks reference definitions
 through keys in optional `customFieldValues`.
@@ -574,7 +655,6 @@ Allowed Yönlek remotes:
 Never force-push from a feature bundle. If push fails, stop and preserve the
 successful local commit and clean working tree. Do not reset or clean.
 
-
 ### Controlled inputs with normalizing domain setters
 
 Do not feed a normalizing domain setter directly from every keystroke when the
@@ -585,7 +665,6 @@ intentional internal spaces.
 For Text Custom Fields, keep a local draft during editing and commit through the
 domain boundary on blur. Tests should assert the user-visible value contract;
 do not weaken the test to match a lossy controlled-input implementation.
-
 
 ### Zero-warning lint gate
 
@@ -633,6 +712,27 @@ All internal Git operations and manifest commands named `git` route to that
 executable. Do not rely on PATH because MSYS Git may appear earlier and behave
 differently for credential helpers and HTTPS transport.
 
+## Windows PowerShell 5.1 source encoding
+
+Repository runners target Windows PowerShell 5.1 as well as newer shells. Keep
+executable `.ps1` source ASCII-only. Do not place product names or other
+non-ASCII prose directly in runner literals, comments, or assertions.
+
+This is stricter than ordinary UTF-8 source handling on purpose. Windows
+PowerShell 5.1 can decode a UTF-8-without-BOM script through legacy code-page
+rules before the script has a chance to call an explicit UTF-8 API. A correct
+literal such as the product name can therefore arrive in memory as mojibake and
+make a content assertion fail even when the Markdown file itself is valid
+UTF-8.
+
+When a runner needs to verify Unicode documentation, prefer an ASCII substring
+that still proves the required behavior. If an exact Unicode code point is
+material to the check, construct it at runtime from its numeric code point
+instead of embedding the character in `.ps1` source.
+
+Bundle preflight must inspect the raw bytes of every executable PowerShell file
+and reject bytes above `0x7F` before repository work starts. This source audit is
+separate from the PowerShell parser check; both are required.
 
 ## Project deletion and optional workspace collections
 
@@ -653,7 +753,6 @@ TDD 141 exposed this boundary: the first TDD 137 preservation fix used
 empty `areas` / `lists` shapes. The correction is implementation-only; no test
 was weakened.
 
-
 ## Relationship target selector text
 
 Task titles are stable semantic text and should remain uniquely attributable to
@@ -669,13 +768,27 @@ duplicates bare Task titles.
 
 ## Task duplication
 
-Duplicate one Task through the Task domain interface, then add the result through
-the existing `task/added` workspace path. The duplicate gets a new Task ID and
-`createdAt` value while keeping the source Task's project, list, parent, status,
-priority, due date, description, checklist, tags, assignees, and Custom Field
+Task duplication is a three-boundary behavior.
+
+At the domain boundary, `duplicateTask` copies one Task under a caller-supplied
+new ID and timestamp. At the application boundary,
+`WorkspaceCommands.duplicateTask(taskId)` obtains that identity and time from
+the injected runtime, then persists the duplicate through the established
+`task/added` reducer path. At the UI boundary, each Task exposes an accessible
+`Duplicate task <title>` button.
+
+The duplicate keeps the source Task's Project, List, parent, status, priority,
+due date, description, Checklist, Tag IDs, assignee IDs, and Custom Field
 values.
 
-Copy Task-local arrays and records so later edits to the duplicate cannot mutate
-the source through shared references. Do not copy child Tasks or workspace-level
-Task relationships. Those are separate workspace records, not fields owned by the
-Task being duplicated.
+Task-owned arrays and records must be copied into new containers. A later edit
+to the duplicate must not mutate the source through a shared reference.
+
+Do not copy child Tasks. They are separate Task entities that happen to point at
+the source through `parentTaskId`.
+
+Do not copy workspace-level `blocks` or `related` edges. Those edges describe
+the workspace graph, not fields owned by the Task being duplicated.
+
+TDD 145 proves the copy semantics, TDD 146 proves persistence through the
+command boundary, and TDD 147 proves the accessible UI control.
