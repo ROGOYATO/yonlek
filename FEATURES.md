@@ -4,11 +4,11 @@ This file tracks product behavior, not visual polish. A checkbox moves to
 complete only after the behavior has a confirmed GREEN cycle and the final
 verification gate has passed.
 
-Confirmed starting checkpoint for TDD 173-177:
+Confirmed starting checkpoint for TDD 178-182:
 
-- commit: `d2b971a`
-- TDD: 172 GREEN
-- tests: 330 passed across 52 files
+- commit: `6d89703`
+- TDD: 177 GREEN
+- tests: 335 passed across 57 files
 - lint: 0 warnings, 0 errors
 - production build: passed
 
@@ -226,7 +226,7 @@ final navigation and visual system are still deferred.
 - [ ] Table view
 - [ ] Timeline
 - [ ] Gantt foundation
-- [ ] Saved views
+- [x] Saved views
 - [x] Per-view grouping
 - [ ] Per-view filters and sorts
 
@@ -234,6 +234,11 @@ Grouping is a view preference, not workspace data. The current list view can
 group the already filtered and sorted active Tasks by status, priority, or List.
 The `none` setting preserves the flat list, empty groups are omitted, and Task
 order inside each group stays equal to the incoming sorted order.
+
+Saved views persist the complete current list-view configuration: Project focus,
+Task search, status, priority, due-date filter, sort, and grouping. Saved views do
+not copy workspace data or the saved-filter-set collection. Saving the same
+normalized name updates that view in place.
 
 ## Productivity
 

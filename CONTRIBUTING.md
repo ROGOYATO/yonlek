@@ -5,10 +5,10 @@
 The current user-confirmed behavior baseline is:
 
 - branch: `main`
-- confirmed starting commit for TDD 173-177: `d2b971a` (`TDD 168-172: add per-view task grouping`)
+- confirmed starting commit for TDD 178-182: `6d89703` (`TDD 173-177: add saved filter sets`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- verified suite at that checkpoint: 330 tests across 52 files
+- verified suite at that checkpoint: 335 tests across 57 files
 - lint: 0 warnings and 0 errors
 - production build: passed
 - post-commit tree: clean
@@ -49,6 +49,18 @@ Names are trimmed and non-empty. Saving the same normalized name replaces that
 preset in place instead of creating a duplicate. Version-1 preference documents
 that do not contain `savedFilterSets` remain valid. If the collection is present,
 validate each preset and reject duplicate names.
+
+## Saved view boundary
+
+Saved views are broader than saved filter sets but remain view-preference data. A
+saved view keeps Project focus, Task search, status, priority, due-date filter,
+sort, and grouping. It must not copy workspace data or the `savedFilterSets`
+collection. Applying a saved view restores those seven view values only.
+
+Saved-view names are trimmed, non-empty, and unique after normalization. Saving
+the same normalized name replaces the existing view in place. Version-1
+preference documents without `savedViews` remain valid; supplied collections must
+validate every view and reject duplicate names.
 
 
 ## PowerShell Git scalar output

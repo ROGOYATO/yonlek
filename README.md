@@ -8,21 +8,21 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 173-177 is TDD 172.
+The confirmed starting checkpoint for TDD 178-182 is TDD 177.
 
 - branch: `main`
-- behavior commit: `d2b971a` (`TDD 168-172: add per-view task grouping`)
+- behavior commit: `6d89703` (`TDD 173-177: add saved filter sets`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 330 passed across 52 files
+- tests: 335 passed across 57 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
 - push: `origin/main` updated successfully
 
 This checkpoint includes Task and Project archive/restore, Project and Task
-templates, per-view Task grouping, persisted archive timestamps, and active/archive
-UI boundaries.
+templates, per-view Task grouping, saved filter sets, persisted archive timestamps,
+and active/archive UI boundaries.
 
 ## Current product model
 
@@ -96,6 +96,7 @@ Current Task behavior includes:
 - created, title, due-date, priority, and manual sort modes;
 - view-only grouping by status, priority, or List after filtering and sorting;
 - named saved filter sets for search, status, priority, and due-date filters;
+- named saved views for Project focus, filters, sort, and grouping;
 - move between compatible Project and List containers;
 - nested Subtasks with cycle and parent integrity checks;
 - manual ordering among valid siblings.
@@ -110,7 +111,13 @@ Saved filter sets are view-preference data, not workspace data. A named set keep
 only the Task search query, status filter, priority filter, and due-date presence
 filter. Saving the same normalized name updates that preset. Applying a preset
 changes only those four filters and preserves Project focus, sort, and grouping.
-Those broader settings remain part of the future Saved Views scope.
+
+### Saved views
+
+Saved views are also view-preference data. A named view keeps the complete current
+list configuration: Project focus, Task search, status, priority, due-date filter,
+sort, and grouping. Applying a saved view restores those seven values. It does not
+copy workspace data or the saved-filter-set collection.
 
 ### Task templates
 

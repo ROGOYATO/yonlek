@@ -1,5 +1,6 @@
 import type { TaskDueDateFilter } from './task-filter'
 import { createTaskFilterSet, type TaskFilterSet } from './task-filter-set'
+import { createSavedTaskView, type SavedTaskView } from './saved-task-view'
 import type { TaskSort } from './task-sort'
 import type { TaskGroup } from './task-group'
 import type { TaskPriority, TaskStatus } from './task'
@@ -13,6 +14,7 @@ export interface ViewPreferences {
   sort: TaskSort
   group?: TaskGroup
   savedFilterSets?: TaskFilterSet[]
+  savedViews?: SavedTaskView[]
 }
 
 export function createDefaultViewPreferences(): ViewPreferences {
@@ -120,5 +122,94 @@ export function deleteTaskFilterSet(
 
   const next = { ...current }
   delete next.savedFilterSets
+  return next
+}
+
+export function getSavedTaskViews(
+  preferences: ViewPreferences,
+): SavedTaskView[] {
+  return preferences.savedViews ?? []
+}
+
+export function saveTaskView(
+  current: ViewPreferences,
+  name: string,
+): ViewPreferences {
+  const savedView = createSavedTaskView({
+    name,
+    projectView: current.projectView,
+    query: current.query,
+    status: current.status,
+    priority: current.priority,
+    dueDate: current.dueDate,
+    sort: current.sort,
+    group: getTaskGroup(current),
+  })
+  const existing = getSavedTaskViews(current)
+  const matchingIndex = existing.findIndex(
+    (candidate) => candidate.name === savedView.name,
+  )
+  const savedViews = [...existing]
+
+  if (matchingIndex === -1) {
+    savedViews.push(savedView)
+  } else {
+    savedViews[matchingIndex] = savedView
+  }
+
+  return {
+    ...current,
+    savedViews,
+  }
+}
+
+export function applyTaskView(
+  current: ViewPreferences,
+  name: string,
+): ViewPreferences {
+  const normalizedName = name.trim()
+  const savedView = getSavedTaskViews(current).find(
+    (candidate) => candidate.name === normalizedName,
+  )
+
+  if (!savedView) {
+    throw new Error('Saved view not found')
+  }
+
+  return {
+    ...current,
+    projectView: savedView.projectView,
+    query: savedView.query,
+    status: savedView.status,
+    priority: savedView.priority,
+    dueDate: savedView.dueDate,
+    sort: savedView.sort,
+    group: savedView.group,
+  }
+}
+
+export function deleteTaskView(
+  current: ViewPreferences,
+  name: string,
+): ViewPreferences {
+  const normalizedName = name.trim()
+  const existing = getSavedTaskViews(current)
+  const savedViews = existing.filter(
+    (candidate) => candidate.name !== normalizedName,
+  )
+
+  if (savedViews.length === existing.length) {
+    throw new Error('Saved view not found')
+  }
+
+  if (savedViews.length > 0) {
+    return {
+      ...current,
+      savedViews,
+    }
+  }
+
+  const next = { ...current }
+  delete next.savedViews
   return next
 }

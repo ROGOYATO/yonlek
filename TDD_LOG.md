@@ -2,25 +2,25 @@
 
 ## Current verified behavior checkpoint
 
-The latest user-confirmed behavior commit before TDD 168-172 is:
+The latest user-confirmed behavior commit before TDD 178-182 is:
 
 ```text
-f18d394  TDD 163-167: add task templates
+6d89703  TDD 173-177: add saved filter sets
 ```
 
 Verified on Windows from `C:\Users\yavuz\git\yonlek`:
 
 ```text
-Tests: 325 passed across 47 files
+Tests: 335 passed across 57 files
 Lint: 0 warnings, 0 errors
 Build: passed
 Working tree: clean after commit
-Push: origin/main updated from 62740bb to f18d394
+Push: origin/main updated from d2b971a to 6d89703
 ```
 
-TDD 163-167 added Task templates on top of the confirmed Project-template
-checkpoint. The approved TDD 167 test repair changed only query scope and left
-production behavior unchanged.
+TDD 173-177 added saved Task filter sets on top of the confirmed per-view
+grouping checkpoint. The approved TDD 177 matcher repair changed only unsupported
+test matcher syntax and left production behavior unchanged.
 
 This log records completed behavior cycles. RED was observed before the
 corresponding production implementation unless a row is explicitly marked as
@@ -1543,6 +1543,108 @@ matcher.
 
 This batch starts from clean `main` at `d2b971a`. Five focused behavior tests are
 prepared, so the expected suite count is 335 across 57 test files if the live
+inventory is otherwise unchanged. Live output remains authoritative. The runner
+must pass every focused GREEN, zero-warning lint, the full suite, production
+build, LF audits, exact changed-file verification, and staged diff checks before
+commit or push.
+
+
+## Confirmed checkpoint after TDD 177
+
+The saved-filter-set resume runner completed from `d2b971a` and created:
+
+```text
+6d89703  TDD 173-177: add saved filter sets
+```
+
+Live verification:
+
+```text
+Tests: 335 passed across 57 files
+Lint: 0 warnings, 0 errors
+Build: passed
+Line-ending audit: 13 changed repository files passed
+Working tree: clean after commit
+Push: origin/main updated from d2b971a to 6d89703
+```
+
+## TDD 178 - Saved view value semantics
+
+**RED**
+
+Add focused domain coverage for a named complete list-view snapshot. The saved
+view name is trimmed and required. The value keeps Project focus, Task search,
+status, priority, due-date filter, sort, and grouping.
+
+Expected RED marker: missing `./saved-task-view` module.
+
+**GREEN**
+
+Add the small `SavedTaskView` value module. It has no workspace, React, storage,
+ID, or timestamp dependency.
+
+## TDD 179 - Saved views in view preferences
+
+**RED**
+
+Add focused preference coverage for save/update, apply, and delete behavior.
+Applying a view must restore the complete seven-value list configuration without
+copying or replacing saved filter sets. Existing preference objects must remain
+immutable.
+
+Expected RED marker: `saveTaskView is not a function`.
+
+**GREEN**
+
+Add optional `savedViews` plus public helpers to list, save/update, apply, and
+delete named views. A repeated normalized name replaces the prior saved view in
+place.
+
+## TDD 180 - Saved view persistence
+
+**RED**
+
+Add focused version-1 preference-storage coverage for valid round-trip, old
+documents with no saved-view collection, duplicate names, and invalid view
+values.
+
+**GREEN**
+
+Validate optional saved views in storage version 1. Names must be trimmed,
+non-empty, and unique. Project focus must be non-empty, and stored filters, sort,
+and grouping must use existing values. No preference-storage version bump is
+required.
+
+## TDD 181 - Persisted save-view control
+
+**RED**
+
+Add a focused BrowserApp interaction test for `Saved view name` and `Save current
+view`. The complete list configuration must persist separately from workspace
+data.
+
+**GREEN**
+
+Add only the saved-view name input and save control to the existing preference
+path. This slice does not add apply/delete controls yet.
+
+## TDD 182 - Apply and delete saved views
+
+**RED**
+
+Add focused WorkspaceRoot coverage for `Apply saved view <name>` and `Delete saved
+view <name>`. Applying must restore Project focus, all Task filters, sort, and
+grouping.
+
+**GREEN**
+
+Render a semantic `Saved views` section with apply/delete controls. The section
+disappears when its final saved view is deleted.
+
+## Prepared verification target after TDD 182
+
+This batch starts from clean `main` at `6d89703`. Five focused behavior tests are
+prepared, so the expected suite count is 340 across 62 test files if the live
 inventory is otherwise unchanged. Live output remains authoritative. The runner
 must pass every focused GREEN, zero-warning lint, the full suite, production
 build, LF audits, exact changed-file verification, and staged diff checks before

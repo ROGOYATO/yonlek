@@ -3,6 +3,7 @@ import {
   type ViewPreferences,
 } from '../domain/view-preferences'
 import type { TaskFilterSet } from '../domain/task-filter-set'
+import type { SavedTaskView } from '../domain/saved-task-view'
 import type { KeyValueStore } from './workspace-storage'
 
 const STORAGE_KEY = 'workspace-app.view-preferences'
@@ -63,6 +64,63 @@ function isValidTaskFilterSets(value: unknown): boolean {
   return true
 }
 
+function isValidSavedTaskView(value: unknown): value is SavedTaskView {
+  return (
+    isRecord(value) &&
+    typeof value.name === 'string' &&
+    value.name.length > 0 &&
+    value.name.trim() === value.name &&
+    typeof value.projectView === 'string' &&
+    value.projectView.length > 0 &&
+    typeof value.query === 'string' &&
+    (value.status === 'all' ||
+      value.status === 'todo' ||
+      value.status === 'doing' ||
+      value.status === 'done') &&
+    (value.priority === 'all' ||
+      value.priority === 'low' ||
+      value.priority === 'normal' ||
+      value.priority === 'high') &&
+    (value.dueDate === 'all' ||
+      value.dueDate === 'withDueDate' ||
+      value.dueDate === 'withoutDueDate') &&
+    (value.sort === 'created' ||
+      value.sort === 'title' ||
+      value.sort === 'dueDate' ||
+      value.sort === 'priority' ||
+      value.sort === 'manual') &&
+    (value.group === 'none' ||
+      value.group === 'status' ||
+      value.group === 'priority' ||
+      value.group === 'list')
+  )
+}
+
+function isValidSavedTaskViews(value: unknown): boolean {
+  if (value === undefined) {
+    return true
+  }
+
+  if (!Array.isArray(value)) {
+    return false
+  }
+
+  const names = new Set<string>()
+
+  for (const savedView of value) {
+    if (!isValidSavedTaskView(savedView)) {
+      return false
+    }
+
+    if (names.has(savedView.name)) {
+      return false
+    }
+    names.add(savedView.name)
+  }
+
+  return true
+}
+
 function isValidPreferences(value: unknown): value is ViewPreferences {
   return (
     isRecord(value) &&
@@ -90,7 +148,8 @@ function isValidPreferences(value: unknown): value is ViewPreferences {
       value.group === 'status' ||
       value.group === 'priority' ||
       value.group === 'list') &&
-    isValidTaskFilterSets(value.savedFilterSets)
+    isValidTaskFilterSets(value.savedFilterSets) &&
+    isValidSavedTaskViews(value.savedViews)
   )
 }
 

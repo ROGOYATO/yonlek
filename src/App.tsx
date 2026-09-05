@@ -13,10 +13,14 @@ import type { TaskRelationshipType } from './domain/task-relationship'
 import {
   createDefaultViewPreferences,
   applyTaskFilterSet,
+  applyTaskView,
   deleteTaskFilterSet,
+  deleteTaskView,
   getTaskFilterSets,
+  getSavedTaskViews,
   getTaskGroup,
   saveTaskFilterSet,
+  saveTaskView,
   updateViewPreferences,
   type ViewPreferences,
 } from './domain/view-preferences'
@@ -185,6 +189,7 @@ export function App({
   const [taskTemplateProjects, setTaskTemplateProjects] = useState<Record<string, string>>({})
   const [taskTemplateLists, setTaskTemplateLists] = useState<Record<string, string>>({})
   const [filterSetName, setFilterSetName] = useState('')
+  const [savedViewName, setSavedViewName] = useState('')
   const [viewPreferences, setViewPreferences] = useState<ViewPreferences>(
     initialViewPreferences,
   )
@@ -198,6 +203,7 @@ export function App({
   } = viewPreferences
   const taskGroup = getTaskGroup(viewPreferences)
   const savedFilterSets = getTaskFilterSets(viewPreferences)
+  const savedViews = getSavedTaskViews(viewPreferences)
 
   function updatePreferences(patch: Partial<ViewPreferences>) {
     setViewPreferences((current) => {
@@ -513,6 +519,80 @@ export function App({
                       const next = deleteTaskFilterSet(
                         viewPreferences,
                         filterSet.name,
+                      )
+                      setViewPreferences(next)
+                      onViewPreferencesChange?.(next)
+                      setError(null)
+                    } catch (caught) {
+                      setError(errorMessage(caught))
+                    }
+                  }}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <label htmlFor="saved-view-name">Saved view name</label>
+      <input
+        id="saved-view-name"
+        value={savedViewName}
+        onChange={(event) => setSavedViewName(event.target.value)}
+      />
+      <button
+        type="button"
+        onClick={() => {
+          try {
+            const next = saveTaskView(viewPreferences, savedViewName)
+            setViewPreferences(next)
+            onViewPreferencesChange?.(next)
+            setSavedViewName('')
+            setError(null)
+          } catch (caught) {
+            setError(errorMessage(caught))
+          }
+        }}
+      >
+        Save current view
+      </button>
+
+      {savedViews.length > 0 ? (
+        <section>
+          <h2>Saved views</h2>
+          <ul>
+            {savedViews.map((savedView) => (
+              <li key={savedView.name}>
+                <span>{savedView.name}</span>
+                <button
+                  type="button"
+                  aria-label={`Apply saved view ${savedView.name}`}
+                  onClick={() => {
+                    try {
+                      const next = applyTaskView(
+                        viewPreferences,
+                        savedView.name,
+                      )
+                      setViewPreferences(next)
+                      onViewPreferencesChange?.(next)
+                      setError(null)
+                    } catch (caught) {
+                      setError(errorMessage(caught))
+                    }
+                  }}
+                >
+                  Apply
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Delete saved view ${savedView.name}`}
+                  onClick={() => {
+                    try {
+                      const next = deleteTaskView(
+                        viewPreferences,
+                        savedView.name,
                       )
                       setViewPreferences(next)
                       onViewPreferencesChange?.(next)
