@@ -5,10 +5,10 @@
 The current user-confirmed behavior baseline is:
 
 - branch: `main`
-- confirmed starting commit for TDD 168-172: `f18d394` (`TDD 163-167: add task templates`)
+- confirmed starting commit for TDD 173-177: `d2b971a` (`TDD 168-172: add per-view task grouping`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- verified suite at that checkpoint: 325 tests across 47 files
+- verified suite at that checkpoint: 330 tests across 52 files
 - lint: 0 warnings and 0 errors
 - production build: passed
 - post-commit tree: clean
@@ -36,6 +36,19 @@ remain optional when absence has one explicit effective default. The loader must
 accept old version-1 documents without the field, validate any supplied value, and
 keep workspace data unchanged. Do not bump the preference-storage version only to
 add an optional field with backward-compatible semantics.
+
+
+## Saved filter set boundary
+
+Saved filter sets are part of the separate view-preference document. They keep
+only the Task search query, status filter, priority filter, and due-date presence
+filter. Do not put Project focus, sort, grouping, workspace IDs, or Task data into
+a saved filter set. Those settings belong to broader saved-view behavior.
+
+Names are trimmed and non-empty. Saving the same normalized name replaces that
+preset in place instead of creating a duplicate. Version-1 preference documents
+that do not contain `savedFilterSets` remain valid. If the collection is present,
+validate each preset and reject duplicate names.
 
 
 ## PowerShell Git scalar output
@@ -889,6 +902,15 @@ read such as `result.projectTemplates` turns the intended missing-action RED
 into a `TypeError`. Keep the field assertions after the whole-return assertion
 so GREEN still proves the full state shape. RED gates should reject the runtime
 error when the intended failure is an assertion.
+
+## Vitest DOM value assertions
+
+The current Vitest setup uses Chai assertions but does not install jest-dom
+matchers such as `toHaveValue`. Rendered tests that need to verify an input or
+select value should read the native DOM `.value` property and compare it with
+`toBe`, using the appropriate `HTMLInputElement` or `HTMLSelectElement` cast.
+Do not add or rely on a matcher that the repository test setup has not
+configured.
 
 ## Repository line endings
 

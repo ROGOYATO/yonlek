@@ -2,6 +2,7 @@ import {
   createDefaultViewPreferences,
   type ViewPreferences,
 } from '../domain/view-preferences'
+import type { TaskFilterSet } from '../domain/task-filter-set'
 import type { KeyValueStore } from './workspace-storage'
 
 const STORAGE_KEY = 'workspace-app.view-preferences'
@@ -14,6 +15,52 @@ interface StoredViewPreferencesV1 {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
+}
+
+function isValidTaskFilterSet(value: unknown): value is TaskFilterSet {
+  return (
+    isRecord(value) &&
+    typeof value.name === 'string' &&
+    value.name.length > 0 &&
+    value.name.trim() === value.name &&
+    typeof value.query === 'string' &&
+    (value.status === 'all' ||
+      value.status === 'todo' ||
+      value.status === 'doing' ||
+      value.status === 'done') &&
+    (value.priority === 'all' ||
+      value.priority === 'low' ||
+      value.priority === 'normal' ||
+      value.priority === 'high') &&
+    (value.dueDate === 'all' ||
+      value.dueDate === 'withDueDate' ||
+      value.dueDate === 'withoutDueDate')
+  )
+}
+
+function isValidTaskFilterSets(value: unknown): boolean {
+  if (value === undefined) {
+    return true
+  }
+
+  if (!Array.isArray(value)) {
+    return false
+  }
+
+  const names = new Set<string>()
+
+  for (const filterSet of value) {
+    if (!isValidTaskFilterSet(filterSet)) {
+      return false
+    }
+
+    if (names.has(filterSet.name)) {
+      return false
+    }
+    names.add(filterSet.name)
+  }
+
+  return true
 }
 
 function isValidPreferences(value: unknown): value is ViewPreferences {
@@ -42,7 +89,8 @@ function isValidPreferences(value: unknown): value is ViewPreferences {
       value.group === 'none' ||
       value.group === 'status' ||
       value.group === 'priority' ||
-      value.group === 'list')
+      value.group === 'list') &&
+    isValidTaskFilterSets(value.savedFilterSets)
   )
 }
 

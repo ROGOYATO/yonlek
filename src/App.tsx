@@ -12,7 +12,11 @@ import type { MoveDirection } from './domain/manual-order'
 import type { TaskRelationshipType } from './domain/task-relationship'
 import {
   createDefaultViewPreferences,
+  applyTaskFilterSet,
+  deleteTaskFilterSet,
+  getTaskFilterSets,
   getTaskGroup,
+  saveTaskFilterSet,
   updateViewPreferences,
   type ViewPreferences,
 } from './domain/view-preferences'
@@ -180,6 +184,7 @@ export function App({
   const [taskDescriptions, setTaskDescriptions] = useState<Record<string, string>>({})
   const [taskTemplateProjects, setTaskTemplateProjects] = useState<Record<string, string>>({})
   const [taskTemplateLists, setTaskTemplateLists] = useState<Record<string, string>>({})
+  const [filterSetName, setFilterSetName] = useState('')
   const [viewPreferences, setViewPreferences] = useState<ViewPreferences>(
     initialViewPreferences,
   )
@@ -192,6 +197,7 @@ export function App({
     sort: taskSort,
   } = viewPreferences
   const taskGroup = getTaskGroup(viewPreferences)
+  const savedFilterSets = getTaskFilterSets(viewPreferences)
 
   function updatePreferences(patch: Partial<ViewPreferences>) {
     setViewPreferences((current) => {
@@ -449,6 +455,80 @@ export function App({
         <option value="priority">Priority</option>
         <option value="list">List</option>
       </select>
+
+      <label htmlFor="filter-set-name">Filter set name</label>
+      <input
+        id="filter-set-name"
+        value={filterSetName}
+        onChange={(event) => setFilterSetName(event.target.value)}
+      />
+      <button
+        type="button"
+        onClick={() => {
+          try {
+            const next = saveTaskFilterSet(viewPreferences, filterSetName)
+            setViewPreferences(next)
+            onViewPreferencesChange?.(next)
+            setFilterSetName('')
+            setError(null)
+          } catch (caught) {
+            setError(errorMessage(caught))
+          }
+        }}
+      >
+        Save current filters
+      </button>
+
+      {savedFilterSets.length > 0 ? (
+        <section>
+          <h2>Saved filter sets</h2>
+          <ul>
+            {savedFilterSets.map((filterSet) => (
+              <li key={filterSet.name}>
+                <span>{filterSet.name}</span>
+                <button
+                  type="button"
+                  aria-label={`Apply saved filter set ${filterSet.name}`}
+                  onClick={() => {
+                    try {
+                      const next = applyTaskFilterSet(
+                        viewPreferences,
+                        filterSet.name,
+                      )
+                      setViewPreferences(next)
+                      onViewPreferencesChange?.(next)
+                      setError(null)
+                    } catch (caught) {
+                      setError(errorMessage(caught))
+                    }
+                  }}
+                >
+                  Apply
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Delete saved filter set ${filterSet.name}`}
+                  onClick={() => {
+                    try {
+                      const next = deleteTaskFilterSet(
+                        viewPreferences,
+                        filterSet.name,
+                      )
+                      setViewPreferences(next)
+                      onViewPreferencesChange?.(next)
+                      setError(null)
+                    } catch (caught) {
+                      setError(errorMessage(caught))
+                    }
+                  }}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <button
         type="button"

@@ -4,11 +4,11 @@ This file tracks product behavior, not visual polish. A checkbox moves to
 complete only after the behavior has a confirmed GREEN cycle and the final
 verification gate has passed.
 
-Confirmed starting checkpoint for TDD 168-172:
+Confirmed starting checkpoint for TDD 173-177:
 
-- commit: `f18d394`
-- TDD: 167 GREEN
-- tests: 325 passed across 47 files
+- commit: `d2b971a`
+- TDD: 172 GREEN
+- tests: 330 passed across 52 files
 - lint: 0 warnings, 0 errors
 - production build: passed
 
@@ -133,7 +133,12 @@ restored under an archived parent through the UI.
 - [x] Manual sort mode
 - [x] Clear active Task filters together
 - [x] Per-view grouping
-- [ ] Saved filter sets
+- [x] Saved filter sets
+
+Saved filter sets persist with view preferences and keep only the Task search
+query, status, priority, and due-date presence filters. Reusing a normalized
+name updates the existing preset. Applying a preset preserves Project focus,
+sort, and grouping so the future Saved Views feature remains a separate scope.
 
 ### Structure
 

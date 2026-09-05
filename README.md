@@ -8,20 +8,21 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 168-172 is TDD 167.
+The confirmed starting checkpoint for TDD 173-177 is TDD 172.
 
 - branch: `main`
-- behavior commit: `f18d394` (`TDD 163-167: add task templates`)
+- behavior commit: `d2b971a` (`TDD 168-172: add per-view task grouping`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 325 passed across 47 files
+- tests: 330 passed across 52 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
 - push: `origin/main` updated successfully
 
-This checkpoint includes Task and Project archive/restore, Project templates, Task
-templates, persisted archive timestamps, and active/archive UI boundaries.
+This checkpoint includes Task and Project archive/restore, Project and Task
+templates, per-view Task grouping, persisted archive timestamps, and active/archive
+UI boundaries.
 
 ## Current product model
 
@@ -94,6 +95,7 @@ Current Task behavior includes:
 - status, priority, and due-date filters;
 - created, title, due-date, priority, and manual sort modes;
 - view-only grouping by status, priority, or List after filtering and sorting;
+- named saved filter sets for search, status, priority, and due-date filters;
 - move between compatible Project and List containers;
 - nested Subtasks with cycle and parent integrity checks;
 - manual ordering among valid siblings.
@@ -101,6 +103,14 @@ Current Task behavior includes:
 Subtask deletion cascades through descendants. Moving a parent across Projects
 moves its descendants with it. A Subtask cannot be moved away from its parent
 Project on its own.
+
+### Saved filter sets
+
+Saved filter sets are view-preference data, not workspace data. A named set keeps
+only the Task search query, status filter, priority filter, and due-date presence
+filter. Saving the same normalized name updates that preset. Applying a preset
+changes only those four filters and preserves Project focus, sort, and grouping.
+Those broader settings remain part of the future Saved Views scope.
 
 ### Task templates
 

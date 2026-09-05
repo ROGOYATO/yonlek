@@ -1438,3 +1438,112 @@ inventory is otherwise unchanged. Live output remains authoritative. The runner
 must pass every focused GREEN, zero-warning lint, the full suite, production
 build, LF audits, exact changed-file verification, and staged diff checks before
 commit or push.
+
+
+## Confirmed checkpoint after TDD 172
+
+The per-view grouping runner completed from `f18d394` and created:
+
+```text
+d2b971a  TDD 168-172: add per-view task grouping
+```
+
+Live verification:
+
+```text
+Tests: 330 passed across 52 files
+Lint: 0 warnings, 0 errors
+Build: passed
+Line-ending audit: 13 changed repository files passed
+Working tree: clean after commit
+Push: origin/main updated from f18d394 to d2b971a
+```
+
+## TDD 173 - Saved filter set value semantics
+
+**RED**
+
+Add focused domain coverage for a named Task-filter snapshot. The name is
+trimmed and required. The value keeps only query, status, priority, and due-date
+presence.
+
+Expected RED marker: missing `./task-filter-set` module.
+
+**GREEN**
+
+Add the small `TaskFilterSet` value module. It has no workspace, React, storage,
+ID, timestamp, sort, grouping, or Project-focus dependency.
+
+## TDD 174 - Saved filter sets in view preferences
+
+**RED**
+
+Add focused preference coverage for save/update, apply, and delete behavior.
+Applying a set must preserve Project focus, sort, and grouping. Existing objects
+must not be mutated.
+
+Expected RED marker: `saveTaskFilterSet is not a function`.
+
+**GREEN**
+
+Add optional `savedFilterSets` plus public helpers to list, save/update, apply,
+and delete named presets. A repeated normalized name replaces the prior snapshot
+in place.
+
+## TDD 175 - Saved filter set persistence
+
+**RED**
+
+Add focused version-1 preference-storage coverage for valid round-trip, old
+documents with no saved-set collection, and rejection of duplicate preset names.
+
+**GREEN**
+
+Validate optional saved filter sets in storage version 1. Names must be trimmed,
+non-empty, and unique, and every stored filter value must use an existing filter
+enum. No preference-storage version bump is required.
+
+## TDD 176 - Persisted save control
+
+**RED**
+
+Add a focused BrowserApp interaction test for `Filter set name` and `Save current
+filters`. The saved preset must persist separately from workspace data.
+
+**GREEN**
+
+Add the name input and save control to the existing view-preference path. This
+slice does not add apply/delete controls yet.
+
+## TDD 177 - Apply and delete saved filter sets
+
+**RED**
+
+Add focused WorkspaceRoot coverage for `Apply saved filter set <name>` and
+`Delete saved filter set <name>`. Applying must update only the four Task filter
+controls and preserve Project focus, sort, and grouping.
+
+**GREEN**
+
+Render a semantic `Saved filter sets` section with apply/delete controls. The
+section disappears when its final preset is deleted.
+
+## TDD 177 approved matcher correction
+
+The first GREEN verification reached the new apply/delete controls but stopped
+before checking their values because the focused test used jest-dom
+`toHaveValue`, which this repository does not configure. The production patch
+was left unchanged. With user approval, the test keeps the same elements and
+expected values but reads each native input/select `.value` and compares it
+with Vitest/Chai `toBe`. This matches the assertion style already used by the
+existing rendered tests and avoids adding a test-only dependency for one
+matcher.
+
+## Prepared verification target after TDD 177
+
+This batch starts from clean `main` at `d2b971a`. Five focused behavior tests are
+prepared, so the expected suite count is 335 across 57 test files if the live
+inventory is otherwise unchanged. Live output remains authoritative. The runner
+must pass every focused GREEN, zero-warning lint, the full suite, production
+build, LF audits, exact changed-file verification, and staged diff checks before
+commit or push.
