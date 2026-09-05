@@ -4,11 +4,11 @@ This file tracks product behavior, not visual polish. A checkbox moves to
 complete only after the behavior has a confirmed GREEN cycle and the final
 verification gate has passed.
 
-Confirmed starting checkpoint for TDD 178-182:
+Confirmed starting checkpoint for TDD 183-187:
 
-- commit: `6d89703`
-- TDD: 177 GREEN
-- tests: 335 passed across 57 files
+- commit: `3f2bd99`
+- TDD: 182 GREEN
+- tests: 340 passed across 62 files
 - lint: 0 warnings, 0 errors
 - production build: passed
 
@@ -221,7 +221,7 @@ final navigation and visual system are still deferred.
 - [x] Focused-Project list view
 - [x] Persist selected Project separately from workspace data
 - [x] Persist Task search, filters, and sort separately from workspace data
-- [ ] Board view
+- [x] Board view
 - [ ] Calendar view
 - [ ] Table view
 - [ ] Timeline
@@ -239,6 +239,13 @@ Saved views persist the complete current list-view configuration: Project focus,
 Task search, status, priority, due-date filter, sort, and grouping. Saved views do
 not copy workspace data or the saved-filter-set collection. Saving the same
 normalized name updates that view in place.
+
+Task view mode is separate optional view-preference state. Missing mode means List.
+Board mode uses fixed To do, Doing, and Done columns after the same active-Task,
+filter, and sort pipeline. Board rendering reuses the existing Task rows and
+actions. List grouping is hidden while Board is active but its preference is
+preserved and returns when the user switches back to List. Saved views do not
+capture layout mode, so applying one preserves the current List/Board choice.
 
 ## Productivity
 

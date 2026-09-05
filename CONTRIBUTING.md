@@ -996,3 +996,14 @@ Project archive and Task archive are separate state transitions.
 Tests should preserve that distinction. Do not implement Project archive as
 Project delete plus reconstruction, and do not cascade Task archive state merely
 to hide a Project.
+
+## Task view layout integrity
+
+List and Board are view-preference state, not workspace data.
+
+- Missing `viewMode` in a version-1 preference document means List.
+- Board uses the already focused, filtered, and sorted active Task sequence.
+- Board columns are fixed by Task status: To do, Doing, and Done. Keep empty columns so the layout is stable.
+- Board reuses existing Task rows and actions. Do not fork Task behavior into a second Board-only command path.
+- List grouping is ignored while Board is active but must not be rewritten. Switching back to List restores the prior grouping preference.
+- Existing saved views do not capture layout mode. Applying one must preserve the current List/Board choice unless a separately tested migration expands that contract later.

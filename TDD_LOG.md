@@ -1649,3 +1649,80 @@ inventory is otherwise unchanged. Live output remains authoritative. The runner
 must pass every focused GREEN, zero-warning lint, the full suite, production
 build, LF audits, exact changed-file verification, and staged diff checks before
 commit or push.
+
+## Confirmed checkpoint after TDD 182
+
+The saved-views runner completed from `6d89703` and created:
+
+```text
+3f2bd99  TDD 178-182: add saved views
+```
+
+Live verification:
+
+```text
+Tests: 340 passed across 62 files
+Lint: 0 warnings, 0 errors
+Build: passed
+Line-ending audit: 13 changed repository files passed
+Working tree: clean after commit
+Push: origin/main updated from 6d89703 to 3f2bd99
+```
+
+## TDD 183 - Board column semantics
+
+**RED**
+
+Add focused domain coverage for fixed To do, Doing, and Done Board columns. The helper must keep empty columns and preserve the incoming Task order inside each status column.
+
+Expected RED marker: missing `./task-board` module.
+
+**GREEN**
+
+Add the pure `createTaskBoardColumns` helper. It depends only on Task status and does not read workspace, React, persistence, filters, or sorting.
+
+## TDD 184 - List and Board view preference
+
+**RED**
+
+Add focused view-preference coverage for an effective List default and immutable update to Board mode.
+
+Expected RED marker: `getTaskViewMode is not a function`.
+
+**GREEN**
+
+Add optional `viewMode` plus `getTaskViewMode`. Missing mode remains List so existing version-1 preference objects and exact default-value tests do not need a migration.
+
+## TDD 185 - Task view mode persistence
+
+**RED**
+
+Add focused version-1 preference-storage coverage for Board round-trip, old documents without `viewMode`, and rejection of unsupported modes.
+
+**GREEN**
+
+Validate optional `viewMode` as `list` or `board` while keeping preference storage at version 1.
+
+## TDD 186 - Persisted Task view control
+
+**RED**
+
+Add a focused BrowserApp test for the `Task view` selector. Choosing Board must persist only in the view-preference document and leave workspace data unchanged.
+
+**GREEN**
+
+Add the List/Board selector to the existing preference path. This slice does not change Task rendering yet.
+
+## TDD 187 - Semantic Board rendering
+
+**RED**
+
+Add focused WorkspaceRoot coverage for fixed Board status headings, status-column Task placement, existing Task actions, and restoration of the prior List grouping after switching back.
+
+**GREEN**
+
+Render the same Task rows in a three-column CSS grid driven by fixed status column markers. Board ignores List grouping headings while active but does not rewrite the grouping preference.
+
+## Prepared verification target after TDD 187
+
+This batch starts from clean `main` at `3f2bd99`. Five focused behavior tests are prepared, so the expected suite count is 345 across 67 test files if the live inventory is otherwise unchanged. Live output remains authoritative. The runner must pass every focused GREEN, zero-warning lint, the full suite, production build, LF audits, exact changed-file verification, and staged diff checks before commit or push.

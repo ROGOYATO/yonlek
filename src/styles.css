@@ -214,3 +214,41 @@ textarea {
 .project-visible-count {
   font-size: 0.9rem;
 }
+
+.task-board {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+.task-board-heading {
+  grid-row: 1;
+  align-self: stretch;
+  background: #eef2f6;
+}
+
+.task-board-heading-todo,
+.task-board-card-todo {
+  grid-column: 1;
+}
+
+.task-board-heading-doing,
+.task-board-card-doing {
+  grid-column: 2;
+}
+
+.task-board-heading-done,
+.task-board-card-done {
+  grid-column: 3;
+}
+
+@media (max-width: 900px) {
+  .task-board {
+    grid-template-columns: 1fr;
+  }
+
+  .task-board-heading,
+  .task-board-card {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}

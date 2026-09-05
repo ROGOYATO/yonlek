@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 
+import { createTaskBoardColumns } from './domain/task-board'
 import { groupTasks, type TaskGroup } from './domain/task-group'
 
 import {
@@ -19,9 +20,11 @@ import {
   getTaskFilterSets,
   getSavedTaskViews,
   getTaskGroup,
+  getTaskViewMode,
   saveTaskFilterSet,
   saveTaskView,
   updateViewPreferences,
+  type TaskViewMode,
   type ViewPreferences,
 } from './domain/view-preferences'
 import type { TaskPriority, TaskStatus } from './domain/task'
@@ -202,6 +205,7 @@ export function App({
     sort: taskSort,
   } = viewPreferences
   const taskGroup = getTaskGroup(viewPreferences)
+  const taskViewMode = getTaskViewMode(viewPreferences)
   const savedFilterSets = getTaskFilterSets(viewPreferences)
   const savedViews = getSavedTaskViews(viewPreferences)
 
@@ -446,6 +450,18 @@ export function App({
         <option value="dueDate">Due date</option>
         <option value="priority">Priority</option>
         <option value="manual">Manual</option>
+      </select>
+
+      <label htmlFor="task-view">Task view</label>
+      <select
+        id="task-view"
+        value={taskViewMode}
+        onChange={(event) =>
+          updatePreferences({ viewMode: event.target.value as TaskViewMode })
+        }
+      >
+        <option value="list">List</option>
+        <option value="board">Board</option>
       </select>
 
       <label htmlFor="task-group">Group tasks</label>
@@ -1007,20 +1023,33 @@ export function App({
             taskSort,
           )
           const taskGroups = groupTasks(tasks, taskGroup, projectLists)
+          const boardColumns = createTaskBoardColumns(tasks)
           const taskEntries =
-            taskGroup === 'none'
-              ? tasks.map((task) => ({ type: 'task' as const, task }))
-              : taskGroups.flatMap((group) => [
+            taskViewMode === 'board'
+              ? boardColumns.flatMap((column) => [
                   {
-                    type: 'group' as const,
-                    key: group.key,
-                    label: group.label,
+                    type: 'board-column' as const,
+                    key: column.key,
+                    label: column.label,
                   },
-                  ...group.tasks.map((task) => ({
+                  ...column.tasks.map((task) => ({
                     type: 'task' as const,
                     task,
                   })),
                 ])
+              : taskGroup === 'none'
+                ? tasks.map((task) => ({ type: 'task' as const, task }))
+                : taskGroups.flatMap((group) => [
+                    {
+                      type: 'group' as const,
+                      key: group.key,
+                      label: group.label,
+                    },
+                    ...group.tasks.map((task) => ({
+                      type: 'task' as const,
+                      task,
+                    })),
+                  ])
           const listName = listNames[project.id] ?? ''
           const taskTitle = taskTitles[project.id] ?? ''
           const newTaskListId = newTaskLists[project.id] ?? ''
@@ -1390,14 +1419,25 @@ export function App({
                 </form>
               ) : null}
 
-              {tasks.length === 0 ? (
+              {tasks.length === 0 && taskViewMode !== 'board' ? (
                 <p>{projectTasks.length === 0 ? 'No tasks yet.' : 'No matching tasks.'}</p>
               ) : (
-                <ul>
+                <ul className={taskViewMode === 'board' ? 'task-board' : undefined}>
                   {taskEntries.map((entry) => {
                     if (entry.type === 'group') {
                       return (
                         <li key={`task-group-${entry.key}`}>
+                          <h3>{entry.label}</h3>
+                        </li>
+                      )
+                    }
+
+                    if (entry.type === 'board-column') {
+                      return (
+                        <li
+                          key={`board-column-${entry.key}`}
+                          className={`task-board-heading task-board-heading-${entry.key}`}
+                        >
                           <h3>{entry.label}</h3>
                         </li>
                       )
@@ -1445,8 +1485,27 @@ export function App({
                     const editedTitle = taskEdits[task.id] ?? task.title
                     const editedDescription = taskDescriptions[task.id] ?? task.description ?? ''
 
+                    const boardStatusLabel =
+                      task.status === 'todo'
+                        ? 'To do'
+                        : task.status === 'doing'
+                          ? 'Doing'
+                          : 'Done'
+
                     return (
-                      <li key={task.id}>
+                      <li
+                        key={task.id}
+                        className={
+                          taskViewMode === 'board'
+                            ? `task-board-card task-board-card-${task.status}`
+                            : undefined
+                        }
+                        aria-label={
+                          taskViewMode === 'board'
+                            ? `${boardStatusLabel} board task ${task.title}`
+                            : undefined
+                        }
+                      >
                         <span>{task.title}</span>
                         <span
                           aria-label={`Subtask count for ${task.title}`}

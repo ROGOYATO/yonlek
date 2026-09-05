@@ -8,21 +8,21 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 178-182 is TDD 177.
+The confirmed starting checkpoint for TDD 183-187 is TDD 182.
 
 - branch: `main`
-- behavior commit: `6d89703` (`TDD 173-177: add saved filter sets`)
+- behavior commit: `3f2bd99` (`TDD 178-182: add saved views`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 335 passed across 57 files
+- tests: 340 passed across 62 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
 - push: `origin/main` updated successfully
 
 This checkpoint includes Task and Project archive/restore, Project and Task
-templates, per-view Task grouping, saved filter sets, persisted archive timestamps,
-and active/archive UI boundaries.
+templates, Task grouping, saved filter sets, saved views, persisted archive
+timestamps, and active/archive UI boundaries.
 
 ## Current product model
 
@@ -97,6 +97,7 @@ Current Task behavior includes:
 - view-only grouping by status, priority, or List after filtering and sorting;
 - named saved filter sets for search, status, priority, and due-date filters;
 - named saved views for Project focus, filters, sort, and grouping;
+- persisted List and Board Task layouts;
 - move between compatible Project and List containers;
 - nested Subtasks with cycle and parent integrity checks;
 - manual ordering among valid siblings.
@@ -118,6 +119,17 @@ Saved views are also view-preference data. A named view keeps the complete curre
 list configuration: Project focus, Task search, status, priority, due-date filter,
 sort, and grouping. Applying a saved view restores those seven values. It does not
 copy workspace data or the saved-filter-set collection.
+
+### Board view
+
+Task layout is optional view-preference state. An older version-1 preference document
+with no layout field opens in List mode. Board mode renders fixed `To do`,
+`Doing`, and `Done` status columns after the existing Project focus, Task
+filters, and Task sort have been applied. The Board reuses the same Task rows,
+so existing Task actions remain available. Grouping is a List-layout concern:
+Board hides grouping headings without rewriting the saved grouping preference.
+Switching back to List restores that grouping. Saved views currently preserve
+the active layout instead of storing a List/Board choice.
 
 ### Task templates
 
@@ -293,8 +305,8 @@ Current storage version:
 1
 ```
 
-View preferences include selected Project, Task search text, filters, and Task
-sort mode.
+View preferences include selected Project, Task search text, filters, Task sort,
+grouping, List/Board layout, saved filter sets, and saved views.
 
 Preferences are deliberately less strict than workspace data. Invalid,
 unsupported, or unreadable preferences fall back to defaults instead of
