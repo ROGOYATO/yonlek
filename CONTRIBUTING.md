@@ -1007,3 +1007,23 @@ List and Board are view-preference state, not workspace data.
 - Board reuses existing Task rows and actions. Do not fork Task behavior into a second Board-only command path.
 - List grouping is ignored while Board is active but must not be rewritten. Switching back to List restores the prior grouping preference.
 - Existing saved views do not capture layout mode. Applying one must preserve the current List/Board choice unless a separately tested migration expands that contract later.
+
+## Calendar view integrity
+
+Calendar extends optional `viewMode`; it does not create workspace data.
+
+- Missing `viewMode` in a version-1 preference document still means List.
+- Calendar uses the already focused, filtered, and sorted active Task sequence.
+- Group Tasks by exact `YYYY-MM-DD` due-date strings and order dated sections
+  chronologically. Put Tasks with no due date in one final `No due date` section.
+- Preserve incoming Task order inside each date section so an existing Task sort
+  remains meaningful when several Tasks share a date.
+- Reuse existing Task rows and actions. Do not create Calendar-only Task command
+  paths.
+- Ignore List grouping headings while Calendar is active without rewriting the
+  saved grouping preference. Switching back to List must restore it.
+- Existing saved views still do not capture layout mode. Applying one must
+  preserve the current List, Board, or Calendar choice unless a separately
+  tested migration changes that contract.
+- Keep date labels locale-free at this stage. Month navigation, locale-specific
+  formatting, and richer calendar presentation require separate behavior tests.

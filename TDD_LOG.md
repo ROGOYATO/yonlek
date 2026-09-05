@@ -1726,3 +1726,114 @@ Render the same Task rows in a three-column CSS grid driven by fixed status colu
 ## Prepared verification target after TDD 187
 
 This batch starts from clean `main` at `3f2bd99`. Five focused behavior tests are prepared, so the expected suite count is 345 across 67 test files if the live inventory is otherwise unchanged. Live output remains authoritative. The runner must pass every focused GREEN, zero-warning lint, the full suite, production build, LF audits, exact changed-file verification, and staged diff checks before commit or push.
+
+## Confirmed checkpoint after TDD 187
+
+The Board-view runner completed from `3f2bd99` and created:
+
+```text
+9f81f0f  TDD 183-187: add board view
+```
+
+Live verification:
+
+```text
+Tests: 345 passed across 67 files
+Lint: 0 warnings, 0 errors
+Build: passed
+Line-ending audit: 14 changed repository files passed
+Working tree: clean after commit
+Push: origin/main updated from 3f2bd99 to 9f81f0f
+```
+
+## TDD 188 - Calendar section semantics
+
+**RED**
+
+Add focused domain coverage for chronological due-date sections plus one final
+`No due date` section. The helper must preserve the incoming Task order inside
+each section without mutating the input array.
+
+Expected RED marker: missing `./task-calendar` module.
+
+**GREEN**
+
+Add the pure `createTaskCalendarSections` helper. It depends only on Task due
+dates and does not read React, persistence, workspace state, filters, or sorting.
+
+## TDD 189 - Calendar view-mode validation
+
+**RED**
+
+Add focused preference coverage for a public view-mode validator. List, Board,
+and Calendar must be supported while an unrelated mode is rejected. Missing mode
+still defaults to List.
+
+Expected RED marker: `isTaskViewMode is not a function`.
+
+**GREEN**
+
+Extend `TaskViewMode` with `calendar` and add `isTaskViewMode` as the runtime
+validation seam reused by persistence.
+
+## TDD 190 - Calendar view persistence
+
+**RED**
+
+Add focused version-1 preference-storage coverage for Calendar round-trip, old
+documents without `viewMode`, and rejection of unsupported modes.
+
+**GREEN**
+
+Reuse `isTaskViewMode` to validate optional `viewMode` while keeping preference
+storage at version 1.
+
+## TDD 191 - Persisted Calendar control
+
+**RED**
+
+Add a focused BrowserApp test for selecting Calendar through `Task view`. The
+choice must persist only in view preferences and leave workspace data unchanged.
+
+**GREEN**
+
+Add the Calendar option to the existing Task-view selector. This slice does not
+change Task rendering yet.
+
+## TDD 192 - Semantic Calendar rendering
+
+**RED**
+
+Add focused WorkspaceRoot coverage for chronological date headings, the final
+`No due date` section, selected-sort order within a shared date, existing Task
+actions, suppression of List grouping headings while Calendar is active, and
+restoration of grouping after switching back to List.
+
+**GREEN**
+
+Render Calendar date markers with the existing Task rows and actions. Calendar
+uses the same focused, filtered, and sorted Task sequence as List and Board. It
+does not rewrite List grouping or Saved View state.
+
+## Prepared verification target after TDD 192
+
+This batch starts from clean `main` at `9f81f0f`. Five focused behavior tests are
+prepared, so the expected suite count is 350 across 72 test files if the live
+inventory is otherwise unchanged. Live output remains authoritative. The runner
+must pass every focused GREEN, zero-warning lint, the full suite, production
+build, LF audits, exact changed-file verification, and staged diff checks before
+commit or push.
+
+## TDD 192 live lint cleanup
+
+The first live TDD 188-192 run reached GREEN through Calendar rendering and the
+14-file LF audit, then the zero-warning lint gate stopped before commit because
+the focused Calendar test bound the returned undated Task to an unused local
+variable. The Task creation is required by the `No due date` assertion, but the
+returned object is not.
+
+Approved correction: call `commands.addTask(project.id, 'Backlog note')`
+directly without storing its return value. No production code, assertion,
+expected value, or Calendar behavior changes. The resume must rerun the focused
+Calendar test, zero-warning lint, the full check, exact-path verification, and
+staged diff checks before commit or push.

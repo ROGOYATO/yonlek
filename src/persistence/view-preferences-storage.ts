@@ -1,5 +1,6 @@
 import {
   createDefaultViewPreferences,
+  isTaskViewMode,
   type ViewPreferences,
 } from '../domain/view-preferences'
 import type { TaskFilterSet } from '../domain/task-filter-set'
@@ -143,9 +144,7 @@ function isValidPreferences(value: unknown): value is ViewPreferences {
       value.sort === 'dueDate' ||
       value.sort === 'priority' ||
       value.sort === 'manual') &&
-    (value.viewMode === undefined ||
-      value.viewMode === 'list' ||
-      value.viewMode === 'board') &&
+    (value.viewMode === undefined || isTaskViewMode(value.viewMode)) &&
     (value.group === undefined ||
       value.group === 'none' ||
       value.group === 'status' ||

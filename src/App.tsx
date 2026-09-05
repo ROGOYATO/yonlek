@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 
 import { createTaskBoardColumns } from './domain/task-board'
+import { createTaskCalendarSections } from './domain/task-calendar'
 import { groupTasks, type TaskGroup } from './domain/task-group'
 
 import {
@@ -462,6 +463,7 @@ export function App({
       >
         <option value="list">List</option>
         <option value="board">Board</option>
+        <option value="calendar">Calendar</option>
       </select>
 
       <label htmlFor="task-group">Group tasks</label>
@@ -1024,6 +1026,7 @@ export function App({
           )
           const taskGroups = groupTasks(tasks, taskGroup, projectLists)
           const boardColumns = createTaskBoardColumns(tasks)
+          const calendarSections = createTaskCalendarSections(tasks)
           const taskEntries =
             taskViewMode === 'board'
               ? boardColumns.flatMap((column) => [
@@ -1037,7 +1040,19 @@ export function App({
                     task,
                   })),
                 ])
-              : taskGroup === 'none'
+              : taskViewMode === 'calendar'
+                ? calendarSections.flatMap((section) => [
+                    {
+                      type: 'calendar-section' as const,
+                      key: section.key,
+                      label: section.label,
+                    },
+                    ...section.tasks.map((task) => ({
+                      type: 'task' as const,
+                      task,
+                    })),
+                  ])
+                : taskGroup === 'none'
                 ? tasks.map((task) => ({ type: 'task' as const, task }))
                 : taskGroups.flatMap((group) => [
                     {
@@ -1422,7 +1437,15 @@ export function App({
               {tasks.length === 0 && taskViewMode !== 'board' ? (
                 <p>{projectTasks.length === 0 ? 'No tasks yet.' : 'No matching tasks.'}</p>
               ) : (
-                <ul className={taskViewMode === 'board' ? 'task-board' : undefined}>
+                <ul
+                  className={
+                    taskViewMode === 'board'
+                      ? 'task-board'
+                      : taskViewMode === 'calendar'
+                        ? 'task-calendar'
+                        : undefined
+                  }
+                >
                   {taskEntries.map((entry) => {
                     if (entry.type === 'group') {
                       return (
@@ -1437,6 +1460,17 @@ export function App({
                         <li
                           key={`board-column-${entry.key}`}
                           className={`task-board-heading task-board-heading-${entry.key}`}
+                        >
+                          <h3>{entry.label}</h3>
+                        </li>
+                      )
+                    }
+
+                    if (entry.type === 'calendar-section') {
+                      return (
+                        <li
+                          key={`calendar-section-${entry.key}`}
+                          className="task-calendar-heading"
                         >
                           <h3>{entry.label}</h3>
                         </li>
@@ -1498,12 +1532,16 @@ export function App({
                         className={
                           taskViewMode === 'board'
                             ? `task-board-card task-board-card-${task.status}`
-                            : undefined
+                            : taskViewMode === 'calendar'
+                              ? 'task-calendar-card'
+                              : undefined
                         }
                         aria-label={
                           taskViewMode === 'board'
                             ? `${boardStatusLabel} board task ${task.title}`
-                            : undefined
+                            : taskViewMode === 'calendar'
+                              ? `${task.dueDate ?? 'No due date'} calendar task ${task.title}`
+                              : undefined
                         }
                       >
                         <span>{task.title}</span>

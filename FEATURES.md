@@ -4,11 +4,11 @@ This file tracks product behavior, not visual polish. A checkbox moves to
 complete only after the behavior has a confirmed GREEN cycle and the final
 verification gate has passed.
 
-Confirmed starting checkpoint for TDD 183-187:
+Confirmed starting checkpoint for TDD 188-192:
 
-- commit: `3f2bd99`
-- TDD: 182 GREEN
-- tests: 340 passed across 62 files
+- commit: `9f81f0f`
+- TDD: 187 GREEN
+- tests: 345 passed across 67 files
 - lint: 0 warnings, 0 errors
 - production build: passed
 
@@ -222,7 +222,7 @@ final navigation and visual system are still deferred.
 - [x] Persist selected Project separately from workspace data
 - [x] Persist Task search, filters, and sort separately from workspace data
 - [x] Board view
-- [ ] Calendar view
+- [x] Calendar view
 - [ ] Table view
 - [ ] Timeline
 - [ ] Gantt foundation
@@ -242,10 +242,14 @@ normalized name updates that view in place.
 
 Task view mode is separate optional view-preference state. Missing mode means List.
 Board mode uses fixed To do, Doing, and Done columns after the same active-Task,
-filter, and sort pipeline. Board rendering reuses the existing Task rows and
-actions. List grouping is hidden while Board is active but its preference is
-preserved and returns when the user switches back to List. Saved views do not
-capture layout mode, so applying one preserves the current List/Board choice.
+filter, and sort pipeline. Calendar mode groups that same incoming Task sequence
+by `YYYY-MM-DD` due date, orders dated sections chronologically, and keeps
+undated Tasks in a final `No due date` section while preserving incoming order
+inside each section. Board and Calendar reuse the existing Task rows and actions.
+List grouping is hidden while either alternate view is active but its preference
+is preserved and returns when the user switches back to List. Saved views do not
+capture layout mode, so applying one preserves the current List/Board/Calendar
+choice.
 
 ## Productivity
 

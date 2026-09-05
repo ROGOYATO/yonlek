@@ -8,21 +8,21 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 183-187 is TDD 182.
+The confirmed starting checkpoint for TDD 188-192 is TDD 187.
 
 - branch: `main`
-- behavior commit: `3f2bd99` (`TDD 178-182: add saved views`)
+- behavior commit: `9f81f0f` (`TDD 183-187: add board view`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 340 passed across 62 files
+- tests: 345 passed across 67 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
 - push: `origin/main` updated successfully
 
 This checkpoint includes Task and Project archive/restore, Project and Task
-templates, Task grouping, saved filter sets, saved views, persisted archive
-timestamps, and active/archive UI boundaries.
+templates, Task grouping, saved filter sets, saved views, Board view, persisted
+archive timestamps, and active/archive UI boundaries.
 
 ## Current product model
 
@@ -130,6 +130,19 @@ so existing Task actions remain available. Grouping is a List-layout concern:
 Board hides grouping headings without rewriting the saved grouping preference.
 Switching back to List restores that grouping. Saved views currently preserve
 the active layout instead of storing a List/Board choice.
+
+### Calendar view
+
+Calendar is another optional Task view mode in the same version-1 preference
+document. It groups the already focused, filtered, and sorted active Tasks by
+`YYYY-MM-DD` due date, orders dated sections chronologically, and places undated
+Tasks in a final `No due date` section. The incoming Task order is preserved
+inside each date section, so the selected Task sort still controls Tasks that
+share a day. Calendar reuses the existing Task rows and actions. List grouping
+headings are hidden while Calendar is active, but the grouping preference is
+not rewritten and returns when the user switches back to List. Saved views
+continue to preserve the current layout instead of capturing List, Board, or
+Calendar mode.
 
 ### Task templates
 

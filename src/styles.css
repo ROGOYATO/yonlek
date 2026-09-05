@@ -241,6 +241,14 @@ textarea {
   grid-column: 3;
 }
 
+.task-calendar-heading {
+  background: #eef2f6;
+}
+
+.task-calendar-card {
+  border-left: 3px solid #cbd5e1;
+}
+
 @media (max-width: 900px) {
   .task-board {
     grid-template-columns: 1fr;
