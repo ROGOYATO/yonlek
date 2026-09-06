@@ -5,7 +5,7 @@ import type { TaskSort } from './task-sort'
 import type { TaskGroup } from './task-group'
 import type { TaskPriority, TaskStatus } from './task'
 
-export type TaskViewMode = 'list' | 'board' | 'calendar'
+export type TaskViewMode = 'list' | 'board' | 'calendar' | 'table'
 
 export interface ViewPreferences {
   projectView: string
@@ -46,7 +46,12 @@ export function getTaskGroup(preferences: ViewPreferences): TaskGroup {
 }
 
 export function isTaskViewMode(value: unknown): value is TaskViewMode {
-  return value === 'list' || value === 'board' || value === 'calendar'
+  return (
+    value === 'list' ||
+    value === 'board' ||
+    value === 'calendar' ||
+    value === 'table'
+  )
 }
 
 export function getTaskViewMode(

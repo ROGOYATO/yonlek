@@ -5,10 +5,10 @@
 The current user-confirmed behavior baseline is:
 
 - branch: `main`
-- confirmed starting commit for TDD 178-182: `6d89703` (`TDD 173-177: add saved filter sets`)
+- confirmed starting commit for TDD 193-197: `10cf1b5` (`TDD 188-192: add calendar view`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- verified suite at that checkpoint: 335 tests across 57 files
+- verified suite at that checkpoint: 350 tests across 72 files
 - lint: 0 warnings and 0 errors
 - production build: passed
 - post-commit tree: clean
@@ -1023,7 +1023,24 @@ Calendar extends optional `viewMode`; it does not create workspace data.
 - Ignore List grouping headings while Calendar is active without rewriting the
   saved grouping preference. Switching back to List must restore it.
 - Existing saved views still do not capture layout mode. Applying one must
-  preserve the current List, Board, or Calendar choice unless a separately
+  preserve the current List, Board, Calendar, or Table choice unless a separately
   tested migration changes that contract.
 - Keep date labels locale-free at this stage. Month navigation, locale-specific
   formatting, and richer calendar presentation require separate behavior tests.
+
+## Table view integrity
+
+Table extends optional `viewMode`; it does not create workspace data.
+
+- Table uses the already focused, filtered, and sorted active Task sequence.
+- Keep the scan columns fixed at Title, Status, Priority, Due date, and List until
+  a separate column-configuration behavior is designed and tested.
+- Use explicit `No due date` and `No list` fallbacks instead of blank cells.
+- Preserve incoming Task order in table rows so the selected Task sort remains
+  authoritative.
+- Keep the existing Task detail rows and actions instead of creating a second
+  Table-only editing or command path.
+- Ignore List grouping headings while Table is active without rewriting the saved
+  grouping preference. Switching back to List must restore it.
+- Saved views preserve the current layout mode and do not capture Table unless a
+  separately tested Saved View migration expands that contract.

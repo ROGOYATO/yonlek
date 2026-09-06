@@ -8,21 +8,21 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 188-192 is TDD 187.
+The confirmed starting checkpoint for TDD 193-197 is TDD 192.
 
 - branch: `main`
-- behavior commit: `9f81f0f` (`TDD 183-187: add board view`)
+- behavior commit: `10cf1b5` (`TDD 188-192: add calendar view`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 345 passed across 67 files
+- tests: 350 passed across 72 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
 - push: `origin/main` updated successfully
 
 This checkpoint includes Task and Project archive/restore, Project and Task
-templates, Task grouping, saved filter sets, saved views, Board view, persisted
-archive timestamps, and active/archive UI boundaries.
+templates, Task grouping, saved filter sets, saved views, Board view, Calendar
+view, persisted archive timestamps, and active/archive UI boundaries.
 
 ## Current product model
 
@@ -97,7 +97,7 @@ Current Task behavior includes:
 - view-only grouping by status, priority, or List after filtering and sorting;
 - named saved filter sets for search, status, priority, and due-date filters;
 - named saved views for Project focus, filters, sort, and grouping;
-- persisted List and Board Task layouts;
+- persisted List, Board, Calendar, and Table Task layouts;
 - move between compatible Project and List containers;
 - nested Subtasks with cycle and parent integrity checks;
 - manual ordering among valid siblings.
@@ -143,6 +143,18 @@ headings are hidden while Calendar is active, but the grouping preference is
 not rewritten and returns when the user switches back to List. Saved views
 continue to preserve the current layout instead of capturing List, Board, or
 Calendar mode.
+
+### Table view
+
+Table is an optional Task view mode in the same version-1 preference document.
+It shows the already focused, filtered, and sorted active Tasks in fixed `Title`,
+`Status`, `Priority`, `Due date`, and `List` columns. `No due date` and `No list`
+are explicit fallbacks. The compact table is a scan surface; the existing Task
+detail rows remain below it so editing, Checklist, relationship, template,
+archive, duplicate, and delete behavior stay on the same tested Task path. List
+grouping headings are hidden while Table is active, but the grouping preference
+is preserved and returns when the user switches back to List. Saved views keep
+preserving the current layout instead of capturing it.
 
 ### Task templates
 
@@ -482,7 +494,7 @@ Not implemented yet:
 - file attachment storage;
 - recurring Tasks;
 - time estimates and tracking;
-- Board, Calendar, Table, Timeline, or Gantt views;
+- Timeline or Gantt views;
 - export/import backup;
 - final responsive design and keyboard-navigation pass.
 

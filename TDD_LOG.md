@@ -2,25 +2,25 @@
 
 ## Current verified behavior checkpoint
 
-The latest user-confirmed behavior commit before TDD 178-182 is:
+The latest user-confirmed behavior commit before TDD 193-197 is:
 
 ```text
-6d89703  TDD 173-177: add saved filter sets
+10cf1b5  TDD 188-192: add calendar view
 ```
 
 Verified on Windows from `C:\Users\yavuz\git\yonlek`:
 
 ```text
-Tests: 335 passed across 57 files
+Tests: 350 passed across 72 files
 Lint: 0 warnings, 0 errors
 Build: passed
 Working tree: clean after commit
-Push: origin/main updated from d2b971a to 6d89703
+Push: origin/main updated from 9f81f0f to 10cf1b5
 ```
 
-TDD 173-177 added saved Task filter sets on top of the confirmed per-view
-grouping checkpoint. The approved TDD 177 matcher repair changed only unsupported
-test matcher syntax and left production behavior unchanged.
+TDD 188-192 added Calendar view on top of the confirmed Board checkpoint. The
+approved TDD 192 lint cleanup removed only an unused local binding in the focused
+Calendar test. It did not change production behavior or assertions.
 
 This log records completed behavior cycles. RED was observed before the
 corresponding production implementation unless a row is explicitly marked as
@@ -1837,3 +1837,98 @@ directly without storing its return value. No production code, assertion,
 expected value, or Calendar behavior changes. The resume must rerun the focused
 Calendar test, zero-warning lint, the full check, exact-path verification, and
 staged diff checks before commit or push.
+
+## Confirmed checkpoint after TDD 192
+
+The Calendar resume completed from the final-lint stop and created:
+
+```text
+10cf1b5  TDD 188-192: add calendar view
+```
+
+Live verification:
+
+```text
+Tests: 350 passed across 72 files
+Lint: 0 warnings, 0 errors
+Build: passed
+Line-ending audit: 14 changed repository files passed
+Working tree: clean after commit
+Push: origin/main updated from 9f81f0f to 10cf1b5
+```
+
+## TDD 193 - Task table row semantics
+
+**RED**
+
+Add focused domain coverage for the fixed Table scan columns. Rows must preserve
+the incoming Task order, format status and priority labels, resolve List names,
+and use explicit `No due date` and `No list` fallbacks.
+
+Expected RED marker: missing `./task-table` module.
+
+**GREEN**
+
+Add the pure `createTaskTableRows` helper. It depends only on Tasks and Lists and
+does not read React, persistence, workspace state, filters, or sorting.
+
+## TDD 194 - Table view-mode support
+
+**RED**
+
+Add focused preference coverage proving `table` is a supported Task view mode, an
+unrelated mode remains invalid, and missing mode still defaults to List.
+
+**GREEN**
+
+Extend `TaskViewMode` and the shared runtime validator with `table`. Preference
+storage already delegates to this validator, so no duplicate storage branch is
+added.
+
+## TDD 195 - Persisted Table control
+
+**RED**
+
+Add a focused BrowserApp test for selecting Table through `Task view`. The choice
+must persist in the separate view-preference document and leave workspace data
+unchanged.
+
+**GREEN**
+
+Add the Table option to the existing Task-view selector. This slice does not
+change Task rendering yet.
+
+## TDD 196 - Semantic Table summary
+
+**RED**
+
+Add focused WorkspaceRoot coverage for an accessible Task table with fixed Title,
+Status, Priority, Due date, and List headers. Rows must follow the selected Task
+sort and use the domain row labels.
+
+**GREEN**
+
+Render the compact Table scan surface from the already focused, filtered, and
+sorted Task sequence. Keep the existing Task detail list unchanged in this slice.
+
+## TDD 197 - Table detail behavior
+
+**RED**
+
+Add focused WorkspaceRoot coverage proving Table keeps existing Task actions,
+hides List grouping headings while active, exposes flat detail rows in the same
+Task order, and restores the prior grouping after switching back to List.
+
+**GREEN**
+
+Use the same flat Task sequence for Table detail rows and add a Table-specific
+accessible label. Do not create a second Task command or editing path.
+
+## Prepared verification target after TDD 197
+
+This batch starts from clean `main` at `10cf1b5`. Five focused behavior tests are
+prepared, so the expected suite count is 355 across 77 test files if the live
+inventory is otherwise unchanged. Live output remains authoritative. The runner
+must pass every focused GREEN, zero-warning lint, the full suite, production
+build, LF audits, exact changed-file verification, and staged diff checks before
+commit or push.

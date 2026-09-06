@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 
 import { createTaskBoardColumns } from './domain/task-board'
 import { createTaskCalendarSections } from './domain/task-calendar'
+import { createTaskTableRows } from './domain/task-table'
 import { groupTasks, type TaskGroup } from './domain/task-group'
 
 import {
@@ -464,6 +465,7 @@ export function App({
         <option value="list">List</option>
         <option value="board">Board</option>
         <option value="calendar">Calendar</option>
+        <option value="table">Table</option>
       </select>
 
       <label htmlFor="task-group">Group tasks</label>
@@ -1027,6 +1029,7 @@ export function App({
           const taskGroups = groupTasks(tasks, taskGroup, projectLists)
           const boardColumns = createTaskBoardColumns(tasks)
           const calendarSections = createTaskCalendarSections(tasks)
+          const tableRows = createTaskTableRows(tasks, projectLists)
           const taskEntries =
             taskViewMode === 'board'
               ? boardColumns.flatMap((column) => [
@@ -1052,7 +1055,9 @@ export function App({
                       task,
                     })),
                   ])
-                : taskGroup === 'none'
+                : taskViewMode === 'table'
+                  ? tasks.map((task) => ({ type: 'task' as const, task }))
+                  : taskGroup === 'none'
                 ? tasks.map((task) => ({ type: 'task' as const, task }))
                 : taskGroups.flatMap((group) => [
                     {
@@ -1437,15 +1442,45 @@ export function App({
               {tasks.length === 0 && taskViewMode !== 'board' ? (
                 <p>{projectTasks.length === 0 ? 'No tasks yet.' : 'No matching tasks.'}</p>
               ) : (
-                <ul
-                  className={
-                    taskViewMode === 'board'
-                      ? 'task-board'
-                      : taskViewMode === 'calendar'
-                        ? 'task-calendar'
-                        : undefined
-                  }
-                >
+                <>
+                  {taskViewMode === 'table' ? (
+                    <table
+                      className="task-table-summary"
+                      aria-label={`Task table for ${project.name}`}
+                    >
+                      <thead>
+                        <tr>
+                          <th scope="col">Title</th>
+                          <th scope="col">Status</th>
+                          <th scope="col">Priority</th>
+                          <th scope="col">Due date</th>
+                          <th scope="col">List</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tableRows.map((row) => (
+                          <tr key={row.taskId}>
+                            <td>{row.title}</td>
+                            <td>{row.status}</td>
+                            <td>{row.priority}</td>
+                            <td>{row.dueDate}</td>
+                            <td>{row.list}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : null}
+                  <ul
+                    className={
+                      taskViewMode === 'board'
+                        ? 'task-board'
+                        : taskViewMode === 'calendar'
+                          ? 'task-calendar'
+                          : taskViewMode === 'table'
+                            ? 'task-table-details'
+                            : undefined
+                    }
+                  >
                   {taskEntries.map((entry) => {
                     if (entry.type === 'group') {
                       return (
@@ -1541,7 +1576,9 @@ export function App({
                             ? `${boardStatusLabel} board task ${task.title}`
                             : taskViewMode === 'calendar'
                               ? `${task.dueDate ?? 'No due date'} calendar task ${task.title}`
-                              : undefined
+                              : taskViewMode === 'table'
+                                ? `Table task details ${task.title}`
+                                : undefined
                         }
                       >
                         <span>{task.title}</span>
@@ -2288,7 +2325,8 @@ export function App({
                       </li>
                     )
                   })}
-                </ul>
+                  </ul>
+                </>
               )}
             </section>
           )
