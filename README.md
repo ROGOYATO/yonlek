@@ -8,13 +8,13 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 193-197 is TDD 192.
+The confirmed starting checkpoint for TDD 198-202 is TDD 197.
 
 - branch: `main`
-- behavior commit: `10cf1b5` (`TDD 188-192: add calendar view`)
+- behavior commit: `bad27b3` (`TDD 193-197: add table view`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 350 passed across 72 files
+- tests: 355 passed across 77 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
@@ -22,7 +22,7 @@ The confirmed starting checkpoint for TDD 193-197 is TDD 192.
 
 This checkpoint includes Task and Project archive/restore, Project and Task
 templates, Task grouping, saved filter sets, saved views, Board view, Calendar
-view, persisted archive timestamps, and active/archive UI boundaries.
+view, Table view, persisted archive timestamps, and active/archive UI boundaries.
 
 ## Current product model
 
@@ -97,7 +97,7 @@ Current Task behavior includes:
 - view-only grouping by status, priority, or List after filtering and sorting;
 - named saved filter sets for search, status, priority, and due-date filters;
 - named saved views for Project focus, filters, sort, and grouping;
-- persisted List, Board, Calendar, and Table Task layouts;
+- persisted List, Board, Calendar, Table, and Timeline Task layouts;
 - move between compatible Project and List containers;
 - nested Subtasks with cycle and parent integrity checks;
 - manual ordering among valid siblings.
@@ -155,6 +155,18 @@ archive, duplicate, and delete behavior stay on the same tested Task path. List
 grouping headings are hidden while Table is active, but the grouping preference
 is preserved and returns when the user switches back to List. Saved views keep
 preserving the current layout instead of capturing it.
+
+### Timeline view
+
+Timeline is another optional Task view mode in the version-1 preference document.
+It consumes the same focused, filtered, and sorted active Task sequence as the
+other views. Dated Tasks are ordered by exact `YYYY-MM-DD` due date, Tasks that
+share a date keep the incoming Task sort, and Tasks without a due date appear
+last as `No due date`. The existing Task detail rows and actions remain the edit
+path. List grouping headings are hidden while Timeline is active, but the saved
+grouping returns when the user switches back to List. This slice does not add
+start dates, durations, drag scheduling, or dependency lines; those remain part
+of the later Gantt foundation.
 
 ### Task templates
 
@@ -494,7 +506,7 @@ Not implemented yet:
 - file attachment storage;
 - recurring Tasks;
 - time estimates and tracking;
-- Timeline or Gantt views;
+- Gantt view;
 - export/import backup;
 - final responsive design and keyboard-navigation pass.
 

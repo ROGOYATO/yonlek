@@ -5,10 +5,10 @@
 The current user-confirmed behavior baseline is:
 
 - branch: `main`
-- confirmed starting commit for TDD 193-197: `10cf1b5` (`TDD 188-192: add calendar view`)
+- confirmed starting commit for TDD 198-202: `bad27b3` (`TDD 193-197: add table view`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- verified suite at that checkpoint: 350 tests across 72 files
+- verified suite at that checkpoint: 355 tests across 77 files
 - lint: 0 warnings and 0 errors
 - production build: passed
 - post-commit tree: clean
@@ -1023,8 +1023,8 @@ Calendar extends optional `viewMode`; it does not create workspace data.
 - Ignore List grouping headings while Calendar is active without rewriting the
   saved grouping preference. Switching back to List must restore it.
 - Existing saved views still do not capture layout mode. Applying one must
-  preserve the current List, Board, Calendar, or Table choice unless a separately
-  tested migration changes that contract.
+  preserve the current List, Board, Calendar, Table, or Timeline choice unless a
+  separately tested migration changes that contract.
 - Keep date labels locale-free at this stage. Month navigation, locale-specific
   formatting, and richer calendar presentation require separate behavior tests.
 
@@ -1044,3 +1044,19 @@ Table extends optional `viewMode`; it does not create workspace data.
   grouping preference. Switching back to List must restore it.
 - Saved views preserve the current layout mode and do not capture Table unless a
   separately tested Saved View migration expands that contract.
+
+## Timeline view integrity
+
+Timeline extends optional `viewMode`; it does not create workspace data.
+
+- Timeline uses the already focused, filtered, and sorted active Task sequence.
+- Order dated Tasks by exact `YYYY-MM-DD` due-date strings. Preserve incoming
+  order when Tasks share a date, then put undated Tasks last with `No due date`.
+- Keep the existing Task detail rows and actions instead of creating a second
+  Timeline-only editing or command path.
+- Ignore List grouping headings while Timeline is active without rewriting the
+  saved grouping preference. Switching back to List must restore it.
+- Saved views preserve the current layout mode and do not capture Timeline unless
+  a separately tested Saved View migration expands that contract.
+- Do not add start dates, durations, drag scheduling, or dependency-line rendering
+  in this slice. Those behaviors belong to the later Gantt foundation.

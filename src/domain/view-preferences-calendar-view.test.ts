@@ -14,7 +14,8 @@ describe('view preference Calendar Task view mode', () => {
     expect(isTaskViewMode('list')).toBe(true)
     expect(isTaskViewMode('board')).toBe(true)
     expect(isTaskViewMode('calendar')).toBe(true)
-    expect(isTaskViewMode('timeline')).toBe(false)
+    expect(isTaskViewMode('timeline')).toBe(true)
+    expect(isTaskViewMode('gantt')).toBe(false)
 
     const current = viewPreferenceDomain.createDefaultViewPreferences()
     expect(viewPreferenceDomain.getTaskViewMode(current)).toBe('list')

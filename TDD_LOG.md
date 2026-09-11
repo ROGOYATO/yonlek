@@ -2,25 +2,25 @@
 
 ## Current verified behavior checkpoint
 
-The latest user-confirmed behavior commit before TDD 193-197 is:
+The latest user-confirmed behavior commit before TDD 198-202 is:
 
 ```text
-10cf1b5  TDD 188-192: add calendar view
+bad27b3  TDD 193-197: add table view
 ```
 
 Verified on Windows from `C:\Users\yavuz\git\yonlek`:
 
 ```text
-Tests: 350 passed across 72 files
+Tests: 355 passed across 77 files
 Lint: 0 warnings, 0 errors
 Build: passed
 Working tree: clean after commit
-Push: origin/main updated from 9f81f0f to 10cf1b5
+Push: origin/main updated from 10cf1b5 to bad27b3
 ```
 
-TDD 188-192 added Calendar view on top of the confirmed Board checkpoint. The
-approved TDD 192 lint cleanup removed only an unused local binding in the focused
-Calendar test. It did not change production behavior or assertions.
+TDD 193-197 added Table view on top of the confirmed Calendar checkpoint. The
+approved TDD 197 lint cleanup removed only an unused local binding in the focused
+Table test. It did not change production behavior or assertions.
 
 This log records completed behavior cycles. RED was observed before the
 corresponding production implementation unless a row is explicitly marked as
@@ -1932,3 +1932,167 @@ inventory is otherwise unchanged. Live output remains authoritative. The runner
 must pass every focused GREEN, zero-warning lint, the full suite, production
 build, LF audits, exact changed-file verification, and staged diff checks before
 commit or push.
+
+## Confirmed checkpoint after TDD 197
+
+The Table resume completed from the final-lint stop and created:
+
+```text
+bad27b3  TDD 193-197: add table view
+```
+
+Live verification:
+
+```text
+Tests: 355 passed across 77 files
+Lint: 0 warnings, 0 errors
+Build: passed
+Line-ending audit: 13 changed repository files passed
+Working tree: clean after commit
+Push: origin/main updated from 10cf1b5 to bad27b3
+```
+
+## TDD 198 - Task timeline ordering semantics
+
+**RED**
+
+Add focused domain coverage for chronological due-date ordering, stable incoming
+order when Tasks share a date, a final `No due date` position, and input
+immutability.
+
+Expected RED marker: missing `./task-timeline` module.
+
+Runner history before GREEN:
+
+- The original TDD 198-202 bundle stopped before mutation because its expected-absent
+  path probe used `git cat-file -e`; Windows PowerShell 5.1 surfaced Git's expected
+  nonzero stderr as a terminating native-command error.
+- Resume-r1 reached the intended TDD 198 missing-module RED with the prepared test
+  unchanged, then stopped because the runner also required the Vitest suite title
+  `Task timeline items`. Vitest does not load the suite body when the imported module
+  is missing, so that title is not emitted. No GREEN patch was applied.
+- Resume-r2 starts only from `bad27b3` plus that one untracked RED test, verifies it
+  byte-for-byte, and accepts the missing-module marker without weakening the test.
+
+**GREEN**
+
+Add the pure `createTaskTimelineItems` helper. It depends only on Tasks and does
+not read React, persistence, workspace state, filters, sorting, or grouping.
+
+## TDD 199 - Timeline view-mode support
+
+**RED**
+
+Add focused preference coverage proving `timeline` is supported, `gantt` remains
+unsupported, and missing mode still defaults to List.
+
+**GREEN**
+
+Extend `TaskViewMode` and the shared runtime validator with `timeline`. Preference
+storage continues to reuse that validator.
+
+## TDD 200 - Persisted Timeline control
+
+**RED**
+
+Add a focused BrowserApp test for selecting Timeline through `Task view`. The
+choice must persist in the separate view-preference document and leave workspace
+data unchanged.
+
+**GREEN**
+
+Add the Timeline option to the existing Task-view selector. This slice does not
+change Task rendering yet.
+
+## TDD 201 - Semantic Timeline summary
+
+**RED**
+
+Add focused WorkspaceRoot coverage for an accessible Timeline list ordered by due
+date. Shared dates must preserve the selected incoming Task sort and undated Tasks
+must appear last.
+
+**GREEN**
+
+Render the compact Timeline summary from the already focused, filtered, and
+sorted Task sequence. Keep the existing Task detail list unchanged in this slice.
+
+## TDD 202 - Timeline detail behavior
+
+**RED**
+
+Add focused WorkspaceRoot coverage proving Timeline keeps existing Task actions,
+hides List grouping headings while active, orders flat detail rows with the same
+Timeline projection, and restores the prior grouping after switching back to
+List.
+
+**GREEN**
+
+Use Timeline order for the existing Task detail rows and add a Timeline-specific
+accessible label. Do not create a second Task command or editing path.
+
+## Prepared verification target after TDD 202
+
+This batch starts from clean `main` at full commit
+`bad27b332b3a2991729001ff635692980cdae048`. Five focused behavior tests are
+prepared, so the expected suite count is 360 across 82 test files if the live
+inventory is otherwise unchanged. Live output remains authoritative. The runner
+must pass every intended RED and focused GREEN, zero-warning lint, the full suite,
+production build, LF audits, exact changed-file verification, byte-for-byte final
+content verification, staged diff checks, remote-tip checks, commit, and non-force
+push.
+
+## TDD 198-202 full-suite compatibility stop and approved repair
+
+The live resume-r2 run completed the five intended Timeline RED -> GREEN cycles.
+The post-202 documentation and style patch applied, the 13-file LF audit passed,
+and zero-warning lint passed. `npm run check` then stopped in the full test suite
+with 4 historical view-preference failures. The suite reported 356 passing tests
+and 4 failing tests across 82 test files. No staging, commit, push, reset, or
+cleanup ran after the failure.
+
+The failures were stale test boundaries, not a Timeline implementation failure.
+The Calendar and Table domain tests still expected `timeline` to be unsupported.
+The Board and Calendar persistence tests still used `timeline` as their
+invalid-mode fixture. Timeline is now supported, while `gantt` remains
+unsupported.
+
+The user approved a narrow repair. The Calendar and Table domain tests now accept
+`timeline` and continue to reject `gantt`. The Board and Calendar persistence
+tests now use `gantt` as the invalid-mode fixture. The repair changes no
+production code and keeps the original compatibility and invalid-value
+assertions.
+
+## TDD 198-202 verification retry after task-template timeout
+
+Resume-r3 verified the exact 17-file Timeline continuation state, applied the
+user-approved historical view-mode test repairs, and passed the focused
+compatibility regression and zero-warning lint. The normal full suite then
+stopped only because `src/WorkspaceRoot.task-template.test.tsx` exceeded the
+unchanged 5000 ms test timeout, completing in 5174 ms. The suite reported 359
+passing tests and 1 timed-out test across 82 test files. No staging, commit,
+push, reset, or cleanup ran after that stop.
+
+Resume-r4 stopped before the isolated retry and before any live repository
+mutation. Its scratch constructor captured child PowerShell progress text in the
+same success stream as the intended temporary-directory return value. The
+resulting combined string was not a valid path, so the runner stopped during
+exact-state reconstruction. The 17-path resume-r3 stop state remained unchanged.
+
+Resume-r5 fixed that scratch-output problem and again verified the exact 17-path
+resume-r3 stop byte-for-byte. It then invoked the isolated retry through `npx`
+without pinning the working directory to the repository. Because the launcher
+had been started from `C:\Users\yavuz`, npx did not resolve Yönlek's local
+Vitest installation. It offered and installed Vitest 5.0.0 in the npm cache,
+ran with `C:/Users/yavuz` as the root, and failed before executing any test
+because that temporary Vitest installation could not resolve the project's
+`jsdom` dependency. Resume-r5 made no live repository change.
+
+Resume-r6 removes caller-working-directory dependence. The isolated retry uses
+only `node_modules\.bin\vitest.cmd` from the Yönlek repository and runs with the
+repository as its explicit working directory. The later lint and full-check
+commands use that same explicit working directory. No npx package installation,
+test change, timeout change, Vitest configuration change, worker override, or
+production-code change is permitted. This note is appended only after the
+unchanged historical task-template test passes in isolation; zero-warning lint
+and the normal full `npm run check` still gate commit and push.

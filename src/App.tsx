@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { createTaskBoardColumns } from './domain/task-board'
 import { createTaskCalendarSections } from './domain/task-calendar'
 import { createTaskTableRows } from './domain/task-table'
+import { createTaskTimelineItems } from './domain/task-timeline'
 import { groupTasks, type TaskGroup } from './domain/task-group'
 
 import {
@@ -466,6 +467,7 @@ export function App({
         <option value="board">Board</option>
         <option value="calendar">Calendar</option>
         <option value="table">Table</option>
+        <option value="timeline">Timeline</option>
       </select>
 
       <label htmlFor="task-group">Group tasks</label>
@@ -1030,6 +1032,7 @@ export function App({
           const boardColumns = createTaskBoardColumns(tasks)
           const calendarSections = createTaskCalendarSections(tasks)
           const tableRows = createTaskTableRows(tasks, projectLists)
+          const timelineItems = createTaskTimelineItems(tasks)
           const taskEntries =
             taskViewMode === 'board'
               ? boardColumns.flatMap((column) => [
@@ -1055,9 +1058,14 @@ export function App({
                       task,
                     })),
                   ])
-                : taskViewMode === 'table'
-                  ? tasks.map((task) => ({ type: 'task' as const, task }))
-                  : taskGroup === 'none'
+                : taskViewMode === 'timeline'
+                  ? timelineItems.map((item) => ({
+                      type: 'task' as const,
+                      task: item.task,
+                    }))
+                  : taskViewMode === 'table'
+                    ? tasks.map((task) => ({ type: 'task' as const, task }))
+                    : taskGroup === 'none'
                 ? tasks.map((task) => ({ type: 'task' as const, task }))
                 : taskGroups.flatMap((group) => [
                     {
@@ -1443,6 +1451,22 @@ export function App({
                 <p>{projectTasks.length === 0 ? 'No tasks yet.' : 'No matching tasks.'}</p>
               ) : (
                 <>
+                  {taskViewMode === 'timeline' ? (
+                    <ol
+                      className="task-timeline-summary"
+                      aria-label={`Task timeline for ${project.name}`}
+                    >
+                      {timelineItems.map((item) => (
+                        <li
+                          key={item.task.id}
+                          aria-label={`${item.dueDateLabel} timeline item ${item.task.title}`}
+                        >
+                          <span>{item.dueDateLabel}</span>
+                          <span>{item.task.title}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : null}
                   {taskViewMode === 'table' ? (
                     <table
                       className="task-table-summary"
@@ -1476,9 +1500,11 @@ export function App({
                         ? 'task-board'
                         : taskViewMode === 'calendar'
                           ? 'task-calendar'
-                          : taskViewMode === 'table'
-                            ? 'task-table-details'
-                            : undefined
+                          : taskViewMode === 'timeline'
+                            ? 'task-timeline-details'
+                            : taskViewMode === 'table'
+                              ? 'task-table-details'
+                              : undefined
                     }
                   >
                   {taskEntries.map((entry) => {
@@ -1576,9 +1602,11 @@ export function App({
                             ? `${boardStatusLabel} board task ${task.title}`
                             : taskViewMode === 'calendar'
                               ? `${task.dueDate ?? 'No due date'} calendar task ${task.title}`
-                              : taskViewMode === 'table'
-                                ? `Table task details ${task.title}`
-                                : undefined
+                              : taskViewMode === 'timeline'
+                                ? `Timeline task details ${task.title}`
+                                : taskViewMode === 'table'
+                                  ? `Table task details ${task.title}`
+                                  : undefined
                         }
                       >
                         <span>{task.title}</span>

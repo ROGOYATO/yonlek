@@ -7,8 +7,8 @@ import {
   updateViewPreferences,
 } from './view-preferences'
 
-describe('view preference Table Task view mode', () => {
-  it('recognizes Table as a supported mode and still defaults missing mode to List', () => {
+describe('view preference Timeline Task view mode', () => {
+  it('recognizes Timeline as a supported mode and still defaults missing mode to List', () => {
     const current = createDefaultViewPreferences()
 
     expect(isTaskViewMode('list')).toBe(true)
@@ -19,11 +19,11 @@ describe('view preference Table Task view mode', () => {
     expect(isTaskViewMode('gantt')).toBe(false)
     expect(getTaskViewMode(current)).toBe('list')
 
-    const table = updateViewPreferences(current, {
-      viewMode: 'table' as never,
+    const timeline = updateViewPreferences(current, {
+      viewMode: 'timeline' as never,
     })
 
-    expect(getTaskViewMode(table)).toBe('table')
+    expect(getTaskViewMode(timeline)).toBe('timeline')
     expect(getTaskViewMode(current)).toBe('list')
   })
 })

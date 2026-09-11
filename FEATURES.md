@@ -4,11 +4,11 @@ This file tracks product behavior, not visual polish. A checkbox moves to
 complete only after the behavior has a confirmed GREEN cycle and the final
 verification gate has passed.
 
-Confirmed starting checkpoint for TDD 193-197:
+Confirmed starting checkpoint for TDD 198-202:
 
-- commit: `10cf1b5`
-- TDD: 192 GREEN
-- tests: 350 passed across 72 files
+- commit: `bad27b3`
+- TDD: 197 GREEN
+- tests: 355 passed across 77 files
 - lint: 0 warnings, 0 errors
 - production build: passed
 
@@ -224,7 +224,7 @@ final navigation and visual system are still deferred.
 - [x] Board view
 - [x] Calendar view
 - [x] Table view
-- [ ] Timeline
+- [x] Timeline
 - [ ] Gantt foundation
 - [x] Saved views
 - [x] Per-view grouping
@@ -247,11 +247,13 @@ by `YYYY-MM-DD` due date, orders dated sections chronologically, and keeps
 undated Tasks in a final `No due date` section while preserving incoming order
 inside each section. Table mode exposes the same incoming Task sequence in fixed
 Title, Status, Priority, Due date, and List columns, then keeps the existing Task
-detail rows available below the scan table. List grouping headings are hidden
-while Board, Calendar, or Table is active, but the grouping preference is
-preserved and returns when the user switches back to List. Saved views do not
-capture layout mode, so applying one preserves the current List, Board, Calendar,
-or Table choice.
+detail rows available below the scan table. Timeline mode orders the same Task
+sequence by `YYYY-MM-DD` due date, preserves incoming order on shared dates, and
+puts undated Tasks last. List grouping headings are hidden while Board, Calendar,
+Table, or Timeline is active, but the grouping preference is preserved and
+returns when the user switches back to List. Saved views do not capture layout
+mode, so applying one preserves the current List, Board, Calendar, Table, or
+Timeline choice.
 
 ## Productivity
 

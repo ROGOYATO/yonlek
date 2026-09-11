@@ -271,6 +271,27 @@ textarea {
   margin-top: 14px;
 }
 
+.task-timeline-summary {
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.task-timeline-summary > li {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 12px;
+  border-left: 3px solid #cbd5e1;
+  background: #f8fafc;
+}
+
+.task-timeline-details {
+  margin-top: 14px;
+}
+
 @media (max-width: 900px) {
   .task-board {
     grid-template-columns: 1fr;
