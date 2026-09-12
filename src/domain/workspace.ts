@@ -35,6 +35,7 @@ import {
   setTaskDescription,
   setTaskList,
   setTaskDueDate,
+  setTaskStartDate,
   type Task,
   type TaskPriority,
   type TaskStatus,
@@ -101,6 +102,7 @@ export type WorkspaceAction =
   | { type: 'task/statusChanged'; taskId: string; status: TaskStatus }
   | { type: 'task/titleChanged'; taskId: string; title: string }
   | { type: 'task/priorityChanged'; taskId: string; priority: TaskPriority }
+  | { type: 'task/startDateChanged'; taskId: string; startDate: string | null }
   | { type: 'task/dueDateChanged'; taskId: string; dueDate: string | null }
   | { type: 'task/descriptionChanged'; taskId: string; description: string | null }
   | { type: 'task/projectChanged'; taskId: string; projectId: string }
@@ -780,6 +782,16 @@ export function workspaceReducer(
         tasks: state.tasks.map((task) =>
           task.id === action.taskId
             ? { ...task, priority: action.priority }
+            : task,
+        ),
+      }
+
+    case 'task/startDateChanged':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? setTaskStartDate(task, action.startDate)
             : task,
         ),
       }

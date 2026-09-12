@@ -12,6 +12,7 @@ export interface Task {
   priority: TaskPriority
   createdAt: string
   archivedAt?: string
+  startDate?: string
   dueDate?: string
   description?: string
   listId?: string
@@ -140,6 +141,33 @@ function isCalendarDate(value: string): boolean {
   )
 }
 
+export function setTaskStartDate(
+  task: Task,
+  startDate: string | null,
+): Task {
+  if (startDate === null) {
+    const next = { ...task }
+    delete next.startDate
+    return next
+  }
+
+  const normalizedStartDate = startDate.trim()
+
+  if (!isCalendarDate(normalizedStartDate)) {
+    throw new Error('Task start date must use YYYY-MM-DD')
+  }
+
+  if (task.dueDate !== undefined && normalizedStartDate > task.dueDate) {
+    throw new Error('Task start date must not be after due date')
+  }
+
+  return {
+    ...task,
+    startDate: normalizedStartDate,
+  }
+}
+
+
 export function setTaskDueDate(
   task: Task,
   dueDate: string | null,
@@ -154,6 +182,10 @@ export function setTaskDueDate(
 
   if (!isCalendarDate(normalizedDueDate)) {
     throw new Error('Task due date must use YYYY-MM-DD')
+  }
+
+  if (task.startDate !== undefined && normalizedDueDate < task.startDate) {
+    throw new Error('Task due date must not be before start date')
   }
 
   return {

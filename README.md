@@ -8,13 +8,13 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 198-202 is TDD 197.
+The confirmed starting checkpoint for TDD 203-207 is TDD 202.
 
 - branch: `main`
-- behavior commit: `bad27b3` (`TDD 193-197: add table view`)
+- behavior commit: `cf536db` (`TDD 198-202: add timeline view`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 355 passed across 77 files
+- tests: 360 passed across 82 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
@@ -22,7 +22,8 @@ The confirmed starting checkpoint for TDD 198-202 is TDD 197.
 
 This checkpoint includes Task and Project archive/restore, Project and Task
 templates, Task grouping, saved filter sets, saved views, Board view, Calendar
-view, Table view, persisted archive timestamps, and active/archive UI boundaries.
+view, Table view, Timeline, persisted archive timestamps, and active/archive UI
+boundaries.
 
 ## Current product model
 
@@ -90,7 +91,7 @@ Current Task behavior includes:
 - create, rename, delete, duplicate, archive, and restore;
 - `todo`, `doing`, and `done` status;
 - `low`, `normal`, and `high` priority;
-- optional due date and description;
+- optional start date, due date, and description;
 - search by title and description;
 - status, priority, and due-date filters;
 - created, title, due-date, priority, and manual sort modes;
@@ -164,9 +165,22 @@ other views. Dated Tasks are ordered by exact `YYYY-MM-DD` due date, Tasks that
 share a date keep the incoming Task sort, and Tasks without a due date appear
 last as `No due date`. The existing Task detail rows and actions remain the edit
 path. List grouping headings are hidden while Timeline is active, but the saved
-grouping returns when the user switches back to List. This slice does not add
-start dates, durations, drag scheduling, or dependency lines; those remain part
-of the later Gantt foundation.
+grouping returns when the user switches back to List. Timeline itself still does
+not render durations, drag scheduling, or dependency lines.
+
+### Gantt foundation
+
+The Gantt foundation is currently a data and domain seam, not a selectable Task
+layout. Tasks may store an optional exact `YYYY-MM-DD` start date alongside the
+existing due date. Setting either boundary preserves the invariant that start is
+not after due when both exist, and workspace storage version 1 validates the
+optional start date while remaining compatible with Tasks that do not have one.
+
+The pure `createTaskGanttItems` projection keeps the incoming Task order and keeps
+every Task available as a row. A projected Task is scheduled only when both start
+and due dates exist. No Gantt view mode, chart rendering, duration editing, drag
+scheduling, dependency-line rendering, milestone model, work calendar, baseline,
+or critical-path calculation is included yet.
 
 ### Task templates
 

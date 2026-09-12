@@ -1,4 +1,4 @@
-import { setTaskDueDate, type Task } from '../domain/task'
+import { setTaskDueDate, setTaskStartDate, type Task } from '../domain/task'
 import { emptyWorkspace, type WorkspaceState } from '../domain/workspace'
 
 const STORAGE_KEY = 'workspace-app.workspace'
@@ -391,6 +391,18 @@ function isValidTask(value: unknown): boolean {
         Array.isArray(value.customFieldValues)))
   ) {
     return false
+  }
+
+  if (value.startDate !== undefined) {
+    if (typeof value.startDate !== 'string') {
+      return false
+    }
+
+    try {
+      setTaskStartDate(value as unknown as Task, value.startDate)
+    } catch {
+      return false
+    }
   }
 
   if (value.dueDate !== undefined) {

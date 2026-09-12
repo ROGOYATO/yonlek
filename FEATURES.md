@@ -4,11 +4,11 @@ This file tracks product behavior, not visual polish. A checkbox moves to
 complete only after the behavior has a confirmed GREEN cycle and the final
 verification gate has passed.
 
-Confirmed starting checkpoint for TDD 198-202:
+Confirmed starting checkpoint for TDD 203-207:
 
-- commit: `bad27b3`
-- TDD: 197 GREEN
-- tests: 355 passed across 77 files
+- commit: `cf536db` (`TDD 198-202: add timeline view`)
+- TDD: 202 GREEN
+- tests: 360 passed across 82 files
 - lint: 0 warnings, 0 errors
 - production build: passed
 
@@ -114,6 +114,7 @@ restored under an archived parent through the UI.
 
 - [x] Status
 - [x] Priority
+- [x] Start date
 - [x] Due date
 - [x] Description
 - [x] Project assignment
@@ -225,7 +226,7 @@ final navigation and visual system are still deferred.
 - [x] Calendar view
 - [x] Table view
 - [x] Timeline
-- [ ] Gantt foundation
+- [x] Gantt foundation
 - [x] Saved views
 - [x] Per-view grouping
 - [ ] Per-view filters and sorts
@@ -254,6 +255,15 @@ Table, or Timeline is active, but the grouping preference is preserved and
 returns when the user switches back to List. Saved views do not capture layout
 mode, so applying one preserves the current List, Board, Calendar, Table, or
 Timeline choice.
+
+Gantt foundation is currently schedule data and a pure domain projection, not a
+Gantt view mode. A Task can carry an optional exact `YYYY-MM-DD` start date. When
+both dates exist, start must be on or before due date. Version-1 workspace
+storage validates the optional start date. `createTaskGanttItems` preserves the
+incoming Task order, keeps every Task available as a row, and marks only Tasks
+with both start and due dates as scheduled. Gantt rendering, drag scheduling,
+duration editing, dependency lines, milestones, and critical-path behavior are
+still deferred.
 
 ## Productivity
 

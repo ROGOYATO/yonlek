@@ -5,10 +5,10 @@
 The current user-confirmed behavior baseline is:
 
 - branch: `main`
-- confirmed starting commit for TDD 198-202: `bad27b3` (`TDD 193-197: add table view`)
+- confirmed starting commit for TDD 203-207: `cf536db` (`TDD 198-202: add timeline view`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- verified suite at that checkpoint: 355 tests across 77 files
+- verified suite at that checkpoint: 360 tests across 82 files
 - lint: 0 warnings and 0 errors
 - production build: passed
 - post-commit tree: clean
@@ -1060,3 +1060,23 @@ Timeline extends optional `viewMode`; it does not create workspace data.
   a separately tested Saved View migration expands that contract.
 - Do not add start dates, durations, drag scheduling, or dependency-line rendering
   in this slice. Those behaviors belong to the later Gantt foundation.
+
+## Gantt foundation integrity
+
+The TDD 203-207 Gantt foundation adds schedule data without opening a Gantt UI
+mode.
+
+- Treat `startDate` as optional workspace Task data using exact `YYYY-MM-DD`.
+- Validate start dates through the Task domain and workspace storage boundary; do
+  not duplicate date parsing in commands or projections.
+- When both boundaries exist, require `startDate <= dueDate`. Enforce the invariant
+  from both setters so changing either side cannot create an invalid range.
+- Keep `changeTaskStartDate` on the existing workspace command/store path so
+  persistence stays transactional with other Task mutations.
+- Keep `createTaskGanttItems` pure. It preserves incoming Task order, keeps every
+  Task as a row, and marks a Task scheduled only when both dates exist.
+- Do not add `gantt` to `TaskViewMode` in this batch. The current compatibility
+  tests intentionally keep it unsupported until a separate RED-first UI slice.
+- Do not infer durations, shift dependency dates, draw dependency lines, or add
+  milestone, work-calendar, baseline, or critical-path semantics without separate
+  tests.

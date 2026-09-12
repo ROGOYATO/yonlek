@@ -2096,3 +2096,116 @@ test change, timeout change, Vitest configuration change, worker override, or
 production-code change is permitted. This note is appended only after the
 unchanged historical task-template test passes in isolation; zero-warning lint
 and the normal full `npm run check` still gate commit and push.
+
+## Confirmed checkpoint after TDD 202
+
+Resume-r6 completed the Timeline batch from the preserved verification stop. The
+unchanged historical Task-template test passed alone, zero-warning lint passed,
+and the normal full check reported 360 passing tests across 82 test files. The
+production build passed after Vite transformed 46 modules. The runner committed
+`TDD 198-202: add timeline view` as
+`cf536db70256953f9b3c6e3998b03966dc91174f`, left the post-commit tree clean,
+performed a non-force push, and verified `origin/main` at the same commit.
+
+## TDD 203 - Task start-date domain seam
+
+**RED**
+
+Add focused Task-domain coverage for setting a normalized exact `YYYY-MM-DD`
+start date, clearing it, rejecting an invalid calendar date, and preserving the
+source Task.
+
+**GREEN**
+
+Add optional `startDate` to Task and the pure `setTaskStartDate` helper. Reuse the
+existing calendar-date validator. Do not add range semantics yet.
+
+## TDD 204 - Persisted start-date command
+
+**RED**
+
+Add a focused command test that changes a Task start date through the public
+workspace command seam, observes the store state, reloads persisted workspace
+data, then clears the start date.
+
+**GREEN**
+
+Add `task/startDateChanged` to the workspace reducer and
+`changeTaskStartDate` to the command boundary. Route mutation through
+`setTaskStartDate`; do not create a second persistence path.
+
+## TDD 205 - Start-date storage compatibility
+
+**RED**
+
+Add focused storage coverage proving a valid start date round-trips in version 1,
+an older version-1 Task without `startDate` still loads, and an invalid persisted
+calendar start date is rejected.
+
+**GREEN**
+
+Validate optional persisted `startDate` by calling the Task-domain setter. Keep
+storage version 1 and the existing compatibility model.
+
+## TDD 206 - Task schedule range invariant
+
+**RED**
+
+Add focused domain coverage proving start cannot move after an existing due date,
+due cannot move before an existing start date, and a same-day range remains
+valid.
+
+**GREEN**
+
+Enforce `startDate <= dueDate` from both Task date setters. Exact `YYYY-MM-DD`
+strings are directly comparable after calendar validation, so no duration or
+time-zone model is introduced.
+
+## TDD 207 - Pure Gantt schedule projection
+
+**RED**
+
+Add focused domain coverage for a pure Gantt projection. Every input Task must
+remain represented in the same order, but only Tasks with both start and due
+dates are marked scheduled. The input array and Tasks must remain unchanged.
+
+Expected RED marker: missing `./task-gantt` module.
+
+**GREEN**
+
+Add `createTaskGanttItems`. Each item carries the original Task, nullable start
+and due boundaries, and an `isScheduled` flag. The helper does not sort, render,
+read workspace state, or infer schedule data.
+
+## Prepared verification target after TDD 207
+
+This batch starts from clean `main` at full commit
+`cf536db70256953f9b3c6e3998b03966dc91174f`. Five new focused RED files are
+prepared. If the live inventory is otherwise unchanged, the final suite is
+expected to contain 371 tests across 87 test files; live output remains
+authoritative. The runner must observe each intended RED before its GREEN patch,
+pass each focused GREEN, zero-warning lint, the full suite, production build, LF
+audits, exact changed-path verification, byte-for-byte final-content verification,
+staged diff checks, remote-tip checks, commit, and non-force push.
+
+## TDD 203-207 verification stop and retry
+
+Resume-r1 completed TDD 203 and 204 RED/GREEN. TDD 205 produced the intended
+storage-validation RED, but the runner's PowerShell `-like` matcher interpreted
+`[Function]` as wildcard syntax and stopped before TDD 205 GREEN. No reset or
+cleanup ran.
+
+Resume-r2 verified the exact stop, reconfirmed TDD 205 RED with literal marker
+matching, completed TDD 205-207 RED/GREEN, applied the post-207 documentation
+patch, passed the LF audit, and passed zero-warning lint. The normal
+`npm run check` ran 371 tests across 87 test files. 370 tests passed; only the
+historical `src/WorkspaceRoot.task-template.test.tsx` timed out at 5326 ms
+against the unchanged 5000 ms limit. No staging, commit, push, reset, or cleanup
+ran after that stop.
+
+Resume-r3 first verifies the exact 14-path post-207 state and confirms that the
+historical Task-template test remains HEAD-clean. It retries that test alone with
+repository-local Vitest and the unchanged timeout. This note is appended only
+after that isolated retry passes. The retry changes no test, timeout, Vitest
+configuration, worker setting, or production behavior. Zero-warning lint and the
+normal full `npm run check` still gate commit and non-force push.
