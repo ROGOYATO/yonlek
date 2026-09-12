@@ -1099,3 +1099,25 @@ TDD 208-212 opens the Gantt UI without expanding the scheduling model.
 - Do not add drag scheduling, dependency-line drawing, automatic rescheduling,
   milestones, baselines, work calendars, time-scale geometry, or critical path in
   this slice.
+
+## Per-view filter and sort integrity
+
+TDD 213-217 keeps layout-specific filtering inside view preferences, not workspace
+data.
+
+- Snapshot only Task search, status, priority, due-date presence, and sort. Project
+  focus, grouping, saved preset collections, and layout mode are not nested into
+  a per-view snapshot.
+- Keep the snapshot collection optional. Ordinary List-only filter/sort changes
+  must preserve the legacy version-1 preference shape until a real layout switch.
+- On first entry to an unseen layout, inherit the outgoing active filter/sort
+  values. Once a layout has a snapshot, restore that snapshot on later visits.
+- Active filter/sort edits update only the active layout snapshot after snapshots
+  exist. Clearing filters follows the same rule.
+- Saved Filter Sets preserve their existing contract and update only the active
+  layout's filter snapshot. Saved Views keep Project focus/grouping behavior,
+  update the active layout's filters/sort, and remain layout-neutral.
+- Persist the optional map in storage version 1 and reject malformed view keys or
+  malformed snapshot values through the existing non-critical preference fallback.
+- Do not change workspace storage, Task filtering algorithms, Task sorting
+  algorithms, or make Project focus/grouping layout-specific in this slice.

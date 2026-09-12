@@ -7,6 +7,18 @@ import type { TaskPriority, TaskStatus } from './task'
 
 export type TaskViewMode = 'list' | 'board' | 'calendar' | 'table' | 'timeline' | 'gantt'
 
+export interface TaskViewFilterSortState {
+  query: string
+  status: TaskStatus | 'all'
+  priority: TaskPriority | 'all'
+  dueDate: TaskDueDateFilter
+  sort: TaskSort
+}
+
+export type TaskViewFilterSortByView = Partial<
+  Record<TaskViewMode, TaskViewFilterSortState>
+>
+
 export interface ViewPreferences {
   projectView: string
   query: string
@@ -18,6 +30,7 @@ export interface ViewPreferences {
   group?: TaskGroup
   savedFilterSets?: TaskFilterSet[]
   savedViews?: SavedTaskView[]
+  filterSortByView?: TaskViewFilterSortByView
 }
 
 export function createDefaultViewPreferences(): ViewPreferences {
@@ -38,6 +51,69 @@ export function updateViewPreferences(
   return {
     ...current,
     ...patch,
+  }
+}
+
+function getTaskViewFilterSortState(
+  preferences: ViewPreferences,
+): TaskViewFilterSortState {
+  return {
+    query: preferences.query,
+    status: preferences.status,
+    priority: preferences.priority,
+    dueDate: preferences.dueDate,
+    sort: preferences.sort,
+  }
+}
+
+export function updateTaskViewFilterSort(
+  current: ViewPreferences,
+  patch: Partial<TaskViewFilterSortState>,
+): ViewPreferences {
+  const activeState = {
+    ...getTaskViewFilterSortState(current),
+    ...patch,
+  }
+  const next = {
+    ...current,
+    ...activeState,
+  }
+
+  if (current.filterSortByView === undefined) {
+    return next
+  }
+
+  return {
+    ...next,
+    filterSortByView: {
+      ...current.filterSortByView,
+      [getTaskViewMode(current)]: activeState,
+    },
+  }
+}
+
+export function switchTaskViewMode(
+  current: ViewPreferences,
+  nextMode: TaskViewMode,
+): ViewPreferences {
+  const currentMode = getTaskViewMode(current)
+
+  if (currentMode === nextMode) {
+    return current
+  }
+
+  const currentState = getTaskViewFilterSortState(current)
+  const targetState = current.filterSortByView?.[nextMode] ?? currentState
+
+  return {
+    ...current,
+    ...targetState,
+    viewMode: nextMode,
+    filterSortByView: {
+      ...current.filterSortByView,
+      [currentMode]: currentState,
+      [nextMode]: targetState,
+    },
   }
 }
 
@@ -110,13 +186,12 @@ export function applyTaskFilterSet(
     throw new Error('Saved filter set not found')
   }
 
-  return {
-    ...current,
+  return updateTaskViewFilterSort(current, {
     query: filterSet.query,
     status: filterSet.status,
     priority: filterSet.priority,
     dueDate: filterSet.dueDate,
-  }
+  })
 }
 
 export function deleteTaskFilterSet(
@@ -196,16 +271,19 @@ export function applyTaskView(
     throw new Error('Saved view not found')
   }
 
-  return {
-    ...current,
-    projectView: savedView.projectView,
-    query: savedView.query,
-    status: savedView.status,
-    priority: savedView.priority,
-    dueDate: savedView.dueDate,
-    sort: savedView.sort,
-    group: savedView.group,
-  }
+  return updateTaskViewFilterSort(
+    updateViewPreferences(current, {
+      projectView: savedView.projectView,
+      group: savedView.group,
+    }),
+    {
+      query: savedView.query,
+      status: savedView.status,
+      priority: savedView.priority,
+      dueDate: savedView.dueDate,
+      sort: savedView.sort,
+    },
+  )
 }
 
 export function deleteTaskView(

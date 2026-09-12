@@ -27,7 +27,10 @@ import {
   getTaskViewMode,
   saveTaskFilterSet,
   saveTaskView,
+  switchTaskViewMode,
+  updateTaskViewFilterSort,
   updateViewPreferences,
+  type TaskViewFilterSortState,
   type TaskViewMode,
   type ViewPreferences,
 } from './domain/view-preferences'
@@ -222,6 +225,24 @@ export function App({
       return next
     })
   }
+
+  function updateFilterSortPreferences(
+    patch: Partial<TaskViewFilterSortState>,
+  ) {
+    setViewPreferences((current) => {
+      const next = updateTaskViewFilterSort(current, patch)
+      onViewPreferencesChange?.(next)
+      return next
+    })
+  }
+
+  function changeTaskViewMode(nextMode: TaskViewMode) {
+    setViewPreferences((current) => {
+      const next = switchTaskViewMode(current, nextMode)
+      onViewPreferencesChange?.(next)
+      return next
+    })
+  }
   const [error, setError] = useState<string | null>(null)
 
   function submitCustomField(event: FormEvent<HTMLFormElement>) {
@@ -389,7 +410,9 @@ export function App({
       <input
         id="task-search"
         value={searchQuery}
-        onChange={(event) => updatePreferences({ query: event.target.value })}
+        onChange={(event) =>
+          updateFilterSortPreferences({ query: event.target.value })
+        }
       />
 
       <label htmlFor="task-status-filter">Filter by status</label>
@@ -397,7 +420,7 @@ export function App({
         id="task-status-filter"
         value={statusFilter}
         onChange={(event) =>
-          updatePreferences({
+          updateFilterSortPreferences({
             status: event.target.value as TaskStatus | 'all',
           })
         }
@@ -413,7 +436,7 @@ export function App({
         id="task-priority-filter"
         value={priorityFilter}
         onChange={(event) =>
-          updatePreferences({
+          updateFilterSortPreferences({
             priority: event.target.value as TaskPriority | 'all',
           })
         }
@@ -431,7 +454,7 @@ export function App({
         id="task-due-date-filter"
         value={dueDateFilter}
         onChange={(event) =>
-          updatePreferences({
+          updateFilterSortPreferences({
             dueDate: event.target.value as TaskDueDateFilter,
           })
         }
@@ -448,7 +471,9 @@ export function App({
         id="task-sort"
         value={taskSort}
         onChange={(event) =>
-          updatePreferences({ sort: event.target.value as TaskSort })
+          updateFilterSortPreferences({
+            sort: event.target.value as TaskSort,
+          })
         }
       >
         <option value="created">Created</option>
@@ -463,7 +488,7 @@ export function App({
         id="task-view"
         value={taskViewMode}
         onChange={(event) =>
-          updatePreferences({ viewMode: event.target.value as TaskViewMode })
+          changeTaskViewMode(event.target.value as TaskViewMode)
         }
       >
         <option value="list">List</option>
@@ -639,7 +664,7 @@ export function App({
       <button
         type="button"
         onClick={() => {
-          updatePreferences({
+          updateFilterSortPreferences({
             query: '',
             status: 'all',
             priority: 'all',

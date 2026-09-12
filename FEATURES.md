@@ -230,7 +230,7 @@ final navigation and visual system are still deferred.
 - [x] Gantt view
 - [x] Saved views
 - [x] Per-view grouping
-- [ ] Per-view filters and sorts
+- [x] Per-view filters and sorts
 
 Grouping is a view preference, not workspace data. The current list view can
 group the already filtered and sorted active Tasks by status, priority, or List.
@@ -265,6 +265,13 @@ represented, complete ranges show their exact boundaries, and incomplete ranges
 are explicit `Unscheduled` rows. Existing Task actions remain available below
 the summary. Drag scheduling, inferred duration, dependency lines, milestones,
 baselines, work calendars, and critical-path behavior remain deferred.
+
+Per-view filters and sorts remain view-preference data. Search, status, priority,
+due-date presence, and sort gain optional snapshots keyed by Task layout after
+the first layout switch. A layout without a snapshot inherits the outgoing
+layout's active values once; later visits restore its own snapshot. Project focus
+and grouping remain global. Saved Filter Sets and Saved Views synchronize only
+the active layout snapshot and do not switch layouts.
 
 ## Productivity
 

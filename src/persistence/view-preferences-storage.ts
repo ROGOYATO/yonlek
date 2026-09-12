@@ -1,6 +1,7 @@
 import {
   createDefaultViewPreferences,
   isTaskViewMode,
+  type TaskViewFilterSortState,
   type ViewPreferences,
 } from '../domain/view-preferences'
 import type { TaskFilterSet } from '../domain/task-filter-set'
@@ -37,6 +38,46 @@ function isValidTaskFilterSet(value: unknown): value is TaskFilterSet {
     (value.dueDate === 'all' ||
       value.dueDate === 'withDueDate' ||
       value.dueDate === 'withoutDueDate')
+  )
+}
+
+function isValidTaskViewFilterSortState(
+  value: unknown,
+): value is TaskViewFilterSortState {
+  return (
+    isRecord(value) &&
+    typeof value.query === 'string' &&
+    (value.status === 'all' ||
+      value.status === 'todo' ||
+      value.status === 'doing' ||
+      value.status === 'done') &&
+    (value.priority === 'all' ||
+      value.priority === 'low' ||
+      value.priority === 'normal' ||
+      value.priority === 'high') &&
+    (value.dueDate === 'all' ||
+      value.dueDate === 'withDueDate' ||
+      value.dueDate === 'withoutDueDate') &&
+    (value.sort === 'created' ||
+      value.sort === 'title' ||
+      value.sort === 'dueDate' ||
+      value.sort === 'priority' ||
+      value.sort === 'manual')
+  )
+}
+
+function isValidTaskViewFilterSortByView(value: unknown): boolean {
+  if (value === undefined) {
+    return true
+  }
+
+  if (!isRecord(value)) {
+    return false
+  }
+
+  return Object.entries(value).every(
+    ([viewMode, state]) =>
+      isTaskViewMode(viewMode) && isValidTaskViewFilterSortState(state),
   )
 }
 
@@ -151,7 +192,8 @@ function isValidPreferences(value: unknown): value is ViewPreferences {
       value.group === 'priority' ||
       value.group === 'list') &&
     isValidTaskFilterSets(value.savedFilterSets) &&
-    isValidSavedTaskViews(value.savedViews)
+    isValidSavedTaskViews(value.savedViews) &&
+    isValidTaskViewFilterSortByView(value.filterSortByView)
   )
 }
 

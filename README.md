@@ -8,13 +8,13 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 208-212 is TDD 207.
+The confirmed starting checkpoint for TDD 213-217 is TDD 212.
 
 - branch: `main`
-- behavior commit: `87f65f9` (`TDD 203-207: add Gantt foundation`)
+- behavior commit: `a31c36d` (`TDD 208-212: add Gantt view`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 371 passed across 87 files
+- tests: 376 passed across 92 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
@@ -22,8 +22,8 @@ The confirmed starting checkpoint for TDD 208-212 is TDD 207.
 
 This checkpoint includes Task and Project archive/restore, Project and Task
 templates, Task grouping, saved filter sets, saved views, Board view, Calendar
-view, Table view, Timeline, the Gantt schedule foundation, persisted archive
-timestamps, and active/archive UI boundaries.
+view, Table view, Timeline, the Gantt schedule foundation, Gantt view, persisted
+archive timestamps, and active/archive UI boundaries.
 
 ## Current product model
 
@@ -188,6 +188,17 @@ preference is preserved and returns when the user switches back to List. Saved
 views continue to preserve the current layout instead of capturing Gantt. No
 pixel time-scale, drag scheduling, duration editing, dependency-line rendering,
 milestone, baseline, work-calendar, or critical-path behavior is added here.
+
+### Per-view filters and sorts
+
+Task search, status, priority, due-date presence, and sort can be remembered per
+Task layout without moving them into workspace data. The optional snapshot map is
+created only on the first real layout switch, so List-only version-1 preferences
+keep their existing persisted shape. An unseen target layout inherits the active
+filter/sort state on first entry; later switches restore that layout's own state.
+Project focus and grouping remain global view preferences. Saved Filter Sets and
+Saved Views update only the active layout snapshot when snapshots exist, and
+Saved Views still do not capture layout mode.
 
 ### Task templates
 
@@ -527,7 +538,6 @@ Not implemented yet:
 - file attachment storage;
 - recurring Tasks;
 - time estimates and tracking;
-- Gantt view;
 - export/import backup;
 - final responsive design and keyboard-navigation pass.
 

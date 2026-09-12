@@ -2283,3 +2283,92 @@ headings after switching back to List.
 
 Route Gantt detail rows through the same Task entries while suppressing grouping
 headings only for the active Gantt layout. Saved Views remain layout-neutral.
+
+## Confirmed checkpoint after TDD 212
+
+The TDD 208-212 Gantt view runner completed all five RED/GREEN cycles, passed
+zero-warning lint, passed 376 tests across 92 test files, and built the production
+bundle with 47 transformed modules. It committed `TDD 208-212: add Gantt view` as
+`a31c36df9639cc50781a4cf94074ff889c28d2df`, performed a non-force push, and
+verified `origin/main` at the same commit.
+
+## TDD 213 - Active-view filter/sort snapshot state
+
+**RED**
+
+Add focused domain coverage requiring active filter/sort updates to keep the
+legacy List-only preference shape before any layout switch, then synchronize only
+the active layout when an optional snapshot collection already exists.
+
+**GREEN**
+
+Add the optional `filterSortByView` map and `updateTaskViewFilterSort`. Snapshot
+only query, status, priority, due-date presence, and sort; leave Project focus,
+grouping, saved presets, and layout mode outside the snapshot.
+
+## TDD 214 - Task-view snapshot and restore
+
+**RED**
+
+Add focused domain coverage requiring the first layout switch to snapshot the
+outgoing state, let an unseen target inherit that state, and restore known layout
+states on later switches without mutating the source preferences.
+
+**GREEN**
+
+Add `switchTaskViewMode`. It creates the optional snapshot map on the first real
+switch, records the outgoing layout, restores a known target, and preserves global
+Project focus and grouping.
+
+## TDD 215 - Version-1 per-view preference storage
+
+**RED**
+
+Add focused storage coverage for version-1 round-trip, legacy documents without
+the optional snapshot map, and fallback on unsupported view keys or malformed
+filter/sort snapshot values.
+
+**GREEN**
+
+Validate the optional per-view snapshot map inside the existing version-1 view
+preference document. Do not bump the storage version.
+
+## TDD 216 - Browser persistence across layout switches
+
+**RED**
+
+Add focused BrowserApp coverage that configures List filters/sort, inherits them
+on first Board entry, changes Board independently, restores List, reloads browser
+composition, and then restores Board again without changing workspace data.
+
+**GREEN**
+
+Route the five filter/sort controls and Clear task filters through the active-view
+update helper, and route Task-view selection through `switchTaskViewMode`. Keep
+Project focus and grouping on the existing global preference path.
+
+## TDD 217 - Saved preset isolation
+
+**RED**
+
+Add focused domain coverage requiring Saved Filter Set and Saved View application
+to synchronize only the active layout snapshot while preserving other layouts.
+Saved Views must remain layout-neutral.
+
+**GREEN**
+
+Apply saved filter fields through `updateTaskViewFilterSort`. Apply Saved View
+Project focus/grouping through the existing preference update, then synchronize
+its filters/sort through the active-view helper.
+
+## Prepared verification target after TDD 217
+
+This batch starts from clean `main` at
+`a31c36df9639cc50781a4cf94074ff889c28d2df`, tree
+`0ab69f7cec9863763367583b5b3e66bb22fbbf5a`. Five focused RED files are
+prepared. If the live inventory is otherwise unchanged, the final suite is
+expected to contain 383 tests across 97 test files; live output remains
+authoritative. The runner must observe every intended RED before its GREEN patch,
+pass each focused GREEN, zero-warning lint, the normal full check, LF and diff
+audits, exact changed-path/content gates, remote-tip checks, commit, and non-force
+push.
