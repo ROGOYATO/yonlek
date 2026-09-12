@@ -2209,3 +2209,77 @@ repository-local Vitest and the unchanged timeout. This note is appended only
 after that isolated retry passes. The retry changes no test, timeout, Vitest
 configuration, worker setting, or production behavior. Zero-warning lint and the
 normal full `npm run check` still gate commit and non-force push.
+
+## Confirmed checkpoint after TDD 207
+
+Resume-r3 verified the preserved TDD 203-207 target after the historical
+Task-template timeout, reran that unchanged test in isolation, and then passed
+the normal full check: 371 tests across 87 test files, zero-warning lint, and the
+production build with 46 transformed modules. The runner committed
+`TDD 203-207: add Gantt foundation` as
+`87f65f9c4d0538f369b981f2cebffe358e273315`, left the tree clean, performed a
+non-force push, and verified `origin/main` at the same commit.
+
+## TDD 208 - Start-date UI boundary
+
+**RED**
+
+Add focused WorkspaceRoot coverage requiring an optional Task start-date input
+that updates and clears the already-confirmed persisted start-date command path.
+
+**GREEN**
+
+Expose `onChangeTaskStartDate` through App and WorkspaceRoot and bind the Task
+date input to `task.startDate`. Do not create Gantt-specific persistence.
+
+## TDD 209 - Gantt view preference
+
+**RED**
+
+Add focused domain coverage requiring `gantt` to be a valid Task view mode while
+an unrelated sentinel remains invalid.
+
+**GREEN**
+
+Extend optional `TaskViewMode` with `gantt`. Apply only the five explicitly
+approved historical compatibility repairs: Calendar, Table, and Timeline domain
+tests now recognize Gantt and retain `matrix` as negative coverage; Board and
+Calendar storage tests use `matrix` as their invalid persisted fixture.
+
+## TDD 210 - Browser Gantt persistence
+
+**RED**
+
+Add focused BrowserApp coverage requiring a selectable Gantt layout that persists
+separately from workspace data.
+
+**GREEN**
+
+Add Gantt to the existing Task-view selector. Reuse the version-1 view-preference
+storage path; do not change workspace persistence.
+
+## TDD 211 - Semantic Gantt rendering
+
+**RED**
+
+Add focused WorkspaceRoot coverage requiring every incoming Task to appear in a
+semantic Gantt summary in existing sort order. Complete ranges expose both exact
+dates; incomplete ranges are explicitly unscheduled.
+
+**GREEN**
+
+Render the existing pure `createTaskGanttItems` projection. Do not calculate pixel
+positions, durations, or a time scale.
+
+## TDD 212 - Gantt Task actions and grouping boundary
+
+**RED**
+
+Add focused coverage requiring Gantt to keep the existing Task detail/action path,
+hide List grouping headings, preserve the grouping preference, and restore those
+headings after switching back to List.
+
+**GREEN**
+
+Route Gantt detail rows through the same Task entries while suppressing grouping
+headings only for the active Gantt layout. Saved Views remain layout-neutral.

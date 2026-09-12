@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 
 import { createTaskBoardColumns } from './domain/task-board'
 import { createTaskCalendarSections } from './domain/task-calendar'
+import { createTaskGanttItems } from './domain/task-gantt'
 import { createTaskTableRows } from './domain/task-table'
 import { createTaskTimelineItems } from './domain/task-timeline'
 import { groupTasks, type TaskGroup } from './domain/task-group'
@@ -91,6 +92,7 @@ export interface AppProps {
   onMoveTask?: (taskId: string, direction: MoveDirection) => void
   onChangeTaskStatus?: (taskId: string, status: TaskStatus) => void
   onChangeTaskPriority?: (taskId: string, priority: TaskPriority) => void
+  onChangeTaskStartDate?: (taskId: string, startDate: string | null) => void
   onChangeTaskDueDate?: (taskId: string, dueDate: string | null) => void
   onChangeTaskDescription?: (taskId: string, description: string | null) => void
   onChangeTaskProject?: (taskId: string, projectId: string) => void
@@ -156,6 +158,7 @@ export function App({
   onMoveTask,
   onChangeTaskStatus,
   onChangeTaskPriority,
+  onChangeTaskStartDate,
   onChangeTaskDueDate,
   onChangeTaskDescription,
   onChangeTaskProject,
@@ -468,6 +471,7 @@ export function App({
         <option value="calendar">Calendar</option>
         <option value="table">Table</option>
         <option value="timeline">Timeline</option>
+        <option value="gantt">Gantt</option>
       </select>
 
       <label htmlFor="task-group">Group tasks</label>
@@ -1033,6 +1037,7 @@ export function App({
           const calendarSections = createTaskCalendarSections(tasks)
           const tableRows = createTaskTableRows(tasks, projectLists)
           const timelineItems = createTaskTimelineItems(tasks)
+          const ganttItems = createTaskGanttItems(tasks)
           const taskEntries =
             taskViewMode === 'board'
               ? boardColumns.flatMap((column) => [
@@ -1063,6 +1068,11 @@ export function App({
                       type: 'task' as const,
                       task: item.task,
                     }))
+                  : taskViewMode === 'gantt'
+                    ? ganttItems.map((item) => ({
+                        type: 'task' as const,
+                        task: item.task,
+                      }))
                   : taskViewMode === 'table'
                     ? tasks.map((task) => ({ type: 'task' as const, task }))
                     : taskGroup === 'none'
@@ -1451,6 +1461,30 @@ export function App({
                 <p>{projectTasks.length === 0 ? 'No tasks yet.' : 'No matching tasks.'}</p>
               ) : (
                 <>
+                  {taskViewMode === 'gantt' ? (
+                    <ol
+                      className="task-gantt-summary"
+                      aria-label={`Task Gantt for ${project.name}`}
+                    >
+                      {ganttItems.map((item) => (
+                        <li
+                          key={item.task.id}
+                          aria-label={
+                            item.isScheduled
+                              ? `${item.startDate} to ${item.dueDate} Gantt item ${item.task.title}`
+                              : `Unscheduled Gantt item ${item.task.title}`
+                          }
+                        >
+                          <span>{item.task.title}</span>
+                          {item.isScheduled ? (
+                            <span>{item.startDate} to {item.dueDate}</span>
+                          ) : (
+                            <span>Unscheduled</span>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  ) : null}
                   {taskViewMode === 'timeline' ? (
                     <ol
                       className="task-timeline-summary"
@@ -1502,6 +1536,8 @@ export function App({
                           ? 'task-calendar'
                           : taskViewMode === 'timeline'
                             ? 'task-timeline-details'
+                            : taskViewMode === 'gantt'
+                              ? 'task-gantt-details'
                             : taskViewMode === 'table'
                               ? 'task-table-details'
                               : undefined
@@ -1604,6 +1640,8 @@ export function App({
                               ? `${task.dueDate ?? 'No due date'} calendar task ${task.title}`
                               : taskViewMode === 'timeline'
                                 ? `Timeline task details ${task.title}`
+                                : taskViewMode === 'gantt'
+                                  ? `Gantt task details ${task.title}`
                                 : taskViewMode === 'table'
                                   ? `Table task details ${task.title}`
                                   : undefined
@@ -2239,6 +2277,25 @@ export function App({
                         ) : null}
 
 
+
+                        {onChangeTaskStartDate ? (
+                          <>
+                            <label htmlFor={`task-start-date-${task.id}`}>
+                              Start date for {task.title}
+                            </label>
+                            <input
+                              id={`task-start-date-${task.id}`}
+                              type="date"
+                              value={task.startDate ?? ''}
+                              onChange={(event) =>
+                                onChangeTaskStartDate(
+                                  task.id,
+                                  event.target.value || null,
+                                )
+                              }
+                            />
+                          </>
+                        ) : null}
 
                         {onChangeTaskDueDate ? (
                           <>

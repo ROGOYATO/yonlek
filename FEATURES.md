@@ -227,6 +227,7 @@ final navigation and visual system are still deferred.
 - [x] Table view
 - [x] Timeline
 - [x] Gantt foundation
+- [x] Gantt view
 - [x] Saved views
 - [x] Per-view grouping
 - [ ] Per-view filters and sorts
@@ -251,19 +252,19 @@ Title, Status, Priority, Due date, and List columns, then keeps the existing Tas
 detail rows available below the scan table. Timeline mode orders the same Task
 sequence by `YYYY-MM-DD` due date, preserves incoming order on shared dates, and
 puts undated Tasks last. List grouping headings are hidden while Board, Calendar,
-Table, or Timeline is active, but the grouping preference is preserved and
-returns when the user switches back to List. Saved views do not capture layout
-mode, so applying one preserves the current List, Board, Calendar, Table, or
-Timeline choice.
+Table, Timeline, or Gantt is active, but the grouping preference is preserved
+and returns when the user switches back to List. Saved views do not capture
+layout mode, so applying one preserves the current List, Board, Calendar, Table,
+Timeline, or Gantt choice.
 
-Gantt foundation is currently schedule data and a pure domain projection, not a
-Gantt view mode. A Task can carry an optional exact `YYYY-MM-DD` start date. When
-both dates exist, start must be on or before due date. Version-1 workspace
-storage validates the optional start date. `createTaskGanttItems` preserves the
-incoming Task order, keeps every Task available as a row, and marks only Tasks
-with both start and due dates as scheduled. Gantt rendering, drag scheduling,
-duration editing, dependency lines, milestones, and critical-path behavior are
-still deferred.
+Gantt builds on the confirmed schedule foundation. A Task can carry an optional
+exact `YYYY-MM-DD` start date; when both dates exist, start must be on or before
+due date. The Gantt view consumes `createTaskGanttItems` after the same active,
+focused, filtered, and sorted Task pipeline as the other layouts. Every Task is
+represented, complete ranges show their exact boundaries, and incomplete ranges
+are explicit `Unscheduled` rows. Existing Task actions remain available below
+the summary. Drag scheduling, inferred duration, dependency lines, milestones,
+baselines, work calendars, and critical-path behavior remain deferred.
 
 ## Productivity
 

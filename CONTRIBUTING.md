@@ -1075,8 +1075,27 @@ mode.
   persistence stays transactional with other Task mutations.
 - Keep `createTaskGanttItems` pure. It preserves incoming Task order, keeps every
   Task as a row, and marks a Task scheduled only when both dates exist.
-- Do not add `gantt` to `TaskViewMode` in this batch. The current compatibility
-  tests intentionally keep it unsupported until a separate RED-first UI slice.
+- The confirmed TDD 203-207 batch does not add `gantt` to `TaskViewMode`; the
+  separate TDD 208-212 UI slice owns that compatibility change.
 - Do not infer durations, shift dependency dates, draw dependency lines, or add
   milestone, work-calendar, baseline, or critical-path semantics without separate
   tests.
+
+## Gantt view integrity
+
+TDD 208-212 opens the Gantt UI without expanding the scheduling model.
+
+- Route optional start-date edits through the existing `changeTaskStartDate`
+  command/store path; do not create view-specific Task persistence.
+- `gantt` is optional version-1 view-preference state. Missing view mode still
+  means List, and unrelated values remain invalid.
+- Gantt uses the already active, focused, filtered, and sorted Task sequence and
+  the pure `createTaskGanttItems` projection. Every Task remains a row.
+- A Gantt row is scheduled only when both exact start and due dates exist. Missing
+  either boundary is shown as `Unscheduled`; do not infer a duration.
+- Keep the existing Task detail/action path. Suppress List grouping headings while
+  Gantt is active without changing the saved grouping preference.
+- Saved views continue to preserve the current layout instead of capturing Gantt.
+- Do not add drag scheduling, dependency-line drawing, automatic rescheduling,
+  milestones, baselines, work calendars, time-scale geometry, or critical path in
+  this slice.

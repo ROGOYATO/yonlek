@@ -58,7 +58,7 @@ describe('Task view mode preference storage', () => {
         version: 1,
         preferences: {
           ...createDefaultViewPreferences(),
-          viewMode: 'gantt',
+          viewMode: 'matrix',
         },
       }),
     )

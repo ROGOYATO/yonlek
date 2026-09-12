@@ -16,7 +16,8 @@ describe('view preference Timeline Task view mode', () => {
     expect(isTaskViewMode('calendar')).toBe(true)
     expect(isTaskViewMode('table')).toBe(true)
     expect(isTaskViewMode('timeline')).toBe(true)
-    expect(isTaskViewMode('gantt')).toBe(false)
+    expect(isTaskViewMode('gantt')).toBe(true)
+    expect(isTaskViewMode('matrix')).toBe(false)
     expect(getTaskViewMode(current)).toBe('list')
 
     const timeline = updateViewPreferences(current, {

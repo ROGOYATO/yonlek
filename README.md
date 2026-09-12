@@ -8,13 +8,13 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 203-207 is TDD 202.
+The confirmed starting checkpoint for TDD 208-212 is TDD 207.
 
 - branch: `main`
-- behavior commit: `cf536db` (`TDD 198-202: add timeline view`)
+- behavior commit: `87f65f9` (`TDD 203-207: add Gantt foundation`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 360 passed across 82 files
+- tests: 371 passed across 87 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
@@ -22,8 +22,8 @@ The confirmed starting checkpoint for TDD 203-207 is TDD 202.
 
 This checkpoint includes Task and Project archive/restore, Project and Task
 templates, Task grouping, saved filter sets, saved views, Board view, Calendar
-view, Table view, Timeline, persisted archive timestamps, and active/archive UI
-boundaries.
+view, Table view, Timeline, the Gantt schedule foundation, persisted archive
+timestamps, and active/archive UI boundaries.
 
 ## Current product model
 
@@ -98,7 +98,7 @@ Current Task behavior includes:
 - view-only grouping by status, priority, or List after filtering and sorting;
 - named saved filter sets for search, status, priority, and due-date filters;
 - named saved views for Project focus, filters, sort, and grouping;
-- persisted List, Board, Calendar, Table, and Timeline Task layouts;
+- persisted List, Board, Calendar, Table, Timeline, and Gantt Task layouts;
 - move between compatible Project and List containers;
 - nested Subtasks with cycle and parent integrity checks;
 - manual ordering among valid siblings.
@@ -170,17 +170,24 @@ not render durations, drag scheduling, or dependency lines.
 
 ### Gantt foundation
 
-The Gantt foundation is currently a data and domain seam, not a selectable Task
-layout. Tasks may store an optional exact `YYYY-MM-DD` start date alongside the
-existing due date. Setting either boundary preserves the invariant that start is
-not after due when both exist, and workspace storage version 1 validates the
-optional start date while remaining compatible with Tasks that do not have one.
+The confirmed TDD 203-207 foundation added optional exact `YYYY-MM-DD` start
+dates, the `startDate <= dueDate` invariant, version-1 storage validation, and the
+pure `createTaskGanttItems` projection. The projection preserves incoming Task
+order and marks a Task scheduled only when both boundaries exist. It does not
+infer duration or schedule geometry.
 
-The pure `createTaskGanttItems` projection keeps the incoming Task order and keeps
-every Task available as a row. A projected Task is scheduled only when both start
-and due dates exist. No Gantt view mode, chart rendering, duration editing, drag
-scheduling, dependency-line rendering, milestone model, work calendar, baseline,
-or critical-path calculation is included yet.
+### Gantt view
+
+Gantt is an optional Task view mode in the same version-1 preference document.
+It consumes the same focused, filtered, and sorted active Task sequence as the
+other views. Every Task remains represented in the semantic Gantt summary; only
+Tasks with both start and due dates are marked scheduled and expose the exact
+`YYYY-MM-DD` boundaries. The existing Task detail/action rows remain the edit
+path. List grouping headings are hidden while Gantt is active, but the grouping
+preference is preserved and returns when the user switches back to List. Saved
+views continue to preserve the current layout instead of capturing Gantt. No
+pixel time-scale, drag scheduling, duration editing, dependency-line rendering,
+milestone, baseline, work-calendar, or critical-path behavior is added here.
 
 ### Task templates
 
