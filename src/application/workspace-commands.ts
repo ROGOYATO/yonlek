@@ -1,6 +1,7 @@
 import { createChecklistItem } from '../domain/checklist'
 import {
   createCustomField,
+  type CustomFieldFormula,
   type CustomFieldOption,
   type CustomFieldType,
   type CustomFieldValue,
@@ -41,6 +42,7 @@ export interface WorkspaceCommands {
   addCustomField(name: string, type: CustomFieldType): ReturnType<typeof createCustomField>
   renameCustomField(fieldId: string, name: string): void
   deleteCustomField(fieldId: string): void
+  configureCustomFieldFormula(fieldId: string, formula: CustomFieldFormula | null): void
   addCustomFieldOption(fieldId: string, name: string): CustomFieldOption
   renameCustomFieldOption(fieldId: string, optionId: string, name: string): void
   deleteCustomFieldOption(fieldId: string, optionId: string): void
@@ -159,6 +161,14 @@ export function createWorkspaceCommands(
       store.dispatch({
         type: 'customField/deleted',
         fieldId,
+      })
+    },
+
+    configureCustomFieldFormula(fieldId, formula) {
+      store.dispatch({
+        type: 'customField/formulaChanged',
+        fieldId,
+        formula,
       })
     },
 

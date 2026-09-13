@@ -711,6 +711,7 @@ Supported types:
 - `checkbox`: boolean
 - `select`: one stable option ID owned by that field
 - `date`: exact `YYYY-MM-DD` calendar date
+- `formula`: read-only finite numeric result computed from Number/Formula fields
 
 Rules:
 
@@ -727,6 +728,18 @@ Rules:
 - Date values are trimmed before runtime validation and must resolve to a real
   calendar date in exact `YYYY-MM-DD` form.
 - Date Custom Field values are independent from Task `startDate` and `dueDate`.
+- Formula definitions may be unconfigured or reference exactly two stable
+  Number/Formula field IDs with `+`, `-`, `*`, or `/`.
+- Formula Task results are computed on read. Never store a Formula field key in
+  `Task.customFieldValues`.
+- Formula dependency validation rejects self-reference and direct or indirect
+  cycles.
+- Missing operands, missing Task values, division by zero, non-finite results,
+  or malformed persisted dependency graphs evaluate as unavailable instead of
+  producing stored fallback values.
+- Deleting a Custom Field clears Formula configurations that directly reference
+  that field. Downstream Formula definitions remain configured and evaluate as
+  unavailable until their dependency is configured again.
 - Deleting a Select option removes only Task values for that field that reference
   the deleted option. Other Custom Field values stay unchanged.
 - Non-Select definitions must not carry Select option metadata.

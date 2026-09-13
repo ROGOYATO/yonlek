@@ -1,4 +1,11 @@
-export type CustomFieldType = 'text' | 'number' | 'checkbox' | 'select' | 'date'
+export type CustomFieldType = 'text' | 'number' | 'checkbox' | 'select' | 'date' | 'formula'
+export type CustomFieldFormulaOperator = '+' | '-' | '*' | '/'
+
+export interface CustomFieldFormula {
+  leftFieldId: string
+  operator: CustomFieldFormulaOperator
+  rightFieldId: string
+}
 export type CustomFieldValue = string | number | boolean
 
 export interface CustomFieldOption {
@@ -12,6 +19,7 @@ export interface CustomFieldDefinition {
   type: CustomFieldType
   createdAt: string
   options?: CustomFieldOption[]
+  formula?: CustomFieldFormula
 }
 
 export interface CreateCustomFieldInput {
@@ -58,6 +66,66 @@ export function renameCustomField(
     ...field,
     name,
   }
+}
+
+
+function requireFormulaField(
+  field: CustomFieldDefinition,
+): asserts field is CustomFieldDefinition & { type: 'formula' } {
+  if (field.type !== 'formula') {
+    throw new Error('Custom field must be Formula')
+  }
+}
+
+function normalizeFormulaOperandFieldId(fieldId: string): string {
+  const normalized = fieldId.trim()
+
+  if (!normalized) {
+    throw new Error('Formula operand field is required')
+  }
+
+  return normalized
+}
+
+function normalizeFormulaOperator(
+  operator: CustomFieldFormulaOperator,
+): CustomFieldFormulaOperator {
+  if (
+    operator !== '+' &&
+    operator !== '-' &&
+    operator !== '*' &&
+    operator !== '/'
+  ) {
+    throw new Error('Formula operator is invalid')
+  }
+
+  return operator
+}
+
+export function configureCustomFieldFormula(
+  field: CustomFieldDefinition,
+  formula: CustomFieldFormula,
+): CustomFieldDefinition {
+  requireFormulaField(field)
+
+  return {
+    ...field,
+    formula: {
+      leftFieldId: normalizeFormulaOperandFieldId(formula.leftFieldId),
+      operator: normalizeFormulaOperator(formula.operator),
+      rightFieldId: normalizeFormulaOperandFieldId(formula.rightFieldId),
+    },
+  }
+}
+
+export function clearCustomFieldFormula(
+  field: CustomFieldDefinition,
+): CustomFieldDefinition {
+  requireFormulaField(field)
+
+  const next = { ...field }
+  delete next.formula
+  return next
 }
 
 function requireSelectField(
@@ -178,6 +246,137 @@ export function normalizeDateCustomFieldValue(value: unknown): string {
   }
 
   return normalized
+}
+
+
+
+export function validateCustomFieldFormulaDependencies(
+  fields: CustomFieldDefinition[],
+): void {
+  const fieldsById = new Map(fields.map((field) => [field.id, field]))
+  const visitState = new Map<string, 'visiting' | 'visited'>()
+
+  function visit(field: CustomFieldDefinition): void {
+    if (field.type !== 'formula' || field.formula === undefined) {
+      return
+    }
+
+    const state = visitState.get(field.id)
+
+    if (state === 'visiting') {
+      throw new Error('Formula dependency cycle is not allowed')
+    }
+
+    if (state === 'visited') {
+      return
+    }
+
+    const normalized = configureCustomFieldFormula(field, field.formula)
+      .formula!
+
+    visitState.set(field.id, 'visiting')
+
+    for (const operandId of [
+      normalized.leftFieldId,
+      normalized.rightFieldId,
+    ]) {
+      if (operandId === field.id) {
+        throw new Error('Formula cannot reference itself')
+      }
+
+      const operand = fieldsById.get(operandId)
+
+      if (!operand) {
+        throw new Error('Formula operand field not found')
+      }
+
+      if (operand.type !== 'number' && operand.type !== 'formula') {
+        throw new Error('Formula operand must be Number or Formula')
+      }
+
+      if (operand.type === 'formula') {
+        visit(operand)
+      }
+    }
+
+    visitState.set(field.id, 'visited')
+  }
+
+  for (const field of fields) {
+    visit(field)
+  }
+}
+
+export interface FormulaEvaluableTask {
+  customFieldValues?: Record<string, CustomFieldValue>
+}
+
+export function evaluateCustomFieldFormula(
+  fieldId: string,
+  task: FormulaEvaluableTask,
+  fields: CustomFieldDefinition[],
+): number | null {
+  const fieldsById = new Map(fields.map((field) => [field.id, field]))
+  const target = fieldsById.get(fieldId)
+
+  if (target?.type !== 'formula') {
+    return null
+  }
+
+  function evaluateField(
+    currentFieldId: string,
+    visiting: Set<string>,
+  ): number | null {
+    const field = fieldsById.get(currentFieldId)
+
+    if (!field) {
+      return null
+    }
+
+    if (field.type === 'number') {
+      const value = task.customFieldValues?.[field.id]
+      return typeof value === 'number' && Number.isFinite(value)
+        ? value
+        : null
+    }
+
+    if (field.type !== 'formula' || field.formula === undefined) {
+      return null
+    }
+
+    if (visiting.has(field.id)) {
+      return null
+    }
+
+    const nextVisiting = new Set(visiting)
+    nextVisiting.add(field.id)
+    const left = evaluateField(field.formula.leftFieldId, nextVisiting)
+    const right = evaluateField(field.formula.rightFieldId, nextVisiting)
+
+    if (left === null || right === null) {
+      return null
+    }
+
+    let result: number
+
+    if (field.formula.operator === '+') {
+      result = left + right
+    } else if (field.formula.operator === '-') {
+      result = left - right
+    } else if (field.formula.operator === '*') {
+      result = left * right
+    } else {
+      if (right === 0) {
+        return null
+      }
+
+      result = left / right
+    }
+
+    return Number.isFinite(result) ? result : null
+  }
+
+  return evaluateField(target.id, new Set())
 }
 
 export function normalizeCustomFieldValueForDefinition(

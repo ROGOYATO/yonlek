@@ -1,4 +1,8 @@
-import { normalizeDateCustomFieldValue } from '../domain/custom-field'
+import {
+  normalizeDateCustomFieldValue,
+  validateCustomFieldFormulaDependencies,
+  type CustomFieldDefinition,
+} from '../domain/custom-field'
 import { setTaskDueDate, setTaskStartDate, type Task } from '../domain/task'
 import { emptyWorkspace, type WorkspaceState } from '../domain/workspace'
 
@@ -298,6 +302,22 @@ function isValidTaskRelationship(value: unknown): boolean {
 }
 
 
+function isValidCustomFieldFormula(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.leftFieldId === 'string' &&
+    value.leftFieldId.length > 0 &&
+    value.leftFieldId.trim() === value.leftFieldId &&
+    (value.operator === '+' ||
+      value.operator === '-' ||
+      value.operator === '*' ||
+      value.operator === '/') &&
+    typeof value.rightFieldId === 'string' &&
+    value.rightFieldId.length > 0 &&
+    value.rightFieldId.trim() === value.rightFieldId
+  )
+}
+
 function isValidCustomField(value: unknown): boolean {
   if (
     !isRecord(value) ||
@@ -309,9 +329,21 @@ function isValidCustomField(value: unknown): boolean {
       value.type !== 'number' &&
       value.type !== 'checkbox' &&
       value.type !== 'select' &&
-      value.type !== 'date') ||
+      value.type !== 'date' &&
+      value.type !== 'formula') ||
     !isIsoInstant(value.createdAt)
   ) {
+    return false
+  }
+
+  if (value.type === 'formula') {
+    return (
+      value.options === undefined &&
+      (value.formula === undefined || isValidCustomFieldFormula(value.formula))
+    )
+  }
+
+  if (value.formula !== undefined) {
     return false
   }
 
@@ -570,11 +602,24 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
       (field as { id: string }).id,
       field as {
         id: string
-        type: 'text' | 'number' | 'checkbox' | 'select' | 'date'
+        type: 'text' | 'number' | 'checkbox' | 'select' | 'date' | 'formula'
         options?: Array<{ id: string; name: string }>
+        formula?: {
+          leftFieldId: string
+          operator: '+' | '-' | '*' | '/'
+          rightFieldId: string
+        }
       },
     ]),
   )
+
+  try {
+    validateCustomFieldFormulaDependencies(
+      customFields as CustomFieldDefinition[],
+    )
+  } catch {
+    invalidStorage()
+  }
 
   const projectIds = new Set(
     workspace.projects.map((project) => (project as { id: string }).id),
@@ -761,6 +806,10 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
           } catch {
             return true
           }
+        }
+
+        if (field.type === 'formula') {
+          return true
         }
 
         return (

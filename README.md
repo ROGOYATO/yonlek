@@ -8,22 +8,22 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 218-222 is TDD 217.
+The confirmed starting checkpoint for TDD 238-242 is TDD 237.
 
 - branch: `main`
-- behavior commit: `4c01e45` (`TDD 213-217: add per-view filters and sorts`)
+- behavior commit: `ae6458b` (`TDD 233-237: add Custom Field filtering and sorting`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 383 passed across 97 files
+- tests: 424 passed across 117 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
 - push: `origin/main` updated successfully
 
-This checkpoint includes Task and Project archive/restore, Project and Task
-templates, Task grouping, saved filter sets, saved views, Board view, Calendar
-view, Table view, Timeline, the Gantt schedule foundation, Gantt view, per-view
-filters and sorts, persisted archive timestamps, and active/archive UI boundaries.
+This checkpoint includes the core Project/Task model, archive/restore, templates,
+all current Task layouts, per-view filters/sorts, saved filter sets/views, bulk
+actions, Select and Date Custom Fields, and type-aware Custom Field filtering
+and sorting.
 
 ## Current product model
 
@@ -239,8 +239,11 @@ People, and Custom Field definitions belong to the Workspace and Tasks refer to
 them by ID. Select Custom Fields own ordered options with stable IDs; Tasks store
 the selected option ID rather than its display label.
 Date Custom Fields store exact `YYYY-MM-DD` values and remain independent from
-the Task's start and due dates. One Custom Field filter and one Custom Field sort
-may be active at a time. Text filtering is case-insensitive substring matching;
+the Task's start and due dates. Formula Custom Fields are read-only numeric
+definitions that reference stable Number/Formula field IDs. Their results are
+computed from current Task values and are never stored in
+`Task.customFieldValues`. One Custom Field filter and one Custom Field sort may
+be active at a time. Text filtering is case-insensitive substring matching;
 Number, Checkbox, Select, and Date filtering is exact and type-aware. Custom
 Field sorting is ascending, places missing values last, uses Task creation time
 for ties, and follows option order for Select fields. Stale field references are

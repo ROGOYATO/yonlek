@@ -41,10 +41,13 @@ import {
   type ViewPreferences,
 } from './domain/view-preferences'
 import type { TaskPriority, TaskStatus } from './domain/task'
-import type {
-  CustomFieldDefinition,
-  CustomFieldType,
-  CustomFieldValue,
+import {
+  evaluateCustomFieldFormula,
+  type CustomFieldDefinition,
+  type CustomFieldFormula,
+  type CustomFieldFormulaOperator,
+  type CustomFieldType,
+  type CustomFieldValue,
 } from './domain/custom-field'
 import { emptyWorkspace, type WorkspaceState } from './domain/workspace'
 
@@ -55,6 +58,7 @@ export interface AppProps {
   onCreateCustomField?: (name: string, type: CustomFieldType) => void
   onRenameCustomField?: (fieldId: string, name: string) => void
   onDeleteCustomField?: (fieldId: string) => void
+  onConfigureCustomFieldFormula?: (fieldId: string, formula: CustomFieldFormula | null) => void
   onAddCustomFieldOption?: (fieldId: string, name: string) => void
   onRenameCustomFieldOption?: (fieldId: string, optionId: string, name: string) => void
   onDeleteCustomFieldOption?: (fieldId: string, optionId: string) => void
@@ -127,6 +131,7 @@ export function App({
   onCreateCustomField,
   onRenameCustomField,
   onDeleteCustomField,
+  onConfigureCustomFieldFormula,
   onAddCustomFieldOption,
   onRenameCustomFieldOption,
   onDeleteCustomFieldOption,
@@ -198,6 +203,9 @@ export function App({
   const [customFieldEdits, setCustomFieldEdits] = useState<Record<string, string>>({})
   const [customFieldOptionNames, setCustomFieldOptionNames] = useState<Record<string, string>>({})
   const [customFieldOptionEdits, setCustomFieldOptionEdits] = useState<Record<string, string>>({})
+  const [customFieldFormulaLeftOperands, setCustomFieldFormulaLeftOperands] = useState<Record<string, string>>({})
+  const [customFieldFormulaOperators, setCustomFieldFormulaOperators] = useState<Record<string, CustomFieldFormulaOperator>>({})
+  const [customFieldFormulaRightOperands, setCustomFieldFormulaRightOperands] = useState<Record<string, string>>({})
   const [customFieldValueDrafts, setCustomFieldValueDrafts] = useState<
     Record<string, string>
   >({})
@@ -377,6 +385,9 @@ export function App({
 
   const relationships = state.relationships ?? []
   const customFields = state.customFields ?? []
+  const filterableCustomFields = customFields.filter(
+    (field) => field.type !== 'formula',
+  )
 
   function resolveCustomFieldFilter(
     filter: CustomFieldTaskFilter | undefined,
@@ -385,7 +396,7 @@ export function App({
       return undefined
     }
 
-    const field = customFields.find(
+    const field = filterableCustomFields.find(
       (candidate) =>
         candidate.id === filter.fieldId && candidate.type === filter.fieldType,
     )
@@ -420,7 +431,7 @@ export function App({
   }
 
   const effectiveCustomFieldFilter = resolveCustomFieldFilter(customFieldFilter)
-  const selectedCustomFieldFilterField = customFields.find(
+  const selectedCustomFieldFilterField = filterableCustomFields.find(
     (field) => field.id === customFieldFilterFieldId,
   )
   const customFieldFilterIsStale =
@@ -439,7 +450,7 @@ export function App({
         : '')
     : ''
   const activeCustomFieldSortField = customFieldSortFieldId
-    ? customFields.find((field) => field.id === customFieldSortFieldId)
+    ? filterableCustomFields.find((field) => field.id === customFieldSortFieldId)
     : undefined
   const effectiveCustomFieldSort = activeCustomFieldSortField
     ? createCustomFieldTaskSort(activeCustomFieldSortField.id)
@@ -666,7 +677,7 @@ export function App({
         }}
       >
         <option value="">No custom field filter</option>
-        {customFields.map((field) => (
+        {filterableCustomFields.map((field) => (
           <option key={field.id} value={field.id}>
             {field.name}
           </option>
@@ -821,7 +832,7 @@ export function App({
         <option value="dueDate">Due date</option>
         <option value="priority">Priority</option>
         <option value="manual">Manual</option>
-        {customFields.map((field) => (
+        {filterableCustomFields.map((field) => (
           <option key={field.id} value={`custom:${field.id}`}>
             Custom field: {field.name}
           </option>
@@ -1242,6 +1253,7 @@ export function App({
               <option value="checkbox">Checkbox</option>
               <option value="select">Select</option>
               <option value="date">Date</option>
+              <option value="formula">Formula</option>
             </select>
             <button type="submit">Add custom field</button>
           </form>
@@ -1414,6 +1426,155 @@ export function App({
                             })}
                           </ul>
                         )}
+                      </>
+                    ) : null}
+                    {field.type === 'formula' && onConfigureCustomFieldFormula ? (
+                      <>
+                        <form
+                          onSubmit={(event) => {
+                            event.preventDefault()
+
+                            const leftFieldId =
+                              customFieldFormulaLeftOperands[field.id] ??
+                              field.formula?.leftFieldId ??
+                              ''
+                            const operator =
+                              customFieldFormulaOperators[field.id] ??
+                              field.formula?.operator ??
+                              '+'
+                            const rightFieldId =
+                              customFieldFormulaRightOperands[field.id] ??
+                              field.formula?.rightFieldId ??
+                              ''
+
+                            try {
+                              onConfigureCustomFieldFormula(field.id, {
+                                leftFieldId,
+                                operator,
+                                rightFieldId,
+                              })
+                              setError(null)
+                            } catch (caught) {
+                              setError(errorMessage(caught))
+                            }
+                          }}
+                        >
+                          <label htmlFor={`formula-left-${field.id}`}>
+                            Left operand for formula {field.name}
+                          </label>
+                          <select
+                            id={`formula-left-${field.id}`}
+                            value={
+                              customFieldFormulaLeftOperands[field.id] ??
+                              field.formula?.leftFieldId ??
+                              ''
+                            }
+                            onChange={(event) =>
+                              setCustomFieldFormulaLeftOperands((current) => ({
+                                ...current,
+                                [field.id]: event.target.value,
+                              }))
+                            }
+                          >
+                            <option value="">Choose field</option>
+                            {customFields
+                              .filter(
+                                (candidate) =>
+                                  candidate.id !== field.id &&
+                                  (candidate.type === 'number' ||
+                                    candidate.type === 'formula'),
+                              )
+                              .map((candidate) => (
+                                <option key={candidate.id} value={candidate.id}>
+                                  {candidate.name}
+                                </option>
+                              ))}
+                          </select>
+                          <label htmlFor={`formula-operator-${field.id}`}>
+                            Operator for formula {field.name}
+                          </label>
+                          <select
+                            id={`formula-operator-${field.id}`}
+                            value={
+                              customFieldFormulaOperators[field.id] ??
+                              field.formula?.operator ??
+                              '+'
+                            }
+                            onChange={(event) =>
+                              setCustomFieldFormulaOperators((current) => ({
+                                ...current,
+                                [field.id]: event.target.value as CustomFieldFormulaOperator,
+                              }))
+                            }
+                          >
+                            <option value="+">+</option>
+                            <option value="-">-</option>
+                            <option value="*">*</option>
+                            <option value="/">/</option>
+                          </select>
+                          <label htmlFor={`formula-right-${field.id}`}>
+                            Right operand for formula {field.name}
+                          </label>
+                          <select
+                            id={`formula-right-${field.id}`}
+                            value={
+                              customFieldFormulaRightOperands[field.id] ??
+                              field.formula?.rightFieldId ??
+                              ''
+                            }
+                            onChange={(event) =>
+                              setCustomFieldFormulaRightOperands((current) => ({
+                                ...current,
+                                [field.id]: event.target.value,
+                              }))
+                            }
+                          >
+                            <option value="">Choose field</option>
+                            {customFields
+                              .filter(
+                                (candidate) =>
+                                  candidate.id !== field.id &&
+                                  (candidate.type === 'number' ||
+                                    candidate.type === 'formula'),
+                              )
+                              .map((candidate) => (
+                                <option key={candidate.id} value={candidate.id}>
+                                  {candidate.name}
+                                </option>
+                              ))}
+                          </select>
+                          <button type="submit">
+                            Configure formula {field.name}
+                          </button>
+                        </form>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            try {
+                              onConfigureCustomFieldFormula(field.id, null)
+                              setCustomFieldFormulaLeftOperands((current) => {
+                                const next = { ...current }
+                                delete next[field.id]
+                                return next
+                              })
+                              setCustomFieldFormulaOperators((current) => {
+                                const next = { ...current }
+                                delete next[field.id]
+                                return next
+                              })
+                              setCustomFieldFormulaRightOperands((current) => {
+                                const next = { ...current }
+                                delete next[field.id]
+                                return next
+                              })
+                              setError(null)
+                            } catch (caught) {
+                              setError(errorMessage(caught))
+                            }
+                          }}
+                        >
+                          Clear formula {field.name}
+                        </button>
                       </>
                     ) : null}
                     {onDeleteCustomField ? (
@@ -2396,7 +2557,8 @@ export function App({
                         ) : null}
 
                         {customFields.length > 0 &&
-                        onChangeTaskCustomFieldValue ? (
+                        (onChangeTaskCustomFieldValue ||
+                          customFields.some((field) => field.type === 'formula')) ? (
                           <fieldset>
                             <legend>Custom fields for {task.title}</legend>
                             {customFields.map((field) => {
@@ -2405,6 +2567,29 @@ export function App({
                               const draftKey = `${task.id}:${field.id}`
                               const draftValue =
                                 customFieldValueDrafts[draftKey]
+
+                              if (field.type === 'formula') {
+                                const result = evaluateCustomFieldFormula(
+                                  field.id,
+                                  task,
+                                  customFields,
+                                )
+
+                                return (
+                                  <label key={field.id}>
+                                    Custom field {field.name} for {task.title}
+                                    <output
+                                      aria-label={`Custom field ${field.name} for ${task.title}`}
+                                    >
+                                      {result === null ? 'Unavailable' : String(result)}
+                                    </output>
+                                  </label>
+                                )
+                              }
+
+                              if (!onChangeTaskCustomFieldValue) {
+                                return null
+                              }
 
                               if (field.type === 'select') {
                                 return (

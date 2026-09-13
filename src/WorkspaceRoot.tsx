@@ -44,6 +44,9 @@ export function WorkspaceRoot({
       onDeleteCustomField={(fieldId) => {
         commands.deleteCustomField(fieldId)
       }}
+      onConfigureCustomFieldFormula={(fieldId, formula) => {
+        commands.configureCustomFieldFormula(fieldId, formula)
+      }}
       onAddCustomFieldOption={(fieldId, name) => {
         commands.addCustomFieldOption(fieldId, name)
       }}

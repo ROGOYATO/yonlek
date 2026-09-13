@@ -2695,3 +2695,90 @@ authoritative. The runner must observe every intended RED before its GREEN
 patch, pass each focused GREEN, zero-warning lint, the normal full check, LF and
 diff audits, exact changed-path/content gates, remote-tip checks, commit, and
 non-force push.
+
+## TDD 238 - Formula Custom Field definition
+
+**RED**
+
+Add focused domain coverage requiring Formula as a Custom Field type, optional
+binary configuration with stable operand field IDs, supported arithmetic
+operators, immutable configure/clear helpers, and rejection of malformed
+configuration.
+
+**GREEN**
+
+Add `formula` to the Custom Field type model and add optional binary Formula
+definition metadata. Formula fields are created unconfigured and do not carry
+Select option metadata.
+
+## TDD 239 - Formula evaluation
+
+**RED**
+
+Add focused domain coverage for Number operands, chained Formula references,
+all four arithmetic operators, unavailable operands, division by zero,
+non-finite results, and malformed cyclic persisted data.
+
+**GREEN**
+
+Add a pure recursive Formula evaluator. It reads current Task Custom Field
+values without mutating workspace state and returns `null` for unavailable or
+unsafe results.
+
+## TDD 240 - Formula workspace configuration
+
+**RED**
+
+Add focused workspace-command coverage for configure/clear persistence,
+Number/Formula operand validation, self/cycle rejection, referenced-field
+deletion cleanup, and rejection of direct Formula Task-value writes.
+
+**GREEN**
+
+Add one Formula configuration command/action. Validate the Formula dependency
+graph before accepting configuration, clear directly dangling Formula
+configurations when a referenced field is deleted, and keep Formula Task values
+read-only.
+
+## TDD 241 - Formula workspace storage
+
+**RED**
+
+Add version-1 workspace-storage coverage for configured and unconfigured Formula
+definitions, legacy compatibility, malformed metadata, invalid dependencies,
+cycles, and forbidden stored Formula Task values.
+
+**GREEN**
+
+Keep workspace storage at version 1. Validate Formula definition metadata and
+dependency graphs on load and reject Task `customFieldValues` entries owned by
+Formula definitions.
+
+## TDD 242 - Formula UI and read-only results
+
+**RED**
+
+Add jsdom WorkspaceRoot coverage requiring Formula field creation,
+Number/Formula operand controls, configure/clear actions, read-only computed Task
+results, live recomputation after Number edits, and no Formula Task-value
+persistence.
+
+**GREEN**
+
+Expose Formula in the Custom Field definition UI, wire Formula configuration
+through the workspace command, and render Task Formula results as read-only
+computed output. Formula fields stay outside Custom Field filter/sort choices in
+this batch.
+
+## Prepared verification target after TDD 242
+
+This batch starts from confirmed `main` at
+`ae6458bf6f9f3d80bf7e4217ca762d5ca5952271`. The runner captures the live
+`HEAD^{tree}` directly from Git after checking the expected HEAD, parent, origin,
+remote tip, clean working tree, and empty index. Five focused RED files are
+prepared. If the live inventory is otherwise unchanged, the final suite is
+expected to contain 440 tests across 122 test files; live output remains
+authoritative. The runner must observe every intended RED before its GREEN
+patch, pass each focused GREEN, zero-warning lint, the normal full check, LF and
+diff audits, exact changed-path/content gates, remote-tip checks, commit, and
+non-force push.

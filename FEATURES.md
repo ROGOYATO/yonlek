@@ -188,7 +188,7 @@ not imply authentication, email identity, permissions, or notifications.
 - [x] Cleanup Task values when a definition is deleted
 - [x] Select fields
 - [x] Date fields
-- [ ] Formula fields
+- [x] Formula fields
 - [ ] Field type migration
 - [x] Custom Field filtering and sorting
 
@@ -199,6 +199,12 @@ that option.
 
 Date fields store exact `YYYY-MM-DD` calendar dates as independent Task Custom
 Field values. They do not change or inherit Task start/due dates.
+
+Formula fields are read-only numeric computed fields. A Formula definition
+references two stable Number/Formula field IDs with `+`, `-`, `*`, or `/`.
+Formula results are evaluated from current Task values and are never stored as
+Task Custom Field values. Missing inputs, invalid dependencies, division by
+zero, and non-finite results are unavailable rather than persisted.
 
 One Custom Field filter and one Custom Field sort can be active at a time. Text
 filters use case-insensitive substring matching; Number, Checkbox, Select, and

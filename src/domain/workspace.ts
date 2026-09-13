@@ -8,11 +8,15 @@ import { renameTaskList, type TaskList } from './task-list'
 import type { TaskRelationship } from './task-relationship'
 import {
   addCustomFieldOption,
+  clearCustomFieldFormula,
+  configureCustomFieldFormula,
   deleteCustomFieldOption,
   normalizeCustomFieldValueForDefinition,
   renameCustomField,
   renameCustomFieldOption,
+  validateCustomFieldFormulaDependencies,
   type CustomFieldDefinition,
+  type CustomFieldFormula,
   type CustomFieldOption,
   type CustomFieldValue,
 } from './custom-field'
@@ -74,6 +78,7 @@ export type WorkspaceAction =
   | { type: 'customField/added'; field: CustomFieldDefinition }
   | { type: 'customField/deleted'; fieldId: string }
   | { type: 'customField/nameChanged'; fieldId: string; name: string }
+  | { type: 'customField/formulaChanged'; fieldId: string; formula: CustomFieldFormula | null }
   | { type: 'customField/optionAdded'; fieldId: string; option: CustomFieldOption }
   | { type: 'customField/optionNameChanged'; fieldId: string; optionId: string; name: string }
   | { type: 'customField/optionDeleted'; fieldId: string; optionId: string }
@@ -248,6 +253,32 @@ export function workspaceReducer(
         ),
       }
 
+    case 'customField/formulaChanged': {
+      const target = (state.customFields ?? []).find(
+        (field) => field.id === action.fieldId,
+      )
+
+      if (!target) {
+        throw new Error('Cannot configure a missing custom field')
+      }
+
+      const updated = action.formula === null
+        ? clearCustomFieldFormula(target)
+        : configureCustomFieldFormula(target, action.formula)
+      const customFields = (state.customFields ?? []).map((field) =>
+        field.id === action.fieldId ? updated : field,
+      )
+
+      if (action.formula !== null) {
+        validateCustomFieldFormulaDependencies(customFields)
+      }
+
+      return {
+        ...state,
+        customFields,
+      }
+    }
+
     case 'customField/optionAdded': {
       if (!(state.customFields ?? []).some((field) => field.id === action.fieldId)) {
         throw new Error('Cannot change options on a missing custom field')
@@ -315,9 +346,20 @@ export function workspaceReducer(
     }
 
     case 'customField/deleted': {
-      const customFields = (state.customFields ?? []).filter(
-        (field) => field.id !== action.fieldId,
-      )
+      const customFields = (state.customFields ?? [])
+        .filter((field) => field.id !== action.fieldId)
+        .map((field) => {
+          if (
+            field.type !== 'formula' ||
+            field.formula === undefined ||
+            (field.formula.leftFieldId !== action.fieldId &&
+              field.formula.rightFieldId !== action.fieldId)
+          ) {
+            return field
+          }
+
+          return clearCustomFieldFormula(field)
+        })
       const next: WorkspaceState = {
         ...state,
         tasks: state.tasks.map((task) => {
