@@ -20,12 +20,14 @@ import {
 } from '../domain/task-relationship'
 import { createTag } from '../domain/tag'
 import {
+  createNextRecurringTaskOccurrence,
   createSubtask,
   createTask,
   duplicateTask as duplicateTaskDomain,
   createTaskTemplate,
   instantiateTaskTemplate,
   type TaskPriority,
+  type TaskRecurrenceRule,
   type TaskStatus,
 } from '../domain/task'
 import type { MoveDirection } from '../domain/manual-order'
@@ -93,6 +95,7 @@ export interface WorkspaceCommands {
   changeProjectDescription(projectId: string, description: string | null): void
   renameTask(taskId: string, title: string): void
   changeTaskStatus(taskId: string, status: TaskStatus): void
+  changeTaskRecurrence(taskId: string, recurrence: TaskRecurrenceRule | null): void
   changeTasksStatus(taskIds: string[], status: TaskStatus): void
   changeTaskPriority(taskId: string, priority: TaskPriority): void
   changeTasksPriority(taskIds: string[], priority: TaskPriority): void
@@ -815,10 +818,41 @@ export function createWorkspaceCommands(
     },
 
     changeTaskStatus(taskId, status) {
+      const task = store.getState().tasks.find((candidate) => candidate.id === taskId)
+
+      if (
+        task?.recurrence !== undefined &&
+        task.status !== 'done' &&
+        status === 'done'
+      ) {
+        const occurrence = createNextRecurringTaskOccurrence(
+          { ...task, status: 'done' },
+          {
+            id: runtime.nextId(),
+            now: runtime.now(),
+          },
+        )
+
+        store.dispatch({
+          type: 'task/recurringCompleted',
+          taskId,
+          occurrence,
+        })
+        return
+      }
+
       store.dispatch({
         type: 'task/statusChanged',
         taskId,
         status,
+      })
+    },
+
+    changeTaskRecurrence(taskId, recurrence) {
+      store.dispatch({
+        type: 'task/recurrenceChanged',
+        taskId,
+        recurrence,
       })
     },
 

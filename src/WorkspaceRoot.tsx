@@ -208,6 +208,9 @@ export function WorkspaceRoot({
       onChangeTaskStatus={(taskId, status) => {
         commands.changeTaskStatus(taskId, status)
       }}
+      onChangeTaskRecurrence={(taskId, recurrence) => {
+        commands.changeTaskRecurrence(taskId, recurrence)
+      }}
       onChangeTasksStatus={(taskIds, status) => {
         commands.changeTasksStatus(taskIds, status)
       }}

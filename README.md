@@ -602,3 +602,7 @@ The repository's own source-code license has not been selected yet.
 
 Dependency licenses do not license this project's source. See
 `THIRD_PARTY_NOTICES.md` for the current direct-dependency summary.
+
+## Recurring Tasks
+
+Recurring Tasks support completion-driven daily, weekly, and monthly recurrence with a positive interval. A recurrence requires a due date. Completing a recurring Task keeps the completed Task as history and creates exactly one new `todo` occurrence with calendar-advanced due/start dates, reset Checklist completion, and the same recurrence rule. This first version does not run a background scheduler or clone child Tasks/relationship edges.

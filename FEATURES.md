@@ -236,11 +236,13 @@ not copied when one Task is duplicated.
 
 ### Later task capabilities
 
-- [ ] Recurring Tasks
+- [x] Recurring Tasks
 - [ ] Time estimates
 - [ ] Time tracking
 - [ ] Attachments
 - [ ] Activity history
+
+Recurring Tasks use completion-driven daily, weekly, or monthly rules with a positive interval and required due date. Completing a recurring Task preserves the completed occurrence and creates one fresh `todo` occurrence with calendar-advanced dates; monthly rules clamp safely at month end. Clearing a recurring Task's due date also clears its recurrence rule so persisted Task state cannot violate the due-date requirement.
 
 ## Views
 

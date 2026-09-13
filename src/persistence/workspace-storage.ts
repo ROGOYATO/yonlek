@@ -3,7 +3,13 @@ import {
   validateCustomFieldFormulaDependencies,
   type CustomFieldDefinition,
 } from '../domain/custom-field'
-import { setTaskDueDate, setTaskStartDate, type Task } from '../domain/task'
+import {
+  setTaskDueDate,
+  setTaskRecurrence,
+  setTaskStartDate,
+  type Task,
+  type TaskRecurrenceRule,
+} from '../domain/task'
 import { emptyWorkspace, type WorkspaceState } from '../domain/workspace'
 
 const STORAGE_KEY = 'workspace-app.workspace'
@@ -478,6 +484,21 @@ function isValidTask(value: unknown): boolean {
 
     try {
       setTaskDueDate(value as unknown as Task, value.dueDate)
+    } catch {
+      return false
+    }
+  }
+
+  if (value.recurrence !== undefined) {
+    if (!isRecord(value.recurrence)) {
+      return false
+    }
+
+    try {
+      setTaskRecurrence(
+        value as unknown as Task,
+        value.recurrence as unknown as TaskRecurrenceRule,
+      )
     } catch {
       return false
     }

@@ -3,6 +3,12 @@ import type { CustomFieldValue } from './custom-field'
 
 export type TaskStatus = 'todo' | 'doing' | 'done'
 export type TaskPriority = 'low' | 'normal' | 'high'
+export type TaskRecurrenceUnit = 'day' | 'week' | 'month'
+
+export interface TaskRecurrenceRule {
+  unit: TaskRecurrenceUnit
+  interval: number
+}
 
 export interface Task {
   id: string
@@ -14,6 +20,7 @@ export interface Task {
   archivedAt?: string
   startDate?: string
   dueDate?: string
+  recurrence?: TaskRecurrenceRule
   description?: string
   listId?: string
   parentTaskId?: string
@@ -175,6 +182,7 @@ export function setTaskDueDate(
   if (dueDate === null) {
     const next = { ...task }
     delete next.dueDate
+    delete next.recurrence
     return next
   }
 
@@ -194,6 +202,151 @@ export function setTaskDueDate(
   }
 }
 
+
+function assertTaskRecurrenceRule(
+  recurrence: TaskRecurrenceRule,
+): void {
+  if (
+    recurrence.unit !== 'day' &&
+    recurrence.unit !== 'week' &&
+    recurrence.unit !== 'month'
+  ) {
+    throw new Error('Task recurrence unit is invalid')
+  }
+
+  if (!Number.isInteger(recurrence.interval) || recurrence.interval <= 0) {
+    throw new Error('Task recurrence interval must be a positive integer')
+  }
+}
+
+function formatCalendarDate(date: Date): string {
+  return [
+    String(date.getUTCFullYear()).padStart(4, '0'),
+    String(date.getUTCMonth() + 1).padStart(2, '0'),
+    String(date.getUTCDate()).padStart(2, '0'),
+  ].join('-')
+}
+
+export function advanceTaskCalendarDate(
+  value: string,
+  recurrence: TaskRecurrenceRule,
+): string {
+  if (!isCalendarDate(value)) {
+    throw new Error('Task date must use YYYY-MM-DD')
+  }
+
+  assertTaskRecurrenceRule(recurrence)
+
+  const [yearText, monthText, dayText] = value.split('-')
+  const year = Number(yearText)
+  const monthIndex = Number(monthText) - 1
+  const day = Number(dayText)
+
+  if (recurrence.unit === 'month') {
+    const totalMonths = monthIndex + recurrence.interval
+    const nextYear = year + Math.floor(totalMonths / 12)
+    const nextMonthIndex = totalMonths % 12
+    const lastDay = new Date(
+      Date.UTC(nextYear, nextMonthIndex + 1, 0),
+    ).getUTCDate()
+
+    return formatCalendarDate(
+      new Date(Date.UTC(nextYear, nextMonthIndex, Math.min(day, lastDay))),
+    )
+  }
+
+  const date = new Date(Date.UTC(year, monthIndex, day))
+  const days = recurrence.unit === 'week'
+    ? recurrence.interval * 7
+    : recurrence.interval
+  date.setUTCDate(date.getUTCDate() + days)
+  return formatCalendarDate(date)
+}
+
+export function setTaskRecurrence(
+  task: Task,
+  recurrence: TaskRecurrenceRule | null,
+): Task {
+  if (recurrence === null) {
+    const next = { ...task }
+    delete next.recurrence
+    return next
+  }
+
+  if (task.dueDate === undefined || !isCalendarDate(task.dueDate)) {
+    throw new Error('Recurring task requires a valid due date')
+  }
+
+  assertTaskRecurrenceRule(recurrence)
+
+  return {
+    ...task,
+    recurrence: { ...recurrence },
+  }
+}
+
+export interface CreateNextRecurringTaskOccurrenceInput {
+  id: string
+  now: string
+}
+
+export function createNextRecurringTaskOccurrence(
+  task: Task,
+  input: CreateNextRecurringTaskOccurrenceInput,
+): Task {
+  if (task.status !== 'done') {
+    throw new Error(
+      'Recurring Task must be completed before creating the next occurrence',
+    )
+  }
+
+  if (task.recurrence === undefined) {
+    throw new Error('Task does not have a recurrence rule')
+  }
+
+  if (task.dueDate === undefined || !isCalendarDate(task.dueDate)) {
+    throw new Error('Recurring task requires a valid due date')
+  }
+
+  const recurrence = { ...task.recurrence }
+  assertTaskRecurrenceRule(recurrence)
+
+  const next: Task = {
+    ...task,
+    id: input.id,
+    status: 'todo',
+    createdAt: input.now,
+    dueDate: advanceTaskCalendarDate(task.dueDate, recurrence),
+    recurrence,
+  }
+
+  delete next.archivedAt
+
+  if (task.startDate !== undefined) {
+    next.startDate = advanceTaskCalendarDate(task.startDate, recurrence)
+  }
+
+  if (task.checklist !== undefined) {
+    next.checklist = task.checklist.map((item) => ({
+      ...item,
+      completed: false,
+    }))
+  }
+
+  if (task.tagIds !== undefined) {
+    next.tagIds = [...task.tagIds]
+  }
+
+  if (task.assigneeIds !== undefined) {
+    next.assigneeIds = [...task.assigneeIds]
+  }
+
+  if (task.customFieldValues !== undefined) {
+    next.customFieldValues = { ...task.customFieldValues }
+  }
+
+  return next
+}
 
 export function setTaskDescription(
   task: Task,

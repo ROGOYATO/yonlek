@@ -2839,3 +2839,64 @@ authoritative. The runner must observe every intended RED before its GREEN
 patch, pass each focused GREEN, zero-warning lint, the normal full check, LF and
 diff audits, exact changed-path/content gates, remote-tip checks, commit, and
 non-force push.
+
+
+## TDD 246 - Recurrence rule and calendar advancement
+
+**RED**
+
+Add focused Task-domain coverage requiring optional daily/weekly/monthly recurrence with a positive interval, due-date requirement, clear semantics, and calendar-safe date advancement including month-end clamping.
+
+**GREEN**
+
+Add Task recurrence metadata, configure/clear helper, and exact calendar advancement without millisecond-duration month arithmetic.
+
+## TDD 247 - Next recurring occurrence
+
+**RED**
+
+Add pure-domain coverage requiring a completed recurring Task to produce one fresh `todo` occurrence that preserves Task-owned data, advances start/due dates, resets Checklist completion, and does not carry archive state.
+
+**GREEN**
+
+Add pure next-occurrence creation with a fresh Task ID/creation time, copied recurrence and Task-owned values, month-safe date advancement, and reset Checklist completion.
+
+## TDD 248 - Atomic recurring completion
+
+**RED**
+
+Add workspace-command coverage requiring persisted recurrence configuration plus one-dispatch completion-and-next-occurrence creation, no duplicate generation when the completed source is set to `done` again, unchanged non-recurring completion, and fail-before-dispatch behavior for invalid recurrence state.
+
+**GREEN**
+
+Add the recurrence command/action and a dedicated atomic recurring-completion action on the singular Task status path. Bulk status behavior remains unchanged.
+
+## TDD 249 - Recurrence storage version 1
+
+**RED**
+
+Add storage coverage requiring recurrence round-trip, legacy Task compatibility, and rejection of malformed rules or recurrence without a valid due date.
+
+**GREEN**
+
+Keep workspace storage at version 1 and validate optional Task recurrence through the same domain rule used by live mutations.
+
+## TDD 250 - Recurrence UI and BrowserApp persistence
+
+**RED**
+
+Add jsdom BrowserApp coverage requiring recurrence unit/interval controls, due-date validation, immediate rendering of completed plus next occurrence, and persistence across reload.
+
+**GREEN**
+
+Wire recurrence through WorkspaceRoot and render `No recurrence`, Daily, Weekly, Monthly, plus positive interval controls. Surface due-date errors through the existing App alert path and persist generated occurrences through the normal workspace store.
+
+## Prepared verification target after TDD 250
+
+This batch starts from confirmed `main` at `56e52ea4835aedeb459dcfa4df7afdf3d1e74efc`. The runner captures the live `HEAD^{tree}` directly after checking HEAD, parent, origin, remote tip, clean working tree, and empty index. Five focused RED files are prepared. If live inventory is otherwise unchanged, the final suite is expected to contain 458 tests across 130 test files; live output remains authoritative. The runner must observe every intended RED before its GREEN patch, pass each focused GREEN, zero-warning lint, the normal full check, LF and diff audits, exact changed-path/content gates, remote-tip checks, commit, and non-force push.
+
+## TDD 246-250 live final-check correction
+
+The first live run completed all five intended RED to GREEN cycles, zero-warning lint, and 458 tests across 130 test files. The final production build then caught TypeScript literal widening in the `task/recurringCompleted` reducer branch: the inline `status: 'done'` object was inferred as `string` inside the mapped Task array.
+
+Resume r1 narrows that unchanged runtime literal with `as const`. No recurrence behavior, test, timeout, worker setting, or storage contract changes. The resume reruns focused recurrence coverage, the production build, zero-warning lint, and the full check before the original commit and non-force push gates.

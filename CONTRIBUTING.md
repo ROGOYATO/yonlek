@@ -1190,3 +1190,7 @@ path.
   succeeds.
 - Bulk delete, restore, moves, dates, Tags, People, and Custom Fields need their
   own tested slices before they are added.
+
+## Recurring Task integrity
+
+Recurring Task rules are Task-owned optional metadata with unit `day`, `week`, or `month` and a positive integer interval. A recurring Task must have a valid due date. Clearing that due date must clear recurrence in the same Task update. Completion-driven recurrence must update the completed source and append exactly one next occurrence in one workspace dispatch. The source occurrence is retained as immutable history; the next occurrence gets a fresh Task ID/creation time, resets to `todo`, advances dates with calendar arithmetic, and resets Checklist completion. Do not generate recurring subtrees or relationship edges implicitly.

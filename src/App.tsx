@@ -40,7 +40,12 @@ import {
   type TaskViewMode,
   type ViewPreferences,
 } from './domain/view-preferences'
-import type { TaskPriority, TaskStatus } from './domain/task'
+import type {
+  TaskPriority,
+  TaskRecurrenceRule,
+  TaskRecurrenceUnit,
+  TaskStatus,
+} from './domain/task'
 import {
   evaluateCustomFieldFormula,
   type CustomFieldDefinition,
@@ -109,6 +114,7 @@ export interface AppProps {
   onDeleteTask?: (taskId: string) => void
   onMoveTask?: (taskId: string, direction: MoveDirection) => void
   onChangeTaskStatus?: (taskId: string, status: TaskStatus) => void
+  onChangeTaskRecurrence?: (taskId: string, recurrence: TaskRecurrenceRule | null) => void
   onChangeTasksStatus?: (taskIds: string[], status: TaskStatus) => void
   onChangeTaskPriority?: (taskId: string, priority: TaskPriority) => void
   onChangeTasksPriority?: (taskIds: string[], priority: TaskPriority) => void
@@ -183,6 +189,7 @@ export function App({
   onDeleteTask,
   onMoveTask,
   onChangeTaskStatus,
+  onChangeTaskRecurrence,
   onChangeTasksStatus,
   onChangeTaskPriority,
   onChangeTasksPriority,
@@ -3228,6 +3235,68 @@ export function App({
                                 )
                               }
                             />
+                          </>
+                        ) : null}
+
+                        {onChangeTaskRecurrence ? (
+                          <>
+                            <label htmlFor={`task-recurrence-${task.id}`}>
+                              Recurrence for {task.title}
+                            </label>
+                            <select
+                              id={`task-recurrence-${task.id}`}
+                              value={task.recurrence?.unit ?? ''}
+                              onChange={(event) => {
+                                try {
+                                  const unit = event.target.value as
+                                    | TaskRecurrenceUnit
+                                    | ''
+                                  onChangeTaskRecurrence(
+                                    task.id,
+                                    unit === ''
+                                      ? null
+                                      : {
+                                          unit,
+                                          interval: task.recurrence?.interval ?? 1,
+                                        },
+                                  )
+                                  setError(null)
+                                } catch (caught) {
+                                  setError(errorMessage(caught))
+                                }
+                              }}
+                            >
+                              <option value="">No recurrence</option>
+                              <option value="day">Daily</option>
+                              <option value="week">Weekly</option>
+                              <option value="month">Monthly</option>
+                            </select>
+
+                            {task.recurrence ? (
+                              <>
+                                <label htmlFor={`task-recurrence-interval-${task.id}`}>
+                                  Recurrence interval for {task.title}
+                                </label>
+                                <input
+                                  id={`task-recurrence-interval-${task.id}`}
+                                  type="number"
+                                  min="1"
+                                  step="1"
+                                  value={task.recurrence.interval}
+                                  onChange={(event) => {
+                                    try {
+                                      onChangeTaskRecurrence(task.id, {
+                                        unit: task.recurrence!.unit,
+                                        interval: Number(event.target.value),
+                                      })
+                                      setError(null)
+                                    } catch (caught) {
+                                      setError(errorMessage(caught))
+                                    }
+                                  }}
+                                />
+                              </>
+                            ) : null}
                           </>
                         ) : null}
 

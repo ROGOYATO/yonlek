@@ -45,9 +45,11 @@ import {
   setTaskDescription,
   setTaskList,
   setTaskDueDate,
+  setTaskRecurrence,
   setTaskStartDate,
   type Task,
   type TaskPriority,
+  type TaskRecurrenceRule,
   type TaskStatus,
   type TaskTemplate,
 } from './task'
@@ -116,6 +118,8 @@ export type WorkspaceAction =
   | { type: 'task/archivedBulk'; taskIds: string[]; archivedAt: string }
   | { type: 'task/restored'; taskId: string }
   | { type: 'task/statusChanged'; taskId: string; status: TaskStatus }
+  | { type: 'task/recurringCompleted'; taskId: string; occurrence: Task }
+  | { type: 'task/recurrenceChanged'; taskId: string; recurrence: TaskRecurrenceRule | null }
   | { type: 'task/statusChangedBulk'; taskIds: string[]; status: TaskStatus }
   | { type: 'task/titleChanged'; taskId: string; title: string }
   | { type: 'task/priorityChanged'; taskId: string; priority: TaskPriority }
@@ -962,6 +966,27 @@ export function workspaceReducer(
         tasks: state.tasks.map((task) =>
           task.id === action.taskId
             ? { ...task, status: action.status }
+            : task,
+        ),
+      }
+
+    case 'task/recurringCompleted':
+      return {
+        ...state,
+        tasks: [
+          ...state.tasks.map((task) =>
+            task.id === action.taskId ? { ...task, status: 'done' as const } : task,
+          ),
+          action.occurrence,
+        ],
+      }
+
+    case 'task/recurrenceChanged':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? setTaskRecurrence(task, action.recurrence)
             : task,
         ),
       }
