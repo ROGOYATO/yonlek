@@ -48,6 +48,9 @@ export interface AppProps {
   onCreateCustomField?: (name: string, type: CustomFieldType) => void
   onRenameCustomField?: (fieldId: string, name: string) => void
   onDeleteCustomField?: (fieldId: string) => void
+  onAddCustomFieldOption?: (fieldId: string, name: string) => void
+  onRenameCustomFieldOption?: (fieldId: string, optionId: string, name: string) => void
+  onDeleteCustomFieldOption?: (fieldId: string, optionId: string) => void
   onChangeTaskCustomFieldValue?: (taskId: string, fieldId: string, value: CustomFieldValue | null) => void
   onCreatePerson?: (name: string) => void
   onRenamePerson?: (personId: string, name: string) => void
@@ -117,6 +120,9 @@ export function App({
   onCreateCustomField,
   onRenameCustomField,
   onDeleteCustomField,
+  onAddCustomFieldOption,
+  onRenameCustomFieldOption,
+  onDeleteCustomFieldOption,
   onChangeTaskCustomFieldValue,
   onCreatePerson,
   onRenamePerson,
@@ -183,6 +189,8 @@ export function App({
   const [customFieldName, setCustomFieldName] = useState('')
   const [customFieldType, setCustomFieldType] = useState<CustomFieldType>('text')
   const [customFieldEdits, setCustomFieldEdits] = useState<Record<string, string>>({})
+  const [customFieldOptionNames, setCustomFieldOptionNames] = useState<Record<string, string>>({})
+  const [customFieldOptionEdits, setCustomFieldOptionEdits] = useState<Record<string, string>>({})
   const [customFieldValueDrafts, setCustomFieldValueDrafts] = useState<
     Record<string, string>
   >({})
@@ -956,6 +964,7 @@ export function App({
               <option value="text">Text</option>
               <option value="number">Number</option>
               <option value="checkbox">Checkbox</option>
+              <option value="select">Select</option>
             </select>
             <button type="submit">Add custom field</button>
           </form>
@@ -1008,6 +1017,127 @@ export function App({
                           Save custom field name for {field.name}
                         </button>
                       </form>
+                    ) : null}
+                    {field.type === 'select' ? (
+                      <>
+                        {onAddCustomFieldOption ? (
+                          <form
+                            onSubmit={(event) => {
+                              event.preventDefault()
+
+                              try {
+                                onAddCustomFieldOption(
+                                  field.id,
+                                  customFieldOptionNames[field.id] ?? '',
+                                )
+                                setCustomFieldOptionNames((current) => ({
+                                  ...current,
+                                  [field.id]: '',
+                                }))
+                                setError(null)
+                              } catch (caught) {
+                                setError(errorMessage(caught))
+                              }
+                            }}
+                          >
+                            <label
+                              htmlFor={`custom-field-option-new-${field.id}`}
+                            >
+                              Option name for custom field {field.name}
+                            </label>
+                            <input
+                              id={`custom-field-option-new-${field.id}`}
+                              value={customFieldOptionNames[field.id] ?? ''}
+                              onChange={(event) =>
+                                setCustomFieldOptionNames((current) => ({
+                                  ...current,
+                                  [field.id]: event.target.value,
+                                }))
+                              }
+                            />
+                            <button type="submit">
+                              Add option to {field.name}
+                            </button>
+                          </form>
+                        ) : null}
+                        {(field.options ?? []).length === 0 ? (
+                          <p>No options yet.</p>
+                        ) : (
+                          <ul>
+                            {(field.options ?? []).map((option) => {
+                              const optionEditKey = `${field.id}:${option.id}`
+                              const editedOptionName =
+                                customFieldOptionEdits[optionEditKey] ??
+                                option.name
+
+                              return (
+                                <li key={option.id}>
+                                  <span>{option.name}</span>
+                                  {onRenameCustomFieldOption ? (
+                                    <form
+                                      onSubmit={(event) => {
+                                        event.preventDefault()
+
+                                        try {
+                                          onRenameCustomFieldOption(
+                                            field.id,
+                                            option.id,
+                                            editedOptionName,
+                                          )
+                                          setCustomFieldOptionEdits(
+                                            (current) => {
+                                              const next = { ...current }
+                                              delete next[optionEditKey]
+                                              return next
+                                            },
+                                          )
+                                          setError(null)
+                                        } catch (caught) {
+                                          setError(errorMessage(caught))
+                                        }
+                                      }}
+                                    >
+                                      <label
+                                        htmlFor={`custom-field-option-edit-${field.id}-${option.id}`}
+                                      >
+                                        Name for option {option.name} in custom field {field.name}
+                                      </label>
+                                      <input
+                                        id={`custom-field-option-edit-${field.id}-${option.id}`}
+                                        value={editedOptionName}
+                                        onChange={(event) =>
+                                          setCustomFieldOptionEdits(
+                                            (current) => ({
+                                              ...current,
+                                              [optionEditKey]: event.target.value,
+                                            }),
+                                          )
+                                        }
+                                      />
+                                      <button type="submit">
+                                        Save option name {option.name} in {field.name}
+                                      </button>
+                                    </form>
+                                  ) : null}
+                                  {onDeleteCustomFieldOption ? (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        onDeleteCustomFieldOption(
+                                          field.id,
+                                          option.id,
+                                        )
+                                      }
+                                    >
+                                      Delete option {option.name} from {field.name}
+                                    </button>
+                                  ) : null}
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        )}
+                      </>
                     ) : null}
                     {onDeleteCustomField ? (
                       <button
@@ -1991,6 +2121,37 @@ export function App({
                               const draftKey = `${task.id}:${field.id}`
                               const draftValue =
                                 customFieldValueDrafts[draftKey]
+
+                              if (field.type === 'select') {
+                                return (
+                                  <label key={field.id}>
+                                    Custom field {field.name} for {task.title}
+                                    <select
+                                      value={
+                                        typeof currentValue === 'string'
+                                          ? currentValue
+                                          : ''
+                                      }
+                                      onChange={(event) =>
+                                        onChangeTaskCustomFieldValue(
+                                          task.id,
+                                          field.id,
+                                          event.target.value === ''
+                                            ? null
+                                            : event.target.value,
+                                        )
+                                      }
+                                    >
+                                      <option value="">No selection</option>
+                                      {(field.options ?? []).map((option) => (
+                                        <option key={option.id} value={option.id}>
+                                          {option.name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </label>
+                                )
+                              }
 
                               if (field.type === 'checkbox') {
                                 return (

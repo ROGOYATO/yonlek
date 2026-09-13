@@ -2449,3 +2449,86 @@ authoritative. The runner must observe every intended RED before its GREEN patch
 pass each focused GREEN, zero-warning lint, the normal full check, LF and diff
 audits, exact changed-path/content gates, remote-tip checks, commit, and
 non-force push.
+
+## TDD 223 - Select Custom Field option domain
+
+**RED**
+
+Add focused domain coverage for Select field creation and immutable option
+add/rename/delete behavior, including blank-name, duplicate-ID, non-Select, and
+missing-option rejection.
+
+**GREEN**
+
+Extend `CustomFieldType` with `select`, create Select fields with an ordered empty
+option list, and add pure option mutation helpers. Option labels are trimmed and
+option IDs remain stable across rename.
+
+## TDD 224 - Select option workspace commands and cleanup
+
+**RED**
+
+Add focused command/reducer coverage for option add, rename, and delete. Deleting
+an option must clear only Task values that reference that option while preserving
+other values. Missing fields, non-Select fields, and missing options must fail.
+
+**GREEN**
+
+Add Select option workspace commands and actions. New option IDs come from the
+existing runtime ID source. Option deletion reuses the reducer path to clean only
+matching Task references.
+
+## TDD 225 - Task Select value integrity
+
+**RED**
+
+Add focused workspace coverage requiring a Task Select value to reference one of
+the field's current option IDs. `null` clears the value and existing Text, Number,
+and Checkbox normalization remains unchanged.
+
+**GREEN**
+
+Normalize Task values against the full Custom Field definition. Select accepts an
+owned option ID and rejects unknown IDs; existing scalar field behavior stays on
+the same normalization path.
+
+## TDD 226 - Select persistence validation
+
+**RED**
+
+Add version-1 storage coverage for Select definition/value round-trip, legacy v1
+compatibility, malformed or duplicate options, Select metadata on non-Select
+fields, and Task values that reference unknown options.
+
+**GREEN**
+
+Keep workspace storage at version 1 and validate Select option collections and
+Task option-ID references strictly. Existing v1 workspaces without Select fields
+remain valid.
+
+## TDD 227 - Select Custom Field UI
+
+**RED**
+
+Add focused WorkspaceRoot coverage for creating a Select field, adding options,
+selecting an option on a Task, renaming that option without losing the selection,
+and deleting the selected option.
+
+**GREEN**
+
+Expose Select in the Custom Field type chooser, add option add/rename/delete
+controls, and render Task Select fields as labeled dropdowns whose values are
+stable option IDs. Deleting the selected option clears the Task value through the
+workspace cleanup path.
+
+## Prepared verification target after TDD 227
+
+This batch starts from confirmed `main` at
+`aa0717f8c21a7d66b671cdf796fced95969ce18c`. The authoritative live tree is
+intentionally captured by the runner from that commit instead of being hard-coded
+from an offline reconstruction. Five focused RED files are prepared. If the live
+inventory is otherwise unchanged, the final suite is expected to contain 400
+tests across 107 test files; live output remains authoritative. The runner must
+observe every intended RED before its GREEN patch, pass each focused GREEN,
+zero-warning lint, the normal full check, LF and diff audits, exact changed-path
+and content gates, remote-tip checks, commit, and non-force push.

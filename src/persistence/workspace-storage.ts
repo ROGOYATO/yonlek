@@ -298,17 +298,49 @@ function isValidTaskRelationship(value: unknown): boolean {
 
 
 function isValidCustomField(value: unknown): boolean {
-  return (
-    isRecord(value) &&
-    typeof value.id === 'string' &&
-    value.id.trim().length > 0 &&
-    typeof value.name === 'string' &&
-    value.name.trim().length > 0 &&
-    (value.type === 'text' ||
-      value.type === 'number' ||
-      value.type === 'checkbox') &&
-    isIsoInstant(value.createdAt)
+  if (
+    !isRecord(value) ||
+    typeof value.id !== 'string' ||
+    value.id.trim().length === 0 ||
+    typeof value.name !== 'string' ||
+    value.name.trim().length === 0 ||
+    (value.type !== 'text' &&
+      value.type !== 'number' &&
+      value.type !== 'checkbox' &&
+      value.type !== 'select') ||
+    !isIsoInstant(value.createdAt)
+  ) {
+    return false
+  }
+
+  if (value.type !== 'select') {
+    return value.options === undefined
+  }
+
+  if (!Array.isArray(value.options)) {
+    return false
+  }
+
+  const options = value.options as unknown[]
+
+  if (
+    !options.every(
+      (option) =>
+        isRecord(option) &&
+        typeof option.id === 'string' &&
+        option.id.trim().length > 0 &&
+        typeof option.name === 'string' &&
+        option.name.trim().length > 0,
+    )
+  ) {
+    return false
+  }
+
+  const optionIds = new Set(
+    options.map((option) => (option as { id: string }).id),
   )
+
+  return optionIds.size === options.length
 }
 
 
@@ -536,7 +568,8 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
       (field as { id: string }).id,
       field as {
         id: string
-        type: 'text' | 'number' | 'checkbox'
+        type: 'text' | 'number' | 'checkbox' | 'select'
+        options?: Array<{ id: string; name: string }>
       },
     ]),
   )
@@ -712,7 +745,14 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
           )
         }
 
-        return typeof value !== 'boolean'
+        if (field.type === 'checkbox') {
+          return typeof value !== 'boolean'
+        }
+
+        return (
+          typeof value !== 'string' ||
+          !(field.options ?? []).some((option) => option.id === value)
+        )
       })
     })
   ) {

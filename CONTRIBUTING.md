@@ -688,11 +688,12 @@ Rules:
 Custom Field definitions live at workspace level. Tasks reference definitions
 through keys in optional `customFieldValues`.
 
-Initial supported types:
+Supported types:
 
 - `text`: string
 - `number`: finite number
 - `checkbox`: boolean
+- `select`: one stable option ID owned by that field
 
 Rules:
 
@@ -702,6 +703,13 @@ Rules:
 - Every Task value key must reference an existing definition.
 - Runtime value type must match the definition type.
 - Text values are normalized by trimming.
+- Select definitions own an ordered option list. Option IDs and non-blank labels
+  are required, and option IDs are unique inside one field.
+- Task Select values store option IDs, never display labels. Renaming an option
+  preserves existing Task selections.
+- Deleting a Select option removes only Task values for that field that reference
+  the deleted option. Other Custom Field values stay unchanged.
+- Non-Select definitions must not carry Select option metadata.
 - Clearing the final Task value removes `customFieldValues`.
 - Deleting a definition removes that value key from every Task.
 - Deleting the final definition removes `customFields`.

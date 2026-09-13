@@ -7,9 +7,13 @@ import {
 import { renameTaskList, type TaskList } from './task-list'
 import type { TaskRelationship } from './task-relationship'
 import {
-  normalizeCustomFieldValue,
+  addCustomFieldOption,
+  deleteCustomFieldOption,
+  normalizeCustomFieldValueForDefinition,
   renameCustomField,
+  renameCustomFieldOption,
   type CustomFieldDefinition,
+  type CustomFieldOption,
   type CustomFieldValue,
 } from './custom-field'
 import { renamePerson, type Person } from './person'
@@ -70,6 +74,9 @@ export type WorkspaceAction =
   | { type: 'customField/added'; field: CustomFieldDefinition }
   | { type: 'customField/deleted'; fieldId: string }
   | { type: 'customField/nameChanged'; fieldId: string; name: string }
+  | { type: 'customField/optionAdded'; fieldId: string; option: CustomFieldOption }
+  | { type: 'customField/optionNameChanged'; fieldId: string; optionId: string; name: string }
+  | { type: 'customField/optionDeleted'; fieldId: string; optionId: string }
   | { type: 'person/added'; person: Person }
   | { type: 'person/deleted'; personId: string }
   | { type: 'person/nameChanged'; personId: string; name: string }
@@ -240,6 +247,72 @@ export function workspaceReducer(
             : field,
         ),
       }
+
+    case 'customField/optionAdded': {
+      if (!(state.customFields ?? []).some((field) => field.id === action.fieldId)) {
+        throw new Error('Cannot change options on a missing custom field')
+      }
+
+      return {
+        ...state,
+        customFields: (state.customFields ?? []).map((field) =>
+          field.id === action.fieldId
+            ? addCustomFieldOption(field, action.option)
+            : field,
+        ),
+      }
+    }
+
+    case 'customField/optionNameChanged': {
+      if (!(state.customFields ?? []).some((field) => field.id === action.fieldId)) {
+        throw new Error('Cannot change options on a missing custom field')
+      }
+
+      return {
+        ...state,
+        customFields: (state.customFields ?? []).map((field) =>
+          field.id === action.fieldId
+            ? renameCustomFieldOption(field, action.optionId, action.name)
+            : field,
+        ),
+      }
+    }
+
+    case 'customField/optionDeleted': {
+      const field = (state.customFields ?? []).find(
+        (candidate) => candidate.id === action.fieldId,
+      )
+
+      if (!field) {
+        throw new Error('Cannot change options on a missing custom field')
+      }
+
+      const updatedField = deleteCustomFieldOption(field, action.optionId)
+
+      return {
+        ...state,
+        customFields: (state.customFields ?? []).map((candidate) =>
+          candidate.id === action.fieldId ? updatedField : candidate,
+        ),
+        tasks: state.tasks.map((task) => {
+          if (task.customFieldValues?.[action.fieldId] !== action.optionId) {
+            return task
+          }
+
+          const customFieldValues = { ...task.customFieldValues }
+          delete customFieldValues[action.fieldId]
+          const updatedTask = { ...task }
+
+          if (Object.keys(customFieldValues).length === 0) {
+            delete updatedTask.customFieldValues
+          } else {
+            updatedTask.customFieldValues = customFieldValues
+          }
+
+          return updatedTask
+        }),
+      }
+    }
 
     case 'customField/deleted': {
       const customFields = (state.customFields ?? []).filter(
@@ -1000,7 +1073,7 @@ export function workspaceReducer(
             delete customFieldValues[action.fieldId]
           } else {
             customFieldValues[action.fieldId] =
-              normalizeCustomFieldValue(field.type, action.value)
+              normalizeCustomFieldValueForDefinition(field, action.value)
           }
 
           const next = { ...task }

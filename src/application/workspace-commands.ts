@@ -1,6 +1,7 @@
 import { createChecklistItem } from '../domain/checklist'
 import {
   createCustomField,
+  type CustomFieldOption,
   type CustomFieldType,
   type CustomFieldValue,
 } from '../domain/custom-field'
@@ -40,6 +41,9 @@ export interface WorkspaceCommands {
   addCustomField(name: string, type: CustomFieldType): ReturnType<typeof createCustomField>
   renameCustomField(fieldId: string, name: string): void
   deleteCustomField(fieldId: string): void
+  addCustomFieldOption(fieldId: string, name: string): CustomFieldOption
+  renameCustomFieldOption(fieldId: string, optionId: string, name: string): void
+  deleteCustomFieldOption(fieldId: string, optionId: string): void
   changeTaskCustomFieldValue(taskId: string, fieldId: string, value: CustomFieldValue | null): void
   addPerson(name: string): ReturnType<typeof createPerson>
   renamePerson(personId: string, name: string): void
@@ -155,6 +159,46 @@ export function createWorkspaceCommands(
       store.dispatch({
         type: 'customField/deleted',
         fieldId,
+      })
+    },
+
+    addCustomFieldOption(fieldId, name) {
+      const option: CustomFieldOption = {
+        id: runtime.nextId().trim(),
+        name: name.trim(),
+      }
+
+      if (!option.id) {
+        throw new Error('Custom field option id is required')
+      }
+
+      if (!option.name) {
+        throw new Error('Custom field option name is required')
+      }
+
+      store.dispatch({
+        type: 'customField/optionAdded',
+        fieldId,
+        option,
+      })
+
+      return option
+    },
+
+    renameCustomFieldOption(fieldId, optionId, name) {
+      store.dispatch({
+        type: 'customField/optionNameChanged',
+        fieldId,
+        optionId,
+        name,
+      })
+    },
+
+    deleteCustomFieldOption(fieldId, optionId) {
+      store.dispatch({
+        type: 'customField/optionDeleted',
+        fieldId,
+        optionId,
       })
     },
 

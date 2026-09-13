@@ -184,11 +184,16 @@ not imply authentication, email identity, permissions, or notifications.
 - [x] Set and clear Task values
 - [x] Persistence type validation
 - [x] Cleanup Task values when a definition is deleted
-- [ ] Select fields
+- [x] Select fields
 - [ ] Date fields
 - [ ] Formula fields
 - [ ] Field type migration
 - [ ] Custom Field filtering and sorting
+
+Select fields keep ordered workspace-level options with stable option IDs. Task
+values store the option ID, so renaming an option changes its label without
+rewriting Task values. Deleting an option clears only Task values that reference
+that option.
 
 ### Relationships
 

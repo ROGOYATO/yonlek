@@ -1,11 +1,17 @@
-export type CustomFieldType = 'text' | 'number' | 'checkbox'
+export type CustomFieldType = 'text' | 'number' | 'checkbox' | 'select'
 export type CustomFieldValue = string | number | boolean
+
+export interface CustomFieldOption {
+  id: string
+  name: string
+}
 
 export interface CustomFieldDefinition {
   id: string
   name: string
   type: CustomFieldType
   createdAt: string
+  options?: CustomFieldOption[]
 }
 
 export interface CreateCustomFieldInput {
@@ -24,12 +30,18 @@ export function createCustomField(
     throw new Error('Custom field name is required')
   }
 
-  return {
+  const field: CustomFieldDefinition = {
     id: input.id,
     name,
     type: input.type,
     createdAt: input.now,
   }
+
+  if (input.type === 'select') {
+    field.options = []
+  }
+
+  return field
 }
 
 export function renameCustomField(
@@ -46,6 +58,118 @@ export function renameCustomField(
     ...field,
     name,
   }
+}
+
+function requireSelectField(
+  field: CustomFieldDefinition,
+): asserts field is CustomFieldDefinition & { options: CustomFieldOption[] } {
+  if (field.type !== 'select') {
+    throw new Error('Custom field must be Select')
+  }
+
+  if (!Array.isArray(field.options)) {
+    throw new Error('Select custom field options are required')
+  }
+}
+
+function normalizeOptionId(optionId: string): string {
+  const id = optionId.trim()
+
+  if (!id) {
+    throw new Error('Custom field option id is required')
+  }
+
+  return id
+}
+
+function normalizeOptionName(name: string): string {
+  const normalized = name.trim()
+
+  if (!normalized) {
+    throw new Error('Custom field option name is required')
+  }
+
+  return normalized
+}
+
+export function addCustomFieldOption(
+  field: CustomFieldDefinition,
+  option: CustomFieldOption,
+): CustomFieldDefinition {
+  requireSelectField(field)
+
+  const id = normalizeOptionId(option.id)
+  const name = normalizeOptionName(option.name)
+
+  if (field.options.some((candidate) => candidate.id === id)) {
+    throw new Error('Custom field option id already exists')
+  }
+
+  return {
+    ...field,
+    options: [...field.options, { id, name }],
+  }
+}
+
+export function renameCustomFieldOption(
+  field: CustomFieldDefinition,
+  optionId: string,
+  nextName: string,
+): CustomFieldDefinition {
+  requireSelectField(field)
+
+  const id = normalizeOptionId(optionId)
+  const name = normalizeOptionName(nextName)
+
+  if (!field.options.some((candidate) => candidate.id === id)) {
+    throw new Error('Custom field option not found')
+  }
+
+  return {
+    ...field,
+    options: field.options.map((candidate) =>
+      candidate.id === id ? { ...candidate, name } : candidate,
+    ),
+  }
+}
+
+export function deleteCustomFieldOption(
+  field: CustomFieldDefinition,
+  optionId: string,
+): CustomFieldDefinition {
+  requireSelectField(field)
+
+  const id = normalizeOptionId(optionId)
+
+  if (!field.options.some((candidate) => candidate.id === id)) {
+    throw new Error('Custom field option not found')
+  }
+
+  return {
+    ...field,
+    options: field.options.filter((candidate) => candidate.id !== id),
+  }
+}
+
+export function normalizeCustomFieldValueForDefinition(
+  field: CustomFieldDefinition,
+  value: unknown,
+): CustomFieldValue {
+  if (field.type === 'select') {
+    if (typeof value !== 'string') {
+      throw new Error('Custom field value does not match field type')
+    }
+
+    const optionId = value.trim()
+
+    if (!(field.options ?? []).some((option) => option.id === optionId)) {
+      throw new Error('Custom field option not found')
+    }
+
+    return optionId
+  }
+
+  return normalizeCustomFieldValue(field.type, value)
 }
 
 export function normalizeCustomFieldValue(

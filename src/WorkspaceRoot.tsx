@@ -44,6 +44,15 @@ export function WorkspaceRoot({
       onDeleteCustomField={(fieldId) => {
         commands.deleteCustomField(fieldId)
       }}
+      onAddCustomFieldOption={(fieldId, name) => {
+        commands.addCustomFieldOption(fieldId, name)
+      }}
+      onRenameCustomFieldOption={(fieldId, optionId, name) => {
+        commands.renameCustomFieldOption(fieldId, optionId, name)
+      }}
+      onDeleteCustomFieldOption={(fieldId, optionId) => {
+        commands.deleteCustomFieldOption(fieldId, optionId)
+      }}
       onChangeTaskCustomFieldValue={(taskId, fieldId, value) => {
         commands.changeTaskCustomFieldValue(taskId, fieldId, value)
       }}
