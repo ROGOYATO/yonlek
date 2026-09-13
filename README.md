@@ -8,13 +8,13 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 238-242 is TDD 237.
+The confirmed starting checkpoint for TDD 243-245 is TDD 242.
 
 - branch: `main`
-- behavior commit: `ae6458b` (`TDD 233-237: add Custom Field filtering and sorting`)
+- behavior commit: `4108eab` (`TDD 238-242: add Formula Custom Fields`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 424 passed across 117 files
+- tests: 440 passed across 122 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
@@ -22,8 +22,8 @@ The confirmed starting checkpoint for TDD 238-242 is TDD 237.
 
 This checkpoint includes the core Project/Task model, archive/restore, templates,
 all current Task layouts, per-view filters/sorts, saved filter sets/views, bulk
-actions, Select and Date Custom Fields, and type-aware Custom Field filtering
-and sorting.
+actions, Select, Date, and Formula Custom Fields, and type-aware Custom Field
+filtering and sorting.
 
 ## Current product model
 
@@ -247,7 +247,10 @@ be active at a time. Text filtering is case-insensitive substring matching;
 Number, Checkbox, Select, and Date filtering is exact and type-aware. Custom
 Field sorting is ascending, places missing values last, uses Task creation time
 for ties, and follows option order for Select fields. Stale field references are
-inactive rather than destructive.
+inactive rather than destructive. Field type migration preserves field identity
+but deliberately clears that field's stored Task values instead of guessing a
+conversion. Select targets start with no options and Formula targets start
+unconfigured.
 
 ### Task relationships
 

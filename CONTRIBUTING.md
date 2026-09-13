@@ -747,8 +747,17 @@ Rules:
 - Deleting a definition removes that value key from every Task.
 - Deleting the final definition removes `customFields`.
 - Existing version-1 workspaces without Custom Fields remain valid.
-- Do not silently mutate a definition's type after Tasks hold values; a later
-  type-change feature needs an explicit migration policy and tests.
+- Field type migration preserves the definition ID, name, and `createdAt` and
+  clears every stored Task value for that field. Do not implicitly coerce old
+  values during migration.
+- Migrating to Select creates a fresh empty option list. Migrating to Formula
+  leaves the field unconfigured. Incompatible Select/Formula metadata must not
+  survive migration.
+- If a migrated field remains Number or Formula, existing Formula dependencies
+  that reference it stay intact. If it becomes Text, Checkbox, Select, or Date,
+  clear direct Formula configurations that reference it. Downstream Formula
+  definitions remain present and evaluate unavailable until reconfigured.
+- A same-type migration is a non-destructive no-op.
 
 ## Git push gate
 

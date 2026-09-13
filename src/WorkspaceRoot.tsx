@@ -41,6 +41,9 @@ export function WorkspaceRoot({
       onRenameCustomField={(fieldId, name) => {
         commands.renameCustomField(fieldId, name)
       }}
+      onChangeCustomFieldType={(fieldId, nextType) => {
+        commands.changeCustomFieldType(fieldId, nextType)
+      }}
       onDeleteCustomField={(fieldId) => {
         commands.deleteCustomField(fieldId)
       }}

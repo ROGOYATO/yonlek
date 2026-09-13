@@ -41,6 +41,7 @@ export interface WorkspaceCommands {
   deleteTaskRelationship(relationshipId: string): void
   addCustomField(name: string, type: CustomFieldType): ReturnType<typeof createCustomField>
   renameCustomField(fieldId: string, name: string): void
+  changeCustomFieldType(fieldId: string, nextType: CustomFieldType): void
   deleteCustomField(fieldId: string): void
   configureCustomFieldFormula(fieldId: string, formula: CustomFieldFormula | null): void
   addCustomFieldOption(fieldId: string, name: string): CustomFieldOption
@@ -154,6 +155,26 @@ export function createWorkspaceCommands(
         type: 'customField/nameChanged',
         fieldId,
         name,
+      })
+    },
+
+    changeCustomFieldType(fieldId, nextType) {
+      const field = store.getState().customFields?.find(
+        (candidate) => candidate.id === fieldId,
+      )
+
+      if (!field) {
+        throw new Error('Cannot change type of a missing custom field')
+      }
+
+      if (field.type === nextType) {
+        return
+      }
+
+      store.dispatch({
+        type: 'customField/typeChanged',
+        fieldId,
+        nextType,
       })
     },
 

@@ -68,6 +68,28 @@ export function renameCustomField(
   }
 }
 
+export function migrateCustomFieldType(
+  field: CustomFieldDefinition,
+  nextType: CustomFieldType,
+): CustomFieldDefinition {
+  if (field.type === nextType) {
+    return field
+  }
+
+  const migrated: CustomFieldDefinition = {
+    id: field.id,
+    name: field.name,
+    type: nextType,
+    createdAt: field.createdAt,
+  }
+
+  if (nextType === 'select') {
+    migrated.options = []
+  }
+
+  return migrated
+}
+
 
 function requireFormulaField(
   field: CustomFieldDefinition,

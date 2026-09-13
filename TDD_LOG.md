@@ -2782,3 +2782,60 @@ authoritative. The runner must observe every intended RED before its GREEN
 patch, pass each focused GREEN, zero-warning lint, the normal full check, LF and
 diff audits, exact changed-path/content gates, remote-tip checks, commit, and
 non-force push.
+
+## TDD 243 - Pure Custom Field type migration
+
+**RED**
+
+Add focused domain coverage requiring explicit type migration to preserve stable
+field identity while replacing incompatible Select/Formula metadata and making
+same-type migration a no-op across all current field types.
+
+**GREEN**
+
+Add `migrateCustomFieldType`. Migration preserves ID, name, and creation time,
+initializes Select with an empty option list, leaves Formula unconfigured, and
+removes metadata that does not belong to the target type.
+
+## TDD 244 - Workspace migration cleanup and Formula integrity
+
+**RED**
+
+Add focused workspace-command coverage requiring one-dispatch migration, Task
+value cleanup, unrelated-value preservation, same-type no-op behavior, missing
+field rejection, and Formula dependency cleanup only when an operand becomes a
+non-numeric field type.
+
+**GREEN**
+
+Add the Custom Field type-change command/action. Clear migrated Task values and
+clear directly incompatible Formula configurations while preserving downstream
+Formula definitions and dependencies that still point to Number/Formula fields.
+
+## TDD 245 - Migration UI and persisted reload
+
+**RED**
+
+Add jsdom BrowserApp coverage requiring an explicit per-field migration control,
+a disabled same-type action, clear wording about Task-value deletion, immediate
+new-type rendering, stale preference inactivity, and persistence across reload.
+
+**GREEN**
+
+Wire the migration command through WorkspaceRoot and App. Render a target-type
+selector plus explicit destructive action, clear obsolete local field drafts
+after migration, and rely on the existing version-1 workspace persistence and
+stale-preference behavior for reload.
+
+## Prepared verification target after TDD 245
+
+This batch starts from confirmed `main` at
+`4108eabc015886a4d8788425382b5909bb877476`. The runner captures the live
+`HEAD^{tree}` directly from Git after checking the expected HEAD, parent, origin,
+remote tip, clean working tree, and empty index. Three focused RED files are
+prepared. If the live inventory is otherwise unchanged, the final suite is
+expected to contain 446 tests across 125 test files; live output remains
+authoritative. The runner must observe every intended RED before its GREEN
+patch, pass each focused GREEN, zero-warning lint, the normal full check, LF and
+diff audits, exact changed-path/content gates, remote-tip checks, commit, and
+non-force push.

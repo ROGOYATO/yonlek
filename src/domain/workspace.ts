@@ -11,6 +11,7 @@ import {
   clearCustomFieldFormula,
   configureCustomFieldFormula,
   deleteCustomFieldOption,
+  migrateCustomFieldType,
   normalizeCustomFieldValueForDefinition,
   renameCustomField,
   renameCustomFieldOption,
@@ -18,6 +19,7 @@ import {
   type CustomFieldDefinition,
   type CustomFieldFormula,
   type CustomFieldOption,
+  type CustomFieldType,
   type CustomFieldValue,
 } from './custom-field'
 import { renamePerson, type Person } from './person'
@@ -78,6 +80,7 @@ export type WorkspaceAction =
   | { type: 'customField/added'; field: CustomFieldDefinition }
   | { type: 'customField/deleted'; fieldId: string }
   | { type: 'customField/nameChanged'; fieldId: string; name: string }
+  | { type: 'customField/typeChanged'; fieldId: string; nextType: CustomFieldType }
   | { type: 'customField/formulaChanged'; fieldId: string; formula: CustomFieldFormula | null }
   | { type: 'customField/optionAdded'; fieldId: string; option: CustomFieldOption }
   | { type: 'customField/optionNameChanged'; fieldId: string; optionId: string; name: string }
@@ -252,6 +255,65 @@ export function workspaceReducer(
             : field,
         ),
       }
+
+    case 'customField/typeChanged': {
+      const target = (state.customFields ?? []).find(
+        (field) => field.id === action.fieldId,
+      )
+
+      if (!target) {
+        throw new Error('Cannot change type of a missing custom field')
+      }
+
+      if (target.type === action.nextType) {
+        return state
+      }
+
+      const migrated = migrateCustomFieldType(target, action.nextType)
+      const remainsFormulaOperand =
+        action.nextType === 'number' || action.nextType === 'formula'
+      const customFields = (state.customFields ?? []).map((field) => {
+        if (field.id === action.fieldId) {
+          return migrated
+        }
+
+        if (
+          remainsFormulaOperand ||
+          field.type !== 'formula' ||
+          field.formula === undefined ||
+          (field.formula.leftFieldId !== action.fieldId &&
+            field.formula.rightFieldId !== action.fieldId)
+        ) {
+          return field
+        }
+
+        return clearCustomFieldFormula(field)
+      })
+
+      validateCustomFieldFormulaDependencies(customFields)
+
+      return {
+        ...state,
+        customFields,
+        tasks: state.tasks.map((task) => {
+          if (task.customFieldValues?.[action.fieldId] === undefined) {
+            return task
+          }
+
+          const customFieldValues = { ...task.customFieldValues }
+          delete customFieldValues[action.fieldId]
+          const updated = { ...task }
+
+          if (Object.keys(customFieldValues).length === 0) {
+            delete updated.customFieldValues
+          } else {
+            updated.customFieldValues = customFieldValues
+          }
+
+          return updated
+        }),
+      }
+    }
 
     case 'customField/formulaChanged': {
       const target = (state.customFields ?? []).find(

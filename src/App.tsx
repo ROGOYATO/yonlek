@@ -57,6 +57,7 @@ export interface AppProps {
   onDeleteTaskRelationship?: (relationshipId: string) => void
   onCreateCustomField?: (name: string, type: CustomFieldType) => void
   onRenameCustomField?: (fieldId: string, name: string) => void
+  onChangeCustomFieldType?: (fieldId: string, nextType: CustomFieldType) => void
   onDeleteCustomField?: (fieldId: string) => void
   onConfigureCustomFieldFormula?: (fieldId: string, formula: CustomFieldFormula | null) => void
   onAddCustomFieldOption?: (fieldId: string, name: string) => void
@@ -130,6 +131,7 @@ export function App({
   onDeleteTaskRelationship,
   onCreateCustomField,
   onRenameCustomField,
+  onChangeCustomFieldType,
   onDeleteCustomField,
   onConfigureCustomFieldFormula,
   onAddCustomFieldOption,
@@ -200,6 +202,9 @@ export function App({
   >({})
   const [customFieldName, setCustomFieldName] = useState('')
   const [customFieldType, setCustomFieldType] = useState<CustomFieldType>('text')
+  const [customFieldTypeMigrations, setCustomFieldTypeMigrations] = useState<
+    Record<string, CustomFieldType>
+  >({})
   const [customFieldEdits, setCustomFieldEdits] = useState<Record<string, string>>({})
   const [customFieldOptionNames, setCustomFieldOptionNames] = useState<Record<string, string>>({})
   const [customFieldOptionEdits, setCustomFieldOptionEdits] = useState<Record<string, string>>({})
@@ -1306,6 +1311,86 @@ export function App({
                           Save custom field name for {field.name}
                         </button>
                       </form>
+                    ) : null}
+                    {onChangeCustomFieldType ? (
+                      <>
+                        <label htmlFor={`custom-field-type-migrate-${field.id}`}>
+                          Type for custom field {field.name}
+                        </label>
+                        <select
+                          id={`custom-field-type-migrate-${field.id}`}
+                          value={customFieldTypeMigrations[field.id] ?? field.type}
+                          onChange={(event) =>
+                            setCustomFieldTypeMigrations((current) => ({
+                              ...current,
+                              [field.id]: event.target.value as CustomFieldType,
+                            }))
+                          }
+                        >
+                          <option value="text">Text</option>
+                          <option value="number">Number</option>
+                          <option value="checkbox">Checkbox</option>
+                          <option value="select">Select</option>
+                          <option value="date">Date</option>
+                          <option value="formula">Formula</option>
+                        </select>
+                        <button
+                          type="button"
+                          disabled={
+                            (customFieldTypeMigrations[field.id] ?? field.type) ===
+                            field.type
+                          }
+                          onClick={() => {
+                            const nextType =
+                              customFieldTypeMigrations[field.id] ?? field.type
+
+                            if (nextType === field.type) {
+                              return
+                            }
+
+                            try {
+                              onChangeCustomFieldType(field.id, nextType)
+                              setCustomFieldTypeMigrations((current) => {
+                                const next = { ...current }
+                                delete next[field.id]
+                                return next
+                              })
+                              setCustomFieldOptionNames((current) => {
+                                const next = { ...current }
+                                delete next[field.id]
+                                return next
+                              })
+                              setCustomFieldFormulaLeftOperands((current) => {
+                                const next = { ...current }
+                                delete next[field.id]
+                                return next
+                              })
+                              setCustomFieldFormulaOperators((current) => {
+                                const next = { ...current }
+                                delete next[field.id]
+                                return next
+                              })
+                              setCustomFieldFormulaRightOperands((current) => {
+                                const next = { ...current }
+                                delete next[field.id]
+                                return next
+                              })
+                              setCustomFieldValueDrafts((current) =>
+                                Object.fromEntries(
+                                  Object.entries(current).filter(
+                                    ([key]) => !key.endsWith(`:${field.id}`),
+                                  ),
+                                ),
+                              )
+                              setError(null)
+                            } catch (caught) {
+                              setError(errorMessage(caught))
+                            }
+                          }}
+                        >
+                          Change type for {field.name} and clear Task values
+                        </button>
+                      </>
                     ) : null}
                     {field.type === 'select' ? (
                       <>

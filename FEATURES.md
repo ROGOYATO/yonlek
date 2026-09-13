@@ -189,7 +189,7 @@ not imply authentication, email identity, permissions, or notifications.
 - [x] Select fields
 - [x] Date fields
 - [x] Formula fields
-- [ ] Field type migration
+- [x] Field type migration
 - [x] Custom Field filtering and sorting
 
 Select fields keep ordered workspace-level options with stable option IDs. Task
@@ -205,6 +205,12 @@ references two stable Number/Formula field IDs with `+`, `-`, `*`, or `/`.
 Formula results are evaluated from current Task values and are never stored as
 Task Custom Field values. Missing inputs, invalid dependencies, division by
 zero, and non-finite results are unavailable rather than persisted.
+
+Field type migration preserves the definition ID, name, and creation time while
+clearing every stored Task value for that field. Migration does not coerce old
+values. Select targets start with an empty option list and Formula targets start
+unconfigured. If a Number/Formula operand moves to a non-numeric field type,
+direct Formula configurations that reference it are cleared.
 
 One Custom Field filter and one Custom Field sort can be active at a time. Text
 filters use case-insensitive substring matching; Number, Checkbox, Select, and
