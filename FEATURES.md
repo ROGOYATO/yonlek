@@ -185,7 +185,7 @@ not imply authentication, email identity, permissions, or notifications.
 - [x] Persistence type validation
 - [x] Cleanup Task values when a definition is deleted
 - [x] Select fields
-- [ ] Date fields
+- [x] Date fields
 - [ ] Formula fields
 - [ ] Field type migration
 - [ ] Custom Field filtering and sorting
@@ -194,6 +194,9 @@ Select fields keep ordered workspace-level options with stable option IDs. Task
 values store the option ID, so renaming an option changes its label without
 rewriting Task values. Deleting an option clears only Task values that reference
 that option.
+
+Date fields store exact `YYYY-MM-DD` calendar dates as independent Task Custom
+Field values. They do not change or inherit Task start/due dates.
 
 ### Relationships
 

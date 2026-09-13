@@ -1,4 +1,4 @@
-export type CustomFieldType = 'text' | 'number' | 'checkbox' | 'select'
+export type CustomFieldType = 'text' | 'number' | 'checkbox' | 'select' | 'date'
 export type CustomFieldValue = string | number | boolean
 
 export interface CustomFieldOption {
@@ -151,6 +151,35 @@ export function deleteCustomFieldOption(
   }
 }
 
+
+export function normalizeDateCustomFieldValue(value: unknown): string {
+  if (typeof value !== 'string') {
+    throw new Error('Date custom field value must use YYYY-MM-DD')
+  }
+
+  const normalized = value.trim()
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized)
+
+  if (!match) {
+    throw new Error('Date custom field value must use YYYY-MM-DD')
+  }
+
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const date = new Date(Date.UTC(year, month - 1, day))
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    throw new Error('Date custom field value must use YYYY-MM-DD')
+  }
+
+  return normalized
+}
+
 export function normalizeCustomFieldValueForDefinition(
   field: CustomFieldDefinition,
   value: unknown,
@@ -190,6 +219,10 @@ export function normalizeCustomFieldValue(
 
   if (type === 'checkbox' && typeof value === 'boolean') {
     return value
+  }
+
+  if (type === 'date') {
+    return normalizeDateCustomFieldValue(value)
   }
 
   throw new Error('Custom field value does not match field type')

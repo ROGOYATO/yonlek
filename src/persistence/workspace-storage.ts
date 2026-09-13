@@ -1,3 +1,4 @@
+import { normalizeDateCustomFieldValue } from '../domain/custom-field'
 import { setTaskDueDate, setTaskStartDate, type Task } from '../domain/task'
 import { emptyWorkspace, type WorkspaceState } from '../domain/workspace'
 
@@ -307,7 +308,8 @@ function isValidCustomField(value: unknown): boolean {
     (value.type !== 'text' &&
       value.type !== 'number' &&
       value.type !== 'checkbox' &&
-      value.type !== 'select') ||
+      value.type !== 'select' &&
+      value.type !== 'date') ||
     !isIsoInstant(value.createdAt)
   ) {
     return false
@@ -568,7 +570,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
       (field as { id: string }).id,
       field as {
         id: string
-        type: 'text' | 'number' | 'checkbox' | 'select'
+        type: 'text' | 'number' | 'checkbox' | 'select' | 'date'
         options?: Array<{ id: string; name: string }>
       },
     ]),
@@ -747,6 +749,18 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
 
         if (field.type === 'checkbox') {
           return typeof value !== 'boolean'
+        }
+
+        if (field.type === 'date') {
+          if (typeof value !== 'string') {
+            return true
+          }
+
+          try {
+            return normalizeDateCustomFieldValue(value) !== value
+          } catch {
+            return true
+          }
         }
 
         return (

@@ -230,12 +230,14 @@ Tasks can also contain or reference:
 - Checklist items;
 - reusable Tags;
 - multiple local People as assignees;
-- text, number, checkbox, and single-select Custom Field values.
+- text, number, checkbox, single-select, and date Custom Field values.
 
 Checklist arrays and Custom Field value records belong to the Task. Tags,
 People, and Custom Field definitions belong to the Workspace and Tasks refer to
 them by ID. Select Custom Fields own ordered options with stable IDs; Tasks store
 the selected option ID rather than its display label.
+Date Custom Fields store exact `YYYY-MM-DD` values and remain independent from
+the Task's start and due dates.
 
 ### Task relationships
 

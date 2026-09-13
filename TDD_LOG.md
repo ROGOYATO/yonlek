@@ -2532,3 +2532,80 @@ tests across 107 test files; live output remains authoritative. The runner must
 observe every intended RED before its GREEN patch, pass each focused GREEN,
 zero-warning lint, the normal full check, LF and diff audits, exact changed-path
 and content gates, remote-tip checks, commit, and non-force push.
+
+## TDD 228 - Date Custom Field domain value
+
+**RED**
+
+Add focused domain coverage for Date field creation plus exact calendar-date
+normalization. Valid leap dates must normalize after trimming; malformed and
+impossible dates must fail.
+
+**GREEN**
+
+Add `date` to `CustomFieldType` and a pure Date Custom Field normalizer. Date
+definitions carry no Select option metadata.
+
+## TDD 229 - Task Date Custom Field workspace path
+
+**RED**
+
+Add focused reducer coverage for setting and clearing a Date Custom Field while
+preserving unrelated Custom Field values and Task start/due dates.
+
+**GREEN**
+
+Route Date values through the existing definition-aware Custom Field
+normalization path. Date values normalize to exact `YYYY-MM-DD`; `null` keeps
+the existing generic clear behavior.
+
+## TDD 230 - Date persistence validation
+
+**RED**
+
+Add version-1 storage coverage for Date definition/value round-trip, legacy v1
+compatibility, Date definitions carrying Select-only metadata, and malformed,
+impossible, or non-exact persisted Date values.
+
+**GREEN**
+
+Keep workspace storage at version 1 and validate Date definitions and Task Date
+values strictly. Existing version-1 workspaces without Date fields remain valid.
+
+## TDD 231 - Date field definition UI
+
+**RED**
+
+Add focused WorkspaceRoot coverage requiring Date in the Custom Field type
+chooser and creation of a Date definition without Select option controls.
+
+**GREEN**
+
+Expose Date in the existing Custom Field type chooser. The existing create-field
+command path creates the Date definition.
+
+## TDD 232 - Task Date Custom Field UI
+
+**RED**
+
+Add focused WorkspaceRoot coverage requiring a labeled native date input that
+shows the stored Date value, writes an exact date, clears with `null`, and leaves
+Task start/due dates unchanged.
+
+**GREEN**
+
+Render Date Custom Fields with `<input type="date">` and route changes through
+the existing Task Custom Field value callback. Other field controls remain
+unchanged.
+
+## Prepared verification target after TDD 232
+
+This batch starts from confirmed `main` at
+`72a932766b2b4abaeb3069f8d1f79ed3a89e5d59`. The runner captures the live
+`HEAD^{tree}` directly from Git after confirming the expected HEAD, parent,
+origin, clean working tree, and empty index. Five focused RED files are prepared.
+If the live inventory is otherwise unchanged, the final suite is expected to
+contain 411 tests across 112 test files; live output remains authoritative. The
+runner must observe every intended RED before its GREEN patch, pass each focused
+GREEN, zero-warning lint, the normal full check, LF and diff audits, exact
+changed-path/content gates, remote-tip checks, commit, and non-force push.

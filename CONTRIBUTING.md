@@ -694,6 +694,7 @@ Supported types:
 - `number`: finite number
 - `checkbox`: boolean
 - `select`: one stable option ID owned by that field
+- `date`: exact `YYYY-MM-DD` calendar date
 
 Rules:
 
@@ -707,6 +708,9 @@ Rules:
   are required, and option IDs are unique inside one field.
 - Task Select values store option IDs, never display labels. Renaming an option
   preserves existing Task selections.
+- Date values are trimmed before runtime validation and must resolve to a real
+  calendar date in exact `YYYY-MM-DD` form.
+- Date Custom Field values are independent from Task `startDate` and `dueDate`.
 - Deleting a Select option removes only Task values for that field that reference
   the deleted option. Other Custom Field values stay unchanged.
 - Non-Select definitions must not carry Select option metadata.

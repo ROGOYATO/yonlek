@@ -965,6 +965,7 @@ export function App({
               <option value="number">Number</option>
               <option value="checkbox">Checkbox</option>
               <option value="select">Select</option>
+              <option value="date">Date</option>
             </select>
             <button type="submit">Add custom field</button>
           </form>
@@ -2179,7 +2180,9 @@ export function App({
                                     type={
                                       field.type === 'number'
                                         ? 'number'
-                                        : 'text'
+                                        : field.type === 'date'
+                                          ? 'date'
+                                          : 'text'
                                     }
                                     value={
                                       field.type === 'text' &&
@@ -2198,6 +2201,15 @@ export function App({
                                           ...current,
                                           [draftKey]: rawValue,
                                         }))
+                                        return
+                                      }
+
+                                      if (field.type === 'date') {
+                                        onChangeTaskCustomFieldValue(
+                                          task.id,
+                                          field.id,
+                                          rawValue === '' ? null : rawValue,
+                                        )
                                         return
                                       }
 
