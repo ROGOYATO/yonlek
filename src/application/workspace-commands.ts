@@ -78,6 +78,7 @@ export interface WorkspaceCommands {
   addSubtask(parentTaskId: string, title: string): ReturnType<typeof createSubtask>
   duplicateTask(taskId: string): ReturnType<typeof duplicateTaskDomain>
   archiveTask(taskId: string): void
+  archiveTasks(taskIds: string[]): void
   restoreTask(taskId: string): void
   archiveProject(projectId: string): void
   restoreProject(projectId: string): void
@@ -85,7 +86,9 @@ export interface WorkspaceCommands {
   changeProjectDescription(projectId: string, description: string | null): void
   renameTask(taskId: string, title: string): void
   changeTaskStatus(taskId: string, status: TaskStatus): void
+  changeTasksStatus(taskIds: string[], status: TaskStatus): void
   changeTaskPriority(taskId: string, priority: TaskPriority): void
+  changeTasksPriority(taskIds: string[], priority: TaskPriority): void
   changeTaskStartDate(taskId: string, startDate: string | null): void
   changeTaskDueDate(taskId: string, dueDate: string | null): void
   changeTaskDescription(taskId: string, description: string | null): void
@@ -658,6 +661,14 @@ export function createWorkspaceCommands(
       })
     },
 
+    archiveTasks(taskIds) {
+      store.dispatch({
+        type: 'task/archivedBulk',
+        taskIds: [...taskIds],
+        archivedAt: runtime.now(),
+      })
+    },
+
     restoreTask(taskId) {
       const exists = store
         .getState()
@@ -736,10 +747,26 @@ export function createWorkspaceCommands(
       })
     },
 
+    changeTasksStatus(taskIds, status) {
+      store.dispatch({
+        type: 'task/statusChangedBulk',
+        taskIds: [...taskIds],
+        status,
+      })
+    },
+
     changeTaskPriority(taskId, priority) {
       store.dispatch({
         type: 'task/priorityChanged',
         taskId,
+        priority,
+      })
+    },
+
+    changeTasksPriority(taskIds, priority) {
+      store.dispatch({
+        type: 'task/priorityChangedBulk',
+        taskIds: [...taskIds],
         priority,
       })
     },

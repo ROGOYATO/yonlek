@@ -94,7 +94,10 @@ export interface AppProps {
   onDeleteTask?: (taskId: string) => void
   onMoveTask?: (taskId: string, direction: MoveDirection) => void
   onChangeTaskStatus?: (taskId: string, status: TaskStatus) => void
+  onChangeTasksStatus?: (taskIds: string[], status: TaskStatus) => void
   onChangeTaskPriority?: (taskId: string, priority: TaskPriority) => void
+  onChangeTasksPriority?: (taskIds: string[], priority: TaskPriority) => void
+  onArchiveTasks?: (taskIds: string[]) => void
   onChangeTaskStartDate?: (taskId: string, startDate: string | null) => void
   onChangeTaskDueDate?: (taskId: string, dueDate: string | null) => void
   onChangeTaskDescription?: (taskId: string, description: string | null) => void
@@ -160,7 +163,10 @@ export function App({
   onDeleteTask,
   onMoveTask,
   onChangeTaskStatus,
+  onChangeTasksStatus,
   onChangeTaskPriority,
+  onChangeTasksPriority,
+  onArchiveTasks,
   onChangeTaskStartDate,
   onChangeTaskDueDate,
   onChangeTaskDescription,
@@ -202,6 +208,9 @@ export function App({
   const [taskTemplateLists, setTaskTemplateLists] = useState<Record<string, string>>({})
   const [filterSetName, setFilterSetName] = useState('')
   const [savedViewName, setSavedViewName] = useState('')
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
+  const [bulkStatus, setBulkStatus] = useState<TaskStatus>('todo')
+  const [bulkPriority, setBulkPriority] = useState<TaskPriority>('normal')
   const [viewPreferences, setViewPreferences] = useState<ViewPreferences>(
     initialViewPreferences,
   )
@@ -375,6 +384,63 @@ export function App({
     (project) =>
       effectiveProjectView === 'all' || project.id === effectiveProjectView,
   )
+  const visibleProjectIds = new Set(visibleProjects.map((project) => project.id))
+  const visibleTaskIds = sortTasks(
+    filterTasks(
+      activeTasks.filter((task) => visibleProjectIds.has(task.projectId)),
+      {
+        query: searchQuery,
+        status: statusFilter,
+        priority: priorityFilter,
+        dueDate: dueDateFilter,
+      },
+    ),
+    taskSort,
+  ).map((task) => task.id)
+  const visibleTaskIdSet = new Set(visibleTaskIds)
+  const selectedVisibleTaskIds = selectedTaskIds.filter((taskId) =>
+    visibleTaskIdSet.has(taskId),
+  )
+  const selectedVisibleTaskIdSet = new Set(selectedVisibleTaskIds)
+  const allVisibleTasksSelected =
+    visibleTaskIds.length > 0 &&
+    visibleTaskIds.every((taskId) => selectedVisibleTaskIdSet.has(taskId))
+
+  function changeVisibleTaskSelection(taskId: string, selected: boolean) {
+    setSelectedTaskIds((current) => {
+      if (selected) {
+        return current.includes(taskId) ? current : [...current, taskId]
+      }
+
+      return current.filter((candidate) => candidate !== taskId)
+    })
+  }
+
+  function changeAllVisibleTaskSelection(selected: boolean) {
+    setSelectedTaskIds((current) => {
+      const next = new Set(current)
+
+      for (const taskId of visibleTaskIds) {
+        if (selected) {
+          next.add(taskId)
+        } else {
+          next.delete(taskId)
+        }
+      }
+
+      return [...next]
+    })
+  }
+
+  function runBulkAction(action: () => void) {
+    try {
+      action()
+      setSelectedTaskIds([])
+      setError(null)
+    } catch (caught) {
+      setError(errorMessage(caught))
+    }
+  }
 
   return (
     <main>
@@ -512,6 +578,90 @@ export function App({
         <option value="priority">Priority</option>
         <option value="list">List</option>
       </select>
+
+      <label>
+        <input
+          type="checkbox"
+          aria-label="Select all visible tasks"
+          checked={allVisibleTasksSelected}
+          onChange={(event) =>
+            changeAllVisibleTaskSelection(event.target.checked)
+          }
+        />
+        Select all visible tasks
+      </label>
+      <span>
+        {selectedVisibleTaskIds.length}{' '}
+        {selectedVisibleTaskIds.length === 1 ? 'task' : 'tasks'} selected
+      </span>
+
+      {onChangeTasksStatus ? (
+        <>
+          <label htmlFor="bulk-task-status">Bulk status</label>
+          <select
+            id="bulk-task-status"
+            value={bulkStatus}
+            onChange={(event) =>
+              setBulkStatus(event.target.value as TaskStatus)
+            }
+          >
+            <option value="todo">To do</option>
+            <option value="doing">Doing</option>
+            <option value="done">Done</option>
+          </select>
+          <button
+            type="button"
+            disabled={selectedVisibleTaskIds.length === 0}
+            onClick={() =>
+              runBulkAction(() =>
+                onChangeTasksStatus(selectedVisibleTaskIds, bulkStatus),
+              )
+            }
+          >
+            Apply bulk status
+          </button>
+        </>
+      ) : null}
+
+      {onChangeTasksPriority ? (
+        <>
+          <label htmlFor="bulk-task-priority">Bulk priority</label>
+          <select
+            id="bulk-task-priority"
+            value={bulkPriority}
+            onChange={(event) =>
+              setBulkPriority(event.target.value as TaskPriority)
+            }
+          >
+            <option value="low">Low</option>
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+          </select>
+          <button
+            type="button"
+            disabled={selectedVisibleTaskIds.length === 0}
+            onClick={() =>
+              runBulkAction(() =>
+                onChangeTasksPriority(selectedVisibleTaskIds, bulkPriority),
+              )
+            }
+          >
+            Apply bulk priority
+          </button>
+        </>
+      ) : null}
+
+      {onArchiveTasks ? (
+        <button
+          type="button"
+          disabled={selectedVisibleTaskIds.length === 0}
+          onClick={() =>
+            runBulkAction(() => onArchiveTasks(selectedVisibleTaskIds))
+          }
+        >
+          Archive selected tasks
+        </button>
+      ) : null}
 
       <label htmlFor="filter-set-name">Filter set name</label>
       <input
@@ -1672,6 +1822,20 @@ export function App({
                                   : undefined
                         }
                       >
+                        <label>
+                          <input
+                            type="checkbox"
+                            aria-label={`Select task ${task.title}`}
+                            checked={selectedVisibleTaskIdSet.has(task.id)}
+                            onChange={(event) =>
+                              changeVisibleTaskSelection(
+                                task.id,
+                                event.target.checked,
+                              )
+                            }
+                          />
+                          Select task {task.title}
+                        </label>
                         <span>{task.title}</span>
                         <span
                           aria-label={`Subtask count for ${task.title}`}

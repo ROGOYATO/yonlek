@@ -4,11 +4,11 @@ This file tracks product behavior, not visual polish. A checkbox moves to
 complete only after the behavior has a confirmed GREEN cycle and the final
 verification gate has passed.
 
-Confirmed starting checkpoint for TDD 203-207:
+Confirmed starting checkpoint for TDD 218-222:
 
-- commit: `cf536db` (`TDD 198-202: add timeline view`)
-- TDD: 202 GREEN
-- tests: 360 passed across 82 files
+- commit: `4c01e45` (`TDD 213-217: add per-view filters and sorts`)
+- TDD: 217 GREEN
+- tests: 383 passed across 97 files
 - lint: 0 warnings, 0 errors
 - production build: passed
 
@@ -276,9 +276,15 @@ the active layout snapshot and do not switch layouts.
 ## Productivity
 
 - [x] Duplicate Task
-- [ ] Bulk actions
+- [x] Bulk actions
 - [x] Project templates
 - [x] Task templates
+
+Bulk actions operate on the current focused and filtered visible active Task
+selection. Status, priority, and archive each use one workspace dispatch. Bulk
+archive keeps existing Subtask cascade behavior and applies one runtime timestamp
+to the whole operation. Selection stays in UI state and is not persisted. A
+successful bulk action clears the selection.
 
 Task templates keep reusable active Task/Subtask structure, title, status,
 priority, description, and Checklist text/completion. They omit Project/List

@@ -98,10 +98,13 @@ export type WorkspaceAction =
   | { type: 'project/moved'; projectId: string; direction: MoveDirection }
   | { type: 'task/added'; task: Task }
   | { type: 'task/archived'; taskId: string; archivedAt: string }
+  | { type: 'task/archivedBulk'; taskIds: string[]; archivedAt: string }
   | { type: 'task/restored'; taskId: string }
   | { type: 'task/statusChanged'; taskId: string; status: TaskStatus }
+  | { type: 'task/statusChangedBulk'; taskIds: string[]; status: TaskStatus }
   | { type: 'task/titleChanged'; taskId: string; title: string }
   | { type: 'task/priorityChanged'; taskId: string; priority: TaskPriority }
+  | { type: 'task/priorityChangedBulk'; taskIds: string[]; priority: TaskPriority }
   | { type: 'task/startDateChanged'; taskId: string; startDate: string | null }
   | { type: 'task/dueDateChanged'; taskId: string; dueDate: string | null }
   | { type: 'task/descriptionChanged'; taskId: string; description: string | null }
@@ -746,6 +749,25 @@ export function workspaceReducer(
       }
     }
 
+    case 'task/archivedBulk': {
+      const archivedIds = new Set<string>()
+
+      for (const taskId of action.taskIds) {
+        for (const archivedId of collectTaskSubtreeIds(state.tasks, taskId)) {
+          archivedIds.add(archivedId)
+        }
+      }
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          archivedIds.has(task.id)
+            ? archiveTask(task, action.archivedAt)
+            : task,
+        ),
+      }
+    }
+
     case 'task/restored': {
       const restoredIds = collectTaskSubtreeIds(state.tasks, action.taskId)
 
@@ -767,6 +789,18 @@ export function workspaceReducer(
         ),
       }
 
+    case 'task/statusChangedBulk': {
+      const taskIds = new Set(action.taskIds)
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          taskIds.has(task.id)
+            ? { ...task, status: action.status }
+            : task,
+        ),
+      }
+    }
 
     case 'task/titleChanged':
       return {
@@ -785,6 +819,19 @@ export function workspaceReducer(
             : task,
         ),
       }
+
+    case 'task/priorityChangedBulk': {
+      const taskIds = new Set(action.taskIds)
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          taskIds.has(task.id)
+            ? { ...task, priority: action.priority }
+            : task,
+        ),
+      }
+    }
 
     case 'task/startDateChanged':
       return {

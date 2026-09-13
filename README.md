@@ -8,13 +8,13 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 213-217 is TDD 212.
+The confirmed starting checkpoint for TDD 218-222 is TDD 217.
 
 - branch: `main`
-- behavior commit: `a31c36d` (`TDD 208-212: add Gantt view`)
+- behavior commit: `4c01e45` (`TDD 213-217: add per-view filters and sorts`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 376 passed across 92 files
+- tests: 383 passed across 97 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
@@ -22,8 +22,8 @@ The confirmed starting checkpoint for TDD 213-217 is TDD 212.
 
 This checkpoint includes Task and Project archive/restore, Project and Task
 templates, Task grouping, saved filter sets, saved views, Board view, Calendar
-view, Table view, Timeline, the Gantt schedule foundation, Gantt view, persisted
-archive timestamps, and active/archive UI boundaries.
+view, Table view, Timeline, the Gantt schedule foundation, Gantt view, per-view
+filters and sorts, persisted archive timestamps, and active/archive UI boundaries.
 
 ## Current product model
 
@@ -199,6 +199,20 @@ filter/sort state on first entry; later switches restore that layout's own state
 Project focus and grouping remain global view preferences. Saved Filter Sets and
 Saved Views update only the active layout snapshot when snapshots exist, and
 Saved Views still do not capture layout mode.
+
+### Bulk actions
+
+Bulk selection is UI-local. It contains only active Tasks from the current
+Project focus and active filters. `Select all visible tasks` uses that same
+visible Task set.
+
+Bulk status and priority changes each use one workspace action and therefore one
+workspace persistence write. Bulk archive also uses one action. It expands every
+selected root through the existing Subtask archive rule and applies one runtime
+timestamp to the full operation. Successful bulk actions clear the UI selection.
+
+Bulk delete, restore, Project/List moves, dates, Tags, People, and Custom Fields
+remain separate behavior.
 
 ### Task templates
 

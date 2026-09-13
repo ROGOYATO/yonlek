@@ -1121,3 +1121,22 @@ data.
   malformed snapshot values through the existing non-critical preference fallback.
 - Do not change workspace storage, Task filtering algorithms, Task sorting
   algorithms, or make Project focus/grouping layout-specific in this slice.
+
+## Bulk Task action integrity
+
+TDD 218-222 keeps bulk mutation on the existing workspace command and reducer
+path.
+
+- Bulk status and priority changes use one workspace action per user operation.
+  Do not loop through single-Task commands because that creates multiple
+  persistence writes.
+- Bulk archive uses one runtime timestamp and one workspace action. Every
+  selected root keeps the existing full Subtask archive cascade.
+- Task selection is UI-local. Do not persist selected IDs in workspace or view
+  preferences.
+- Select-all operates on the current active Tasks after Project focus and Task
+  filters. Archived, hidden, and other-Project Tasks are outside that selection.
+- Status, priority, and archive clear selection only after the bulk handler
+  succeeds.
+- Bulk delete, restore, moves, dates, Tags, People, and Custom Fields need their
+  own tested slices before they are added.

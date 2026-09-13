@@ -2372,3 +2372,80 @@ authoritative. The runner must observe every intended RED before its GREEN patch
 pass each focused GREEN, zero-warning lint, the normal full check, LF and diff
 audits, exact changed-path/content gates, remote-tip checks, commit, and non-force
 push.
+
+## TDD 218 - Atomic bulk Task status
+
+**RED**
+
+Add focused command coverage requiring two selected Tasks to receive one status
+change through one persisted store dispatch.
+
+**GREEN**
+
+Add `changeTasksStatus` and one bulk status workspace action. The reducer updates
+the selected Task IDs in one state transition.
+
+## TDD 219 - Atomic bulk Task priority
+
+**RED**
+
+Add focused command coverage requiring two selected Tasks to receive one priority
+change through one persisted store dispatch.
+
+**GREEN**
+
+Add `changeTasksPriority` and one bulk priority workspace action. The reducer
+updates the selected Task IDs in one state transition.
+
+## TDD 220 - Atomic bulk Task archive
+
+**RED**
+
+Add focused command coverage requiring multiple selected roots and a descendant
+Subtask to archive with one runtime timestamp and one persisted store dispatch.
+
+**GREEN**
+
+Add `archiveTasks` and one bulk archive workspace action. The reducer unions the
+existing Subtask archive sets for all selected roots and applies the same
+`archivedAt` value to the resulting Task set.
+
+## TDD 221 - Visible active Task selection
+
+**RED**
+
+Add focused WorkspaceRoot coverage requiring selection to expose only active
+Tasks inside the current Project focus and Task filters. `Select all visible
+tasks` must select and clear that visible set.
+
+**GREEN**
+
+Keep selected Task IDs in App state. Derive the selectable IDs from the existing
+active, focused, filtered Task pipeline and add per-Task plus select-all
+checkboxes. Do not persist selection.
+
+## TDD 222 - Bulk Task action controls
+
+**RED**
+
+Add focused WorkspaceRoot coverage for bulk status, priority, and archive. Each
+successful action must update the selected Tasks and clear selection.
+
+**GREEN**
+
+Wire the three bulk workspace commands through WorkspaceRoot. Add status and
+priority selectors plus archive action controls in App. Pass only currently
+visible selected IDs to each handler and clear selection after a successful
+handler call.
+
+## Prepared verification target after TDD 222
+
+This batch starts from clean `main` at
+`4c01e4509a7e4f11b17883e6adeec1cf6cfcc6ef`, tree
+`bc05e2746dce9832b92447cfc56b30248b9918b8`. Five focused RED files are
+prepared. If the live inventory is otherwise unchanged, the final suite is
+expected to contain 388 tests across 102 test files; live output remains
+authoritative. The runner must observe every intended RED before its GREEN patch,
+pass each focused GREEN, zero-warning lint, the normal full check, LF and diff
+audits, exact changed-path/content gates, remote-tip checks, commit, and
+non-force push.

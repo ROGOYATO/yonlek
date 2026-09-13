@@ -172,6 +172,9 @@ export function WorkspaceRoot({
       onArchiveTask={(taskId) => {
         commands.archiveTask(taskId)
       }}
+      onArchiveTasks={(taskIds) => {
+        commands.archiveTasks(taskIds)
+      }}
       onRestoreTask={(taskId) => {
         commands.restoreTask(taskId)
       }}
@@ -190,8 +193,14 @@ export function WorkspaceRoot({
       onChangeTaskStatus={(taskId, status) => {
         commands.changeTaskStatus(taskId, status)
       }}
+      onChangeTasksStatus={(taskIds, status) => {
+        commands.changeTasksStatus(taskIds, status)
+      }}
       onChangeTaskPriority={(taskId, priority) => {
         commands.changeTaskPriority(taskId, priority)
+      }}
+      onChangeTasksPriority={(taskIds, priority) => {
+        commands.changeTasksPriority(taskIds, priority)
       }}
       onChangeTaskStartDate={(taskId, startDate) => {
         commands.changeTaskStartDate(taskId, startDate)
