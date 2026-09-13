@@ -1,4 +1,4 @@
-import type { TaskDueDateFilter } from './task-filter'
+import type { CustomFieldTaskFilter, TaskDueDateFilter } from './task-filter'
 import { createTaskFilterSet, type TaskFilterSet } from './task-filter-set'
 import { createSavedTaskView, type SavedTaskView } from './saved-task-view'
 import type { TaskSort } from './task-sort'
@@ -13,6 +13,8 @@ export interface TaskViewFilterSortState {
   priority: TaskPriority | 'all'
   dueDate: TaskDueDateFilter
   sort: TaskSort
+  customFieldFilter?: CustomFieldTaskFilter
+  customFieldSortFieldId?: string
 }
 
 export type TaskViewFilterSortByView = Partial<
@@ -31,6 +33,8 @@ export interface ViewPreferences {
   savedFilterSets?: TaskFilterSet[]
   savedViews?: SavedTaskView[]
   filterSortByView?: TaskViewFilterSortByView
+  customFieldFilter?: CustomFieldTaskFilter
+  customFieldSortFieldId?: string
 }
 
 export function createDefaultViewPreferences(): ViewPreferences {
@@ -57,27 +61,84 @@ export function updateViewPreferences(
 function getTaskViewFilterSortState(
   preferences: ViewPreferences,
 ): TaskViewFilterSortState {
-  return {
+  const state: TaskViewFilterSortState = {
     query: preferences.query,
     status: preferences.status,
     priority: preferences.priority,
     dueDate: preferences.dueDate,
     sort: preferences.sort,
   }
+
+  if (preferences.customFieldFilter !== undefined) {
+    state.customFieldFilter = preferences.customFieldFilter
+  }
+
+  if (preferences.customFieldSortFieldId !== undefined) {
+    state.customFieldSortFieldId = preferences.customFieldSortFieldId
+  }
+
+  return state
+}
+
+function hasOwnProperty<T extends object>(object: T, key: PropertyKey): boolean {
+  return Object.prototype.hasOwnProperty.call(object, key)
+}
+
+function mergeTaskViewFilterSortState(
+  current: TaskViewFilterSortState,
+  patch: Partial<TaskViewFilterSortState>,
+): TaskViewFilterSortState {
+  const next: TaskViewFilterSortState = {
+    ...current,
+    ...patch,
+  }
+
+  if (
+    hasOwnProperty(patch, 'customFieldFilter') &&
+    patch.customFieldFilter === undefined
+  ) {
+    delete next.customFieldFilter
+  }
+
+  if (
+    hasOwnProperty(patch, 'customFieldSortFieldId') &&
+    patch.customFieldSortFieldId === undefined
+  ) {
+    delete next.customFieldSortFieldId
+  }
+
+  return next
+}
+
+function applyTaskViewFilterSortState(
+  current: ViewPreferences,
+  state: TaskViewFilterSortState,
+): ViewPreferences {
+  const next: ViewPreferences = {
+    ...current,
+    ...state,
+  }
+
+  if (state.customFieldFilter === undefined) {
+    delete next.customFieldFilter
+  }
+
+  if (state.customFieldSortFieldId === undefined) {
+    delete next.customFieldSortFieldId
+  }
+
+  return next
 }
 
 export function updateTaskViewFilterSort(
   current: ViewPreferences,
   patch: Partial<TaskViewFilterSortState>,
 ): ViewPreferences {
-  const activeState = {
-    ...getTaskViewFilterSortState(current),
-    ...patch,
-  }
-  const next = {
-    ...current,
-    ...activeState,
-  }
+  const activeState = mergeTaskViewFilterSortState(
+    getTaskViewFilterSortState(current),
+    patch,
+  )
+  const next = applyTaskViewFilterSortState(current, activeState)
 
   if (current.filterSortByView === undefined) {
     return next
@@ -106,8 +167,7 @@ export function switchTaskViewMode(
   const targetState = current.filterSortByView?.[nextMode] ?? currentState
 
   return {
-    ...current,
-    ...targetState,
+    ...applyTaskViewFilterSortState(current, targetState),
     viewMode: nextMode,
     filterSortByView: {
       ...current.filterSortByView,
@@ -154,6 +214,7 @@ export function saveTaskFilterSet(
     status: current.status,
     priority: current.priority,
     dueDate: current.dueDate,
+    customFieldFilter: current.customFieldFilter,
   })
   const existing = getTaskFilterSets(current)
   const matchingIndex = existing.findIndex(
@@ -191,6 +252,7 @@ export function applyTaskFilterSet(
     status: filterSet.status,
     priority: filterSet.priority,
     dueDate: filterSet.dueDate,
+    customFieldFilter: filterSet.customFieldFilter,
   })
 }
 
@@ -239,6 +301,8 @@ export function saveTaskView(
     dueDate: current.dueDate,
     sort: current.sort,
     group: getTaskGroup(current),
+    customFieldFilter: current.customFieldFilter,
+    customFieldSortFieldId: current.customFieldSortFieldId,
   })
   const existing = getSavedTaskViews(current)
   const matchingIndex = existing.findIndex(
@@ -282,6 +346,8 @@ export function applyTaskView(
       priority: savedView.priority,
       dueDate: savedView.dueDate,
       sort: savedView.sort,
+      customFieldFilter: savedView.customFieldFilter,
+      customFieldSortFieldId: savedView.customFieldSortFieldId,
     },
   )
 }

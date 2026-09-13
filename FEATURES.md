@@ -127,19 +127,21 @@ restored under an archived parent through the UI.
 - [x] Status filter
 - [x] Priority filter
 - [x] Due-date presence filter
+- [x] Type-aware Custom Field filter
 - [x] Sort by created time
 - [x] Sort by title
 - [x] Sort by due date
 - [x] Sort by priority
 - [x] Manual sort mode
+- [x] Type-aware Custom Field sort
 - [x] Clear active Task filters together
 - [x] Per-view grouping
 - [x] Saved filter sets
 
-Saved filter sets persist with view preferences and keep only the Task search
-query, status, priority, and due-date presence filters. Reusing a normalized
-name updates the existing preset. Applying a preset preserves Project focus,
-sort, and grouping so the future Saved Views feature remains a separate scope.
+Saved filter sets persist with view preferences and keep the Task search query,
+status, priority, due-date presence, and optional active Custom Field filter.
+Reusing a normalized name updates the existing preset. Applying a preset
+preserves Project focus, Task sort, Custom Field sort, and grouping.
 
 ### Structure
 
@@ -188,7 +190,7 @@ not imply authentication, email identity, permissions, or notifications.
 - [x] Date fields
 - [ ] Formula fields
 - [ ] Field type migration
-- [ ] Custom Field filtering and sorting
+- [x] Custom Field filtering and sorting
 
 Select fields keep ordered workspace-level options with stable option IDs. Task
 values store the option ID, so renaming an option changes its label without
@@ -197,6 +199,13 @@ that option.
 
 Date fields store exact `YYYY-MM-DD` calendar dates as independent Task Custom
 Field values. They do not change or inherit Task start/due dates.
+
+One Custom Field filter and one Custom Field sort can be active at a time. Text
+filters use case-insensitive substring matching; Number, Checkbox, Select, and
+Date filters use type-aware exact matching. Custom Field sorting is ascending,
+keeps missing values last, and uses Task creation time as the deterministic
+tie-breaker. Select sorting follows the field's option order. Deleted or stale
+field references are treated as inactive view state rather than hiding Tasks.
 
 ### Relationships
 
@@ -275,10 +284,11 @@ the summary. Drag scheduling, inferred duration, dependency lines, milestones,
 baselines, work calendars, and critical-path behavior remain deferred.
 
 Per-view filters and sorts remain view-preference data. Search, status, priority,
-due-date presence, and sort gain optional snapshots keyed by Task layout after
-the first layout switch. A layout without a snapshot inherits the outgoing
-layout's active values once; later visits restore its own snapshot. Project focus
-and grouping remain global. Saved Filter Sets and Saved Views synchronize only
+due-date presence, optional Custom Field filter, built-in sort, and optional
+Custom Field sort gain snapshots keyed by Task layout after the first layout
+switch. A layout without a snapshot inherits the outgoing layout's active values
+once; later visits restore its own snapshot. Project focus and grouping remain
+global. Saved Filter Sets and Saved Views synchronize only
 the active layout snapshot and do not switch layouts.
 
 ## Productivity

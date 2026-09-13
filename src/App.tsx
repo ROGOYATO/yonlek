@@ -8,10 +8,16 @@ import { createTaskTimelineItems } from './domain/task-timeline'
 import { groupTasks, type TaskGroup } from './domain/task-group'
 
 import {
+  createCustomFieldTaskFilter,
   filterTasks,
+  type CustomFieldTaskFilter,
   type TaskDueDateFilter,
 } from './domain/task-filter'
-import { sortTasks, type TaskSort } from './domain/task-sort'
+import {
+  createCustomFieldTaskSort,
+  sortTasks,
+  type TaskSort,
+} from './domain/task-sort'
 import { summarizeTasks } from './domain/task-summary'
 import type { MoveDirection } from './domain/manual-order'
 import type { TaskRelationshipType } from './domain/task-relationship'
@@ -36,6 +42,7 @@ import {
 } from './domain/view-preferences'
 import type { TaskPriority, TaskStatus } from './domain/task'
 import type {
+  CustomFieldDefinition,
   CustomFieldType,
   CustomFieldValue,
 } from './domain/custom-field'
@@ -219,6 +226,17 @@ export function App({
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState<TaskStatus>('todo')
   const [bulkPriority, setBulkPriority] = useState<TaskPriority>('normal')
+  const [customFieldFilterFieldId, setCustomFieldFilterFieldId] = useState(
+    initialViewPreferences.customFieldFilter?.fieldId ?? '',
+  )
+  const [customFieldFilterDraftValues, setCustomFieldFilterDraftValues] =
+    useState<Record<string, string>>(() => {
+      const filter = initialViewPreferences.customFieldFilter
+
+      return filter === undefined
+        ? {}
+        : { [filter.fieldId]: String(filter.value) }
+    })
   const [viewPreferences, setViewPreferences] = useState<ViewPreferences>(
     initialViewPreferences,
   )
@@ -229,11 +247,25 @@ export function App({
     priority: priorityFilter,
     dueDate: dueDateFilter,
     sort: taskSort,
+    customFieldFilter,
+    customFieldSortFieldId,
   } = viewPreferences
   const taskGroup = getTaskGroup(viewPreferences)
   const taskViewMode = getTaskViewMode(viewPreferences)
   const savedFilterSets = getTaskFilterSets(viewPreferences)
   const savedViews = getSavedTaskViews(viewPreferences)
+
+  function syncCustomFieldFilterEditor(preferences: ViewPreferences) {
+    const filter = preferences.customFieldFilter
+    setCustomFieldFilterFieldId(filter?.fieldId ?? '')
+
+    if (filter !== undefined) {
+      setCustomFieldFilterDraftValues((current) => ({
+        ...current,
+        [filter.fieldId]: String(filter.value),
+      }))
+    }
+  }
 
   function updatePreferences(patch: Partial<ViewPreferences>) {
     setViewPreferences((current) => {
@@ -256,6 +288,7 @@ export function App({
   function changeTaskViewMode(nextMode: TaskViewMode) {
     setViewPreferences((current) => {
       const next = switchTaskViewMode(current, nextMode)
+      syncCustomFieldFilterEditor(next)
       onViewPreferencesChange?.(next)
       return next
     })
@@ -344,6 +377,73 @@ export function App({
 
   const relationships = state.relationships ?? []
   const customFields = state.customFields ?? []
+
+  function resolveCustomFieldFilter(
+    filter: CustomFieldTaskFilter | undefined,
+  ): CustomFieldTaskFilter | undefined {
+    if (filter === undefined) {
+      return undefined
+    }
+
+    const field = customFields.find(
+      (candidate) =>
+        candidate.id === filter.fieldId && candidate.type === filter.fieldType,
+    )
+
+    if (!field) {
+      return undefined
+    }
+
+    try {
+      return createCustomFieldTaskFilter(field, filter.value)
+    } catch {
+      return undefined
+    }
+  }
+
+  function changeCustomFieldFilter(
+    field: CustomFieldDefinition,
+    value: unknown,
+  ) {
+    try {
+      const filter = createCustomFieldTaskFilter(field, value)
+      updateFilterSortPreferences({ customFieldFilter: filter })
+      setError(null)
+    } catch (caught) {
+      setError(errorMessage(caught))
+    }
+  }
+
+  function clearCustomFieldFilter() {
+    updateFilterSortPreferences({ customFieldFilter: undefined })
+    setError(null)
+  }
+
+  const effectiveCustomFieldFilter = resolveCustomFieldFilter(customFieldFilter)
+  const selectedCustomFieldFilterField = customFields.find(
+    (field) => field.id === customFieldFilterFieldId,
+  )
+  const customFieldFilterIsStale =
+    customFieldFilter !== undefined && effectiveCustomFieldFilter === undefined
+  const customFieldFilterSelectValue = customFieldFilterIsStale
+    ? ''
+    : selectedCustomFieldFilterField?.id ?? ''
+  const customFieldFilterControlField =
+    customFieldFilterSelectValue === ''
+      ? undefined
+      : selectedCustomFieldFilterField
+  const customFieldFilterControlValue = customFieldFilterControlField
+    ? customFieldFilterDraftValues[customFieldFilterControlField.id] ??
+      (effectiveCustomFieldFilter?.fieldId === customFieldFilterControlField.id
+        ? String(effectiveCustomFieldFilter.value)
+        : '')
+    : ''
+  const activeCustomFieldSortField = customFieldSortFieldId
+    ? customFields.find((field) => field.id === customFieldSortFieldId)
+    : undefined
+  const effectiveCustomFieldSort = activeCustomFieldSortField
+    ? createCustomFieldTaskSort(activeCustomFieldSortField.id)
+    : undefined
   const people = state.people ?? []
   const tags = state.tags ?? []
   const areas = state.areas ?? []
@@ -401,9 +501,13 @@ export function App({
         status: statusFilter,
         priority: priorityFilter,
         dueDate: dueDateFilter,
+        customField: effectiveCustomFieldFilter,
       },
+      customFields,
     ),
     taskSort,
+    customFields,
+    effectiveCustomFieldSort,
   ).map((task) => task.id)
   const visibleTaskIdSet = new Set(visibleTaskIds)
   const selectedVisibleTaskIds = selectedTaskIds.filter((taskId) =>
@@ -523,6 +627,154 @@ export function App({
 
 
 
+      <label htmlFor="custom-field-filter">Custom field filter</label>
+      <select
+        id="custom-field-filter"
+        value={customFieldFilterSelectValue}
+        onChange={(event) => {
+          const fieldId = event.target.value
+          setCustomFieldFilterFieldId(fieldId)
+
+          if (fieldId === '') {
+            clearCustomFieldFilter()
+            return
+          }
+
+          const field = customFields.find(
+            (candidate) => candidate.id === fieldId,
+          )
+
+          if (!field) {
+            clearCustomFieldFilter()
+            return
+          }
+
+          if (field.type === 'checkbox') {
+            setCustomFieldFilterDraftValues((current) => ({
+              ...current,
+              [field.id]: 'false',
+            }))
+            changeCustomFieldFilter(field, false)
+            return
+          }
+
+          setCustomFieldFilterDraftValues((current) => ({
+            ...current,
+            [field.id]: '',
+          }))
+          clearCustomFieldFilter()
+        }}
+      >
+        <option value="">No custom field filter</option>
+        {customFields.map((field) => (
+          <option key={field.id} value={field.id}>
+            {field.name}
+          </option>
+        ))}
+      </select>
+
+      {customFieldFilterControlField?.type === 'select' ? (
+        <label>
+          Filter custom field {customFieldFilterControlField.name}
+          <select
+            aria-label={`Filter custom field ${customFieldFilterControlField.name}`}
+            value={customFieldFilterControlValue}
+            onChange={(event) => {
+              const value = event.target.value
+              setCustomFieldFilterDraftValues((current) => ({
+                ...current,
+                [customFieldFilterControlField.id]: value,
+              }))
+
+              if (value === '') {
+                clearCustomFieldFilter()
+              } else {
+                changeCustomFieldFilter(customFieldFilterControlField, value)
+              }
+            }}
+          >
+            <option value="">Choose option</option>
+            {(customFieldFilterControlField.options ?? []).map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : customFieldFilterControlField?.type === 'checkbox' ? (
+        <label>
+          <input
+            type="checkbox"
+            aria-label={`Filter custom field ${customFieldFilterControlField.name}`}
+            checked={
+              effectiveCustomFieldFilter?.fieldId ===
+                customFieldFilterControlField.id &&
+              effectiveCustomFieldFilter.value === true
+            }
+            onChange={(event) => {
+              setCustomFieldFilterDraftValues((current) => ({
+                ...current,
+                [customFieldFilterControlField.id]: String(
+                  event.target.checked,
+                ),
+              }))
+              changeCustomFieldFilter(
+                customFieldFilterControlField,
+                event.target.checked,
+              )
+            }}
+          />
+          Filter custom field {customFieldFilterControlField.name}
+        </label>
+      ) : customFieldFilterControlField ? (
+        <label>
+          Filter custom field {customFieldFilterControlField.name}
+          <input
+            aria-label={`Filter custom field ${customFieldFilterControlField.name}`}
+            type={
+              customFieldFilterControlField.type === 'number'
+                ? 'number'
+                : customFieldFilterControlField.type === 'date'
+                  ? 'date'
+                  : 'text'
+            }
+            value={customFieldFilterControlValue}
+            onChange={(event) => {
+              const rawValue = event.target.value
+              setCustomFieldFilterDraftValues((current) => ({
+                ...current,
+                [customFieldFilterControlField.id]: rawValue,
+              }))
+
+              if (rawValue === '' || rawValue.trim() === '') {
+                clearCustomFieldFilter()
+                return
+              }
+
+              if (customFieldFilterControlField.type === 'number') {
+                const numericValue = Number(rawValue)
+
+                if (!Number.isFinite(numericValue)) {
+                  clearCustomFieldFilter()
+                  return
+                }
+
+                changeCustomFieldFilter(
+                  customFieldFilterControlField,
+                  numericValue,
+                )
+                return
+              }
+
+              changeCustomFieldFilter(
+                customFieldFilterControlField,
+                rawValue,
+              )
+            }}
+          />
+        </label>
+      ) : null}
+
       <label htmlFor="task-due-date-filter">Filter by due date</label>
       <select
         id="task-due-date-filter"
@@ -543,18 +795,37 @@ export function App({
       <label htmlFor="task-sort">Sort tasks</label>
       <select
         id="task-sort"
-        value={taskSort}
-        onChange={(event) =>
-          updateFilterSortPreferences({
-            sort: event.target.value as TaskSort,
-          })
+        value={
+          activeCustomFieldSortField
+            ? `custom:${activeCustomFieldSortField.id}`
+            : taskSort
         }
+        onChange={(event) => {
+          const value = event.target.value
+
+          if (value.startsWith('custom:')) {
+            updateFilterSortPreferences({
+              customFieldSortFieldId: value.slice('custom:'.length),
+            })
+            return
+          }
+
+          updateFilterSortPreferences({
+            sort: value as TaskSort,
+            customFieldSortFieldId: undefined,
+          })
+        }}
       >
         <option value="created">Created</option>
         <option value="title">Title</option>
         <option value="dueDate">Due date</option>
         <option value="priority">Priority</option>
         <option value="manual">Manual</option>
+        {customFields.map((field) => (
+          <option key={field.id} value={`custom:${field.id}`}>
+            Custom field: {field.name}
+          </option>
+        ))}
       </select>
 
       <label htmlFor="task-view">Task view</label>
@@ -711,6 +982,7 @@ export function App({
                         filterSet.name,
                       )
                       setViewPreferences(next)
+                      syncCustomFieldFilterEditor(next)
                       onViewPreferencesChange?.(next)
                       setError(null)
                     } catch (caught) {
@@ -730,6 +1002,7 @@ export function App({
                         filterSet.name,
                       )
                       setViewPreferences(next)
+                      syncCustomFieldFilterEditor(next)
                       onViewPreferencesChange?.(next)
                       setError(null)
                     } catch (caught) {
@@ -785,6 +1058,7 @@ export function App({
                         savedView.name,
                       )
                       setViewPreferences(next)
+                      syncCustomFieldFilterEditor(next)
                       onViewPreferencesChange?.(next)
                       setError(null)
                     } catch (caught) {
@@ -822,11 +1096,13 @@ export function App({
       <button
         type="button"
         onClick={() => {
+          setCustomFieldFilterFieldId('')
           updateFilterSortPreferences({
             query: '',
             status: 'all',
             priority: 'all',
             dueDate: 'all',
+            customFieldFilter: undefined,
           })
         }}
       >
@@ -1330,13 +1606,20 @@ export function App({
             (task) => task.projectId === project.id,
           )
           const tasks = sortTasks(
-            filterTasks(projectTasks, {
-              query: searchQuery,
-              status: statusFilter,
-              priority: priorityFilter,
-              dueDate: dueDateFilter,
-            }),
+            filterTasks(
+              projectTasks,
+              {
+                query: searchQuery,
+                status: statusFilter,
+                priority: priorityFilter,
+                dueDate: dueDateFilter,
+                customField: effectiveCustomFieldFilter,
+              },
+              customFields,
+            ),
             taskSort,
+            customFields,
+            effectiveCustomFieldSort,
           )
           const taskGroups = groupTasks(tasks, taskGroup, projectLists)
           const boardColumns = createTaskBoardColumns(tasks)

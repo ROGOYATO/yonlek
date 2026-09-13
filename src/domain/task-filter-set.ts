@@ -1,4 +1,4 @@
-import type { TaskDueDateFilter } from './task-filter'
+import type { CustomFieldTaskFilter, TaskDueDateFilter } from './task-filter'
 import type { TaskPriority, TaskStatus } from './task'
 
 export interface TaskFilterSet {
@@ -7,6 +7,7 @@ export interface TaskFilterSet {
   status: TaskStatus | 'all'
   priority: TaskPriority | 'all'
   dueDate: TaskDueDateFilter
+  customFieldFilter?: CustomFieldTaskFilter
 }
 
 export interface CreateTaskFilterSetInput {
@@ -15,6 +16,7 @@ export interface CreateTaskFilterSetInput {
   status: TaskStatus | 'all'
   priority: TaskPriority | 'all'
   dueDate: TaskDueDateFilter
+  customFieldFilter?: CustomFieldTaskFilter
 }
 
 export function createTaskFilterSet(
@@ -26,11 +28,17 @@ export function createTaskFilterSet(
     throw new Error('Filter set name is required')
   }
 
-  return {
+  const filterSet: TaskFilterSet = {
     name,
     query: input.query,
     status: input.status,
     priority: input.priority,
     dueDate: input.dueDate,
   }
+
+  if (input.customFieldFilter !== undefined) {
+    filterSet.customFieldFilter = input.customFieldFilter
+  }
+
+  return filterSet
 }

@@ -41,9 +41,10 @@ add an optional field with backward-compatible semantics.
 ## Saved filter set boundary
 
 Saved filter sets are part of the separate view-preference document. They keep
-only the Task search query, status filter, priority filter, and due-date presence
-filter. Do not put Project focus, sort, grouping, workspace IDs, or Task data into
-a saved filter set. Those settings belong to broader saved-view behavior.
+the Task search query, status filter, priority filter, due-date presence filter,
+and at most one active Custom Field filter. Do not put Project focus, built-in or
+Custom Field sort, grouping, workspace IDs, or Task data into a saved filter set.
+Those settings belong to broader saved-view behavior.
 
 Names are trimmed and non-empty. Saving the same normalized name replaces that
 preset in place instead of creating a duplicate. Version-1 preference documents
@@ -54,13 +55,28 @@ validate each preset and reject duplicate names.
 
 Saved views are broader than saved filter sets but remain view-preference data. A
 saved view keeps Project focus, Task search, status, priority, due-date filter,
-sort, and grouping. It must not copy workspace data or the `savedFilterSets`
-collection. Applying a saved view restores those seven view values only.
+optional Custom Field filter, built-in sort, optional Custom Field sort, and
+grouping. It must not copy workspace data or the `savedFilterSets` collection.
 
 Saved-view names are trimmed, non-empty, and unique after normalization. Saving
 the same normalized name replaces the existing view in place. Version-1
 preference documents without `savedViews` remain valid; supplied collections must
 validate every view and reject duplicate names.
+
+## Custom Field filter and sort boundary
+
+Custom Field filter/sort settings are disposable view-preference state, not
+workspace data. The filter stores a stable field ID, the field type, and one
+normalized primitive value. The sort stores one stable field ID. Preference
+storage validates those structures without requiring the referenced Workspace
+field to exist, because the two documents load independently.
+
+At runtime the Workspace definition is authoritative. Missing fields, type
+mismatches, or removed Select options make stale filter/sort references inactive
+instead of throwing or hiding every Task. Text filters use case-insensitive
+substring matching. Number, Checkbox, Select, and Date filters use exact typed
+matching. Sorts are ascending, place missing values last, use Task `createdAt`
+for ties, and use Select option order rather than option labels.
 
 
 ## PowerShell Git scalar output

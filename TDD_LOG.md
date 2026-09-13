@@ -2609,3 +2609,89 @@ contain 411 tests across 112 test files; live output remains authoritative. The
 runner must observe every intended RED before its GREEN patch, pass each focused
 GREEN, zero-warning lint, the normal full check, LF and diff audits, exact
 changed-path/content gates, remote-tip checks, commit, and non-force push.
+
+## TDD 233 - Type-aware Custom Field filtering
+
+**RED**
+
+Add focused domain coverage for normalized typed Custom Field filters across
+Text, Number, Checkbox, Select, and Date fields, including composition with the
+existing Task filters and inactive stale references.
+
+**GREEN**
+
+Add a stable field-ID/type/value filter specification and extend `filterTasks`
+with Workspace field definitions. Text uses case-insensitive substring matching;
+other supported field types use exact normalized values. Missing definitions,
+type mismatches, and removed Select options are inactive stale state.
+
+## TDD 234 - Type-aware Custom Field sorting
+
+**RED**
+
+Add focused domain coverage for ascending Text, Number, Checkbox, Select, and
+Date ordering, missing values, deterministic ties, and deleted field references.
+
+**GREEN**
+
+Add a stable field-ID sort specification and extend `sortTasks` with optional
+Custom Field definitions. Missing values sort last, equal values use Task
+`createdAt`, Select fields use option order, and missing field definitions leave
+the incoming Task order unchanged.
+
+## TDD 235 - Per-view preferences and saved presets
+
+**RED**
+
+Add focused view-preference coverage requiring Custom Field filter/sort state to
+inherit and restore per Task layout. Saved Filter Sets must capture only the
+Custom Field filter; Saved Views must capture both filter and sort while keeping
+the existing active-layout isolation behavior.
+
+**GREEN**
+
+Extend active filter/sort state, per-view snapshots, Saved Filter Sets, and Saved
+Views with optional Custom Field state. Preserve legacy preference shapes when
+those optional values are absent.
+
+## TDD 236 - Preference storage validation
+
+**RED**
+
+Add version-1 preference storage coverage for top-level, per-view, Saved Filter
+Set, and Saved View Custom Field state, legacy compatibility, and malformed typed
+payloads.
+
+**GREEN**
+
+Keep preference storage at version 1. Validate non-empty field IDs plus typed
+Text, Number, Checkbox, Select, and Date filter payloads and optional Custom
+Field sort IDs without requiring Workspace definitions to exist.
+
+## TDD 237 - App pipeline, UI, and browser persistence
+
+**RED**
+
+Add jsdom BrowserApp coverage requiring Custom Field filter controls, Custom
+Field sort choices, shared visible-Task behavior, bulk Select-all integration,
+layout consistency, reload persistence, and inactive stale field references.
+
+**GREEN**
+
+Feed the existing focused Task sequence through the type-aware Custom Field
+filter/sort domain seams. Add one Custom Field filter selector with type-specific
+value controls and one Custom Field sort option per current field. BrowserApp
+continues to persist the preference document separately from workspace data.
+
+## Prepared verification target after TDD 237
+
+This batch starts from confirmed `main` at
+`94e5576e5259247ab8bee316a19a6701bec7c39f`. The runner captures the live
+`HEAD^{tree}` directly from Git after checking the expected HEAD, parent, origin,
+remote tip, clean working tree, and empty index. Five focused RED files are
+prepared. If the live inventory is otherwise unchanged, the final suite is
+expected to contain 424 tests across 117 test files; live output remains
+authoritative. The runner must observe every intended RED before its GREEN
+patch, pass each focused GREEN, zero-warning lint, the normal full check, LF and
+diff audits, exact changed-path/content gates, remote-tip checks, commit, and
+non-force push.

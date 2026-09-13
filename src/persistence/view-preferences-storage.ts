@@ -1,3 +1,5 @@
+import { normalizeDateCustomFieldValue } from '../domain/custom-field'
+import type { CustomFieldTaskFilter } from '../domain/task-filter'
 import {
   createDefaultViewPreferences,
   isTaskViewMode,
@@ -20,6 +22,61 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
+
+function isNonEmptyTrimmedString(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    value.trim() === value
+  )
+}
+
+function isValidCustomFieldTaskFilter(
+  value: unknown,
+): value is CustomFieldTaskFilter {
+  if (
+    !isRecord(value) ||
+    !isNonEmptyTrimmedString(value.fieldId) ||
+    (value.fieldType !== 'text' &&
+      value.fieldType !== 'number' &&
+      value.fieldType !== 'checkbox' &&
+      value.fieldType !== 'select' &&
+      value.fieldType !== 'date')
+  ) {
+    return false
+  }
+
+  if (value.fieldType === 'text' || value.fieldType === 'select') {
+    return isNonEmptyTrimmedString(value.value)
+  }
+
+  if (value.fieldType === 'number') {
+    return typeof value.value === 'number' && Number.isFinite(value.value)
+  }
+
+  if (value.fieldType === 'checkbox') {
+    return typeof value.value === 'boolean'
+  }
+
+  if (typeof value.value !== 'string') {
+    return false
+  }
+
+  try {
+    return normalizeDateCustomFieldValue(value.value) === value.value
+  } catch {
+    return false
+  }
+}
+
+function isValidOptionalCustomFieldFilter(value: unknown): boolean {
+  return value === undefined || isValidCustomFieldTaskFilter(value)
+}
+
+function isValidOptionalCustomFieldSortFieldId(value: unknown): boolean {
+  return value === undefined || isNonEmptyTrimmedString(value)
+}
+
 function isValidTaskFilterSet(value: unknown): value is TaskFilterSet {
   return (
     isRecord(value) &&
@@ -37,7 +94,8 @@ function isValidTaskFilterSet(value: unknown): value is TaskFilterSet {
       value.priority === 'high') &&
     (value.dueDate === 'all' ||
       value.dueDate === 'withDueDate' ||
-      value.dueDate === 'withoutDueDate')
+      value.dueDate === 'withoutDueDate') &&
+    isValidOptionalCustomFieldFilter(value.customFieldFilter)
   )
 }
 
@@ -62,7 +120,9 @@ function isValidTaskViewFilterSortState(
       value.sort === 'title' ||
       value.sort === 'dueDate' ||
       value.sort === 'priority' ||
-      value.sort === 'manual')
+      value.sort === 'manual') &&
+    isValidOptionalCustomFieldFilter(value.customFieldFilter) &&
+    isValidOptionalCustomFieldSortFieldId(value.customFieldSortFieldId)
   )
 }
 
@@ -134,7 +194,9 @@ function isValidSavedTaskView(value: unknown): value is SavedTaskView {
     (value.group === 'none' ||
       value.group === 'status' ||
       value.group === 'priority' ||
-      value.group === 'list')
+      value.group === 'list') &&
+    isValidOptionalCustomFieldFilter(value.customFieldFilter) &&
+    isValidOptionalCustomFieldSortFieldId(value.customFieldSortFieldId)
   )
 }
 
@@ -185,6 +247,8 @@ function isValidPreferences(value: unknown): value is ViewPreferences {
       value.sort === 'dueDate' ||
       value.sort === 'priority' ||
       value.sort === 'manual') &&
+    isValidOptionalCustomFieldFilter(value.customFieldFilter) &&
+    isValidOptionalCustomFieldSortFieldId(value.customFieldSortFieldId) &&
     (value.viewMode === undefined || isTaskViewMode(value.viewMode)) &&
     (value.group === undefined ||
       value.group === 'none' ||

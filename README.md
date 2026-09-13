@@ -93,11 +93,11 @@ Current Task behavior includes:
 - `low`, `normal`, and `high` priority;
 - optional start date, due date, and description;
 - search by title and description;
-- status, priority, and due-date filters;
-- created, title, due-date, priority, and manual sort modes;
+- status, priority, due-date, and type-aware Custom Field filters;
+- created, title, due-date, priority, manual, and type-aware Custom Field sort modes;
 - view-only grouping by status, priority, or List after filtering and sorting;
-- named saved filter sets for search, status, priority, and due-date filters;
-- named saved views for Project focus, filters, sort, and grouping;
+- named saved filter sets for search, status, priority, due-date, and one optional Custom Field filter;
+- named saved views for Project focus, filters, built-in/Custom Field sort, and grouping;
 - persisted List, Board, Calendar, Table, Timeline, and Gantt Task layouts;
 - move between compatible Project and List containers;
 - nested Subtasks with cycle and parent integrity checks;
@@ -110,16 +110,17 @@ Project on its own.
 ### Saved filter sets
 
 Saved filter sets are view-preference data, not workspace data. A named set keeps
-only the Task search query, status filter, priority filter, and due-date presence
-filter. Saving the same normalized name updates that preset. Applying a preset
-changes only those four filters and preserves Project focus, sort, and grouping.
+the Task search query, status filter, priority filter, due-date presence filter,
+and one optional type-aware Custom Field filter. Saving the same normalized name
+updates that preset. Applying a preset changes only those filters and preserves
+Project focus, built-in/Custom Field sort, and grouping.
 
 ### Saved views
 
-Saved views are also view-preference data. A named view keeps the complete current
-list configuration: Project focus, Task search, status, priority, due-date filter,
-sort, and grouping. Applying a saved view restores those seven values. It does not
-copy workspace data or the saved-filter-set collection.
+Saved views are also view-preference data. A named view keeps Project focus, Task
+search, status, priority, due-date filter, optional Custom Field filter, built-in
+sort, optional Custom Field sort, and grouping. Applying a saved view restores
+that view state without copying workspace data or the saved-filter-set collection.
 
 ### Board view
 
@@ -191,8 +192,9 @@ milestone, baseline, work-calendar, or critical-path behavior is added here.
 
 ### Per-view filters and sorts
 
-Task search, status, priority, due-date presence, and sort can be remembered per
-Task layout without moving them into workspace data. The optional snapshot map is
+Task search, status, priority, due-date presence, optional Custom Field filter,
+built-in sort, and optional Custom Field sort can be remembered per Task layout
+without moving them into workspace data. The optional snapshot map is
 created only on the first real layout switch, so List-only version-1 preferences
 keep their existing persisted shape. An unseen target layout inherits the active
 filter/sort state on first entry; later switches restore that layout's own state.
@@ -237,7 +239,12 @@ People, and Custom Field definitions belong to the Workspace and Tasks refer to
 them by ID. Select Custom Fields own ordered options with stable IDs; Tasks store
 the selected option ID rather than its display label.
 Date Custom Fields store exact `YYYY-MM-DD` values and remain independent from
-the Task's start and due dates.
+the Task's start and due dates. One Custom Field filter and one Custom Field sort
+may be active at a time. Text filtering is case-insensitive substring matching;
+Number, Checkbox, Select, and Date filtering is exact and type-aware. Custom
+Field sorting is ascending, places missing values last, uses Task creation time
+for ties, and follows option order for Select fields. Stale field references are
+inactive rather than destructive.
 
 ### Task relationships
 
@@ -391,8 +398,8 @@ Current storage version:
 1
 ```
 
-View preferences include selected Project, Task search text, filters, Task sort,
-grouping, List/Board layout, saved filter sets, and saved views.
+View preferences include selected Project, Task search text, built-in and Custom
+Field filters/sorts, grouping, Task layout, saved filter sets, and saved views.
 
 Preferences are deliberately less strict than workspace data. Invalid,
 unsupported, or unreadable preferences fall back to defaults instead of
