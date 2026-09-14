@@ -1194,3 +1194,11 @@ path.
 ## Recurring Task integrity
 
 Recurring Task rules are Task-owned optional metadata with unit `day`, `week`, or `month` and a positive integer interval. A recurring Task must have a valid due date. Clearing that due date must clear recurrence in the same Task update. Completion-driven recurrence must update the completed source and append exactly one next occurrence in one workspace dispatch. The source occurrence is retained as immutable history; the next occurrence gets a fresh Task ID/creation time, resets to `todo`, advances dates with calendar arithmetic, and resets Checklist completion. Do not generate recurring subtrees or relationship edges implicitly.
+
+### Time-estimate invariant
+
+`Task.estimateMinutes`, when present, is a positive finite integer number of minutes. Keep the same rule in live Task state, Task Templates, Project Templates, and storage validation. Do not add implicit string, decimal-hour, or duration-unit coercion.
+
+### Focused test harness and RED validity
+
+Before packaging a new focused test, compare its setup with a currently passing neighboring test at the same public seam. Reuse repository constructors, stores, and persistence helpers instead of inventing imports, constructors, or raw storage keys. BrowserApp workspace fixtures must use `saveWorkspace`/`loadWorkspace` unless the test intentionally exercises malformed raw persistence. A UI RED is valid only after the fixture proves the expected Project/Task loaded; a missing-element error alone is not enough. If GREEN fails with the same setup or harness symptom as RED, treat the prior RED as invalid and stop before continuing the batch.

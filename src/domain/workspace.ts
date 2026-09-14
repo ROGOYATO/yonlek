@@ -46,6 +46,7 @@ import {
   setTaskList,
   setTaskDueDate,
   setTaskRecurrence,
+  setTaskTimeEstimate,
   setTaskStartDate,
   type Task,
   type TaskPriority,
@@ -120,6 +121,7 @@ export type WorkspaceAction =
   | { type: 'task/statusChanged'; taskId: string; status: TaskStatus }
   | { type: 'task/recurringCompleted'; taskId: string; occurrence: Task }
   | { type: 'task/recurrenceChanged'; taskId: string; recurrence: TaskRecurrenceRule | null }
+  | { type: 'task/timeEstimateChanged'; taskId: string; estimateMinutes: number | null }
   | { type: 'task/statusChangedBulk'; taskIds: string[]; status: TaskStatus }
   | { type: 'task/titleChanged'; taskId: string; title: string }
   | { type: 'task/priorityChanged'; taskId: string; priority: TaskPriority }
@@ -987,6 +989,16 @@ export function workspaceReducer(
         tasks: state.tasks.map((task) =>
           task.id === action.taskId
             ? setTaskRecurrence(task, action.recurrence)
+            : task,
+        ),
+      }
+
+    case 'task/timeEstimateChanged':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? setTaskTimeEstimate(task, action.estimateMinutes)
             : task,
         ),
       }

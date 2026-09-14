@@ -2900,3 +2900,21 @@ This batch starts from confirmed `main` at `56e52ea4835aedeb459dcfa4df7afdf3d1e7
 The first live run completed all five intended RED to GREEN cycles, zero-warning lint, and 458 tests across 130 test files. The final production build then caught TypeScript literal widening in the `task/recurringCompleted` reducer branch: the inline `status: 'done'` object was inferred as `string` inside the mapped Task array.
 
 Resume r1 narrows that unchanged runtime literal with `as const`. No recurrence behavior, test, timeout, worker setting, or storage contract changes. The resume reruns focused recurrence coverage, the production build, zero-warning lint, and the full check before the original commit and non-force push gates.
+
+## TDD 251-255: Time estimates
+
+- 251: Task estimate domain value and Task-copy semantics.
+- 252: Task Template and Project Template estimate preservation.
+- 253: Workspace estimate command/reducer.
+- 254: workspace storage v1 validation for live and template estimates.
+- 255: Task UI and BrowserApp persistence.
+
+Time tracking, rollups, bulk estimate editing, filtering, and sorting remain out of scope.
+
+### TDD 253 resume correction
+
+The first TDD 253 RED was invalid because the focused test imported a nonexistent `ReducerStore` constructor from `workspace-store`. The approved correction changed only the new test harness to the repository's existing local reducer-backed `WorkspaceStore` pattern. Assertions, fixtures, estimate values, error expectations, and production behavior were unchanged. The corrected TDD 253 RED must fail on the missing `changeTaskTimeEstimate` command before the original TDD 253 GREEN patch is reapplied.
+
+### TDD 255 resume correction
+
+The first TDD 255 RED was invalid because the new BrowserApp test seeded workspace JSON under an invented raw key, so BrowserApp rendered an empty workspace in both RED and GREEN. The approved correction changes only the new test fixture: it uses the existing `saveWorkspace`/`loadWorkspace` contract and domain constructors, and it proves the expected Task is loaded before asserting the missing Time-estimate control. The three behavioral test names, estimate values, recurrence behavior, error expectation, production patch, timeout settings, and worker settings remain unchanged. Future BrowserApp RED tests must prove fixture validity before a missing-element failure can count as RED.

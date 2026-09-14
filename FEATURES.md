@@ -237,7 +237,7 @@ not copied when one Task is duplicated.
 ### Later task capabilities
 
 - [x] Recurring Tasks
-- [ ] Time estimates
+- [x] Time estimates
 - [ ] Time tracking
 - [ ] Attachments
 - [ ] Activity history

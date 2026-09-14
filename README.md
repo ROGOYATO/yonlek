@@ -606,3 +606,7 @@ Dependency licenses do not license this project's source. See
 ## Recurring Tasks
 
 Recurring Tasks support completion-driven daily, weekly, and monthly recurrence with a positive interval. A recurrence requires a due date. Completing a recurring Task keeps the completed Task as history and creates exactly one new `todo` occurrence with calendar-advanced due/start dates, reset Checklist completion, and the same recurrence rule. This first version does not run a background scheduler or clone child Tasks/relationship edges.
+
+## Time estimates
+
+Tasks may carry an optional positive integer `estimateMinutes`. Estimates are copied by Task duplication, recurring occurrences, Task Templates, and Project Templates. They are planning metadata only; Time tracking remains separate.

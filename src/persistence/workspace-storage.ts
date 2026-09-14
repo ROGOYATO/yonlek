@@ -34,6 +34,10 @@ function invalidStorage(): never {
 }
 
 
+function isValidTaskTimeEstimate(value: unknown): boolean {
+  return typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) && value > 0
+}
+
 function isIsoInstant(value: unknown): value is string {
   if (typeof value !== 'string') {
     return false
@@ -79,6 +83,7 @@ function isValidTaskTemplateTask(value: unknown): boolean {
       value.priority === 'normal' ||
       value.priority === 'high') &&
     (value.description === undefined || typeof value.description === 'string') &&
+    (value.estimateMinutes === undefined || isValidTaskTimeEstimate(value.estimateMinutes)) &&
     (value.parentTaskKey === undefined ||
       (typeof value.parentTaskKey === 'string' &&
         value.parentTaskKey.trim().length > 0)) &&
@@ -185,6 +190,7 @@ function isValidProjectTemplateTask(value: unknown): boolean {
       value.priority === 'high') &&
     (value.description === undefined ||
       typeof value.description === 'string') &&
+    (value.estimateMinutes === undefined || isValidTaskTimeEstimate(value.estimateMinutes)) &&
     (value.listKey === undefined ||
       (typeof value.listKey === 'string' && value.listKey.trim().length > 0)) &&
     (value.parentTaskKey === undefined ||
@@ -439,6 +445,7 @@ function isValidTask(value: unknown): boolean {
     (value.archivedAt !== undefined && !isIsoInstant(value.archivedAt)) ||
     (value.description !== undefined &&
       typeof value.description !== 'string') ||
+    (value.estimateMinutes !== undefined && !isValidTaskTimeEstimate(value.estimateMinutes)) ||
     (value.listId !== undefined &&
       (typeof value.listId !== 'string' || value.listId.trim().length === 0)) ||
     (value.parentTaskId !== undefined &&

@@ -96,6 +96,7 @@ export interface WorkspaceCommands {
   renameTask(taskId: string, title: string): void
   changeTaskStatus(taskId: string, status: TaskStatus): void
   changeTaskRecurrence(taskId: string, recurrence: TaskRecurrenceRule | null): void
+  changeTaskTimeEstimate(taskId: string, estimateMinutes: number | null): void
   changeTasksStatus(taskIds: string[], status: TaskStatus): void
   changeTaskPriority(taskId: string, priority: TaskPriority): void
   changeTasksPriority(taskIds: string[], priority: TaskPriority): void
@@ -853,6 +854,14 @@ export function createWorkspaceCommands(
         type: 'task/recurrenceChanged',
         taskId,
         recurrence,
+      })
+    },
+
+    changeTaskTimeEstimate(taskId, estimateMinutes) {
+      store.dispatch({
+        type: 'task/timeEstimateChanged',
+        taskId,
+        estimateMinutes,
       })
     },
 

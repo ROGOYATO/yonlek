@@ -211,6 +211,9 @@ export function WorkspaceRoot({
       onChangeTaskRecurrence={(taskId, recurrence) => {
         commands.changeTaskRecurrence(taskId, recurrence)
       }}
+      onChangeTaskTimeEstimate={(taskId, estimateMinutes) => {
+        commands.changeTaskTimeEstimate(taskId, estimateMinutes)
+      }}
       onChangeTasksStatus={(taskIds, status) => {
         commands.changeTasksStatus(taskIds, status)
       }}

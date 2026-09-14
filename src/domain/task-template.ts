@@ -12,6 +12,7 @@ export interface TaskTemplateTask {
   status: TaskStatus
   priority: TaskPriority
   description?: string
+  estimateMinutes?: number
   parentTaskKey?: string
   checklist?: TaskTemplateChecklistItem[]
 }
@@ -98,6 +99,10 @@ export function createTaskTemplate(input: CreateTaskTemplateInput): TaskTemplate
         blueprint.description = task.description
       }
 
+      if (task.estimateMinutes !== undefined) {
+        blueprint.estimateMinutes = task.estimateMinutes
+      }
+
       if (
         task.parentTaskId !== undefined &&
         includedIds.has(task.parentTaskId)
@@ -159,6 +164,10 @@ export function instantiateTaskTemplate(
 
     if (blueprint.description !== undefined) {
       task.description = blueprint.description
+    }
+
+    if (blueprint.estimateMinutes !== undefined) {
+      task.estimateMinutes = blueprint.estimateMinutes
     }
 
     if (blueprint.parentTaskKey !== undefined) {

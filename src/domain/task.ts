@@ -21,6 +21,7 @@ export interface Task {
   startDate?: string
   dueDate?: string
   recurrence?: TaskRecurrenceRule
+  estimateMinutes?: number
   description?: string
   listId?: string
   parentTaskId?: string
@@ -346,6 +347,24 @@ export function createNextRecurringTaskOccurrence(
   }
 
   return next
+}
+
+
+export function setTaskTimeEstimate(
+  task: Task,
+  estimateMinutes: number | null,
+): Task {
+  if (estimateMinutes === null) {
+    const next = { ...task }
+    delete next.estimateMinutes
+    return next
+  }
+
+  if (!Number.isFinite(estimateMinutes) || !Number.isInteger(estimateMinutes) || estimateMinutes <= 0) {
+    throw new Error('Task time estimate must be a positive integer number of minutes')
+  }
+
+  return { ...task, estimateMinutes }
 }
 
 export function setTaskDescription(

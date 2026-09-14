@@ -115,6 +115,7 @@ export interface AppProps {
   onMoveTask?: (taskId: string, direction: MoveDirection) => void
   onChangeTaskStatus?: (taskId: string, status: TaskStatus) => void
   onChangeTaskRecurrence?: (taskId: string, recurrence: TaskRecurrenceRule | null) => void
+  onChangeTaskTimeEstimate?: (taskId: string, estimateMinutes: number | null) => void
   onChangeTasksStatus?: (taskIds: string[], status: TaskStatus) => void
   onChangeTaskPriority?: (taskId: string, priority: TaskPriority) => void
   onChangeTasksPriority?: (taskIds: string[], priority: TaskPriority) => void
@@ -190,6 +191,7 @@ export function App({
   onMoveTask,
   onChangeTaskStatus,
   onChangeTaskRecurrence,
+  onChangeTaskTimeEstimate,
   onChangeTasksStatus,
   onChangeTaskPriority,
   onChangeTasksPriority,
@@ -3199,6 +3201,34 @@ export function App({
                         ) : null}
 
 
+
+
+                        {onChangeTaskTimeEstimate ? (
+                          <>
+                            <label htmlFor={`task-time-estimate-${task.id}`}>
+                              Time estimate (minutes) for {task.title}
+                            </label>
+                            <input
+                              id={`task-time-estimate-${task.id}`}
+                              type="number"
+                              min={1}
+                              step={1}
+                              value={task.estimateMinutes ?? ''}
+                              onChange={(event) => {
+                                try {
+                                  const raw = event.target.value
+                                  onChangeTaskTimeEstimate(
+                                    task.id,
+                                    raw === '' ? null : Number(raw),
+                                  )
+                                  setError(null)
+                                } catch (caught) {
+                                  setError(errorMessage(caught))
+                                }
+                              }}
+                            />
+                          </>
+                        ) : null}
 
                         {onChangeTaskStartDate ? (
                           <>
