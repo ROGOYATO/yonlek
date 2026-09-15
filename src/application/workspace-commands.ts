@@ -97,6 +97,10 @@ export interface WorkspaceCommands {
   changeTaskStatus(taskId: string, status: TaskStatus): void
   changeTaskRecurrence(taskId: string, recurrence: TaskRecurrenceRule | null): void
   changeTaskTimeEstimate(taskId: string, estimateMinutes: number | null): void
+  addTaskTrackedMinutes(taskId: string, minutes: number): void
+  startTaskTimer(taskId: string): void
+  stopTaskTimer(taskId: string): void
+  deleteTaskTimeEntry(taskId: string, entryId: string): void
   changeTasksStatus(taskIds: string[], status: TaskStatus): void
   changeTaskPriority(taskId: string, priority: TaskPriority): void
   changeTasksPriority(taskIds: string[], priority: TaskPriority): void
@@ -862,6 +866,41 @@ export function createWorkspaceCommands(
         type: 'task/timeEstimateChanged',
         taskId,
         estimateMinutes,
+      })
+    },
+
+    addTaskTrackedMinutes(taskId, minutes) {
+      store.dispatch({
+        type: 'task/timeTrackedManually',
+        taskId,
+        entryId: runtime.nextId(),
+        minutes,
+        now: runtime.now(),
+      })
+    },
+
+    startTaskTimer(taskId) {
+      store.dispatch({
+        type: 'task/timerStarted',
+        taskId,
+        startedAt: runtime.now(),
+      })
+    },
+
+    stopTaskTimer(taskId) {
+      store.dispatch({
+        type: 'task/timerStopped',
+        taskId,
+        entryId: runtime.nextId(),
+        stoppedAt: runtime.now(),
+      })
+    },
+
+    deleteTaskTimeEntry(taskId, entryId) {
+      store.dispatch({
+        type: 'task/timeEntryDeleted',
+        taskId,
+        entryId,
       })
     },
 

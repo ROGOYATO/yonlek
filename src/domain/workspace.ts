@@ -38,7 +38,9 @@ import {
   type ProjectTemplate,
 } from './project'
 import {
+  addTaskTrackedMinutes,
   archiveTask,
+  deleteTaskTimeEntry,
   moveTaskToProject,
   renameTask,
   restoreTask,
@@ -47,6 +49,8 @@ import {
   setTaskDueDate,
   setTaskRecurrence,
   setTaskTimeEstimate,
+  startTaskTimer,
+  stopTaskTimer,
   setTaskStartDate,
   type Task,
   type TaskPriority,
@@ -122,6 +126,10 @@ export type WorkspaceAction =
   | { type: 'task/recurringCompleted'; taskId: string; occurrence: Task }
   | { type: 'task/recurrenceChanged'; taskId: string; recurrence: TaskRecurrenceRule | null }
   | { type: 'task/timeEstimateChanged'; taskId: string; estimateMinutes: number | null }
+  | { type: 'task/timeTrackedManually'; taskId: string; entryId: string; minutes: number; now: string }
+  | { type: 'task/timerStarted'; taskId: string; startedAt: string }
+  | { type: 'task/timerStopped'; taskId: string; entryId: string; stoppedAt: string }
+  | { type: 'task/timeEntryDeleted'; taskId: string; entryId: string }
   | { type: 'task/statusChangedBulk'; taskIds: string[]; status: TaskStatus }
   | { type: 'task/titleChanged'; taskId: string; title: string }
   | { type: 'task/priorityChanged'; taskId: string; priority: TaskPriority }
@@ -999,6 +1007,53 @@ export function workspaceReducer(
         tasks: state.tasks.map((task) =>
           task.id === action.taskId
             ? setTaskTimeEstimate(task, action.estimateMinutes)
+            : task,
+        ),
+      }
+
+    case 'task/timeTrackedManually':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? addTaskTrackedMinutes(task, {
+                id: action.entryId,
+                minutes: action.minutes,
+                now: action.now,
+              })
+            : task,
+        ),
+      }
+
+    case 'task/timerStarted':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? startTaskTimer(task, action.startedAt)
+            : task,
+        ),
+      }
+
+    case 'task/timerStopped':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? stopTaskTimer(task, {
+                id: action.entryId,
+                stoppedAt: action.stoppedAt,
+              })
+            : task,
+        ),
+      }
+
+    case 'task/timeEntryDeleted':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? deleteTaskTimeEntry(task, action.entryId)
             : task,
         ),
       }

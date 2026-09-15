@@ -566,8 +566,6 @@ Not implemented yet:
 - notifications;
 - public API or webhooks;
 - file attachment storage;
-- recurring Tasks;
-- time estimates and tracking;
 - export/import backup;
 - final responsive design and keyboard-navigation pass.
 
@@ -609,4 +607,8 @@ Recurring Tasks support completion-driven daily, weekly, and monthly recurrence 
 
 ## Time estimates
 
-Tasks may carry an optional positive integer `estimateMinutes`. Estimates are copied by Task duplication, recurring occurrences, Task Templates, and Project Templates. They are planning metadata only; Time tracking remains separate.
+Tasks may carry an optional positive integer `estimateMinutes`. Estimates are copied by Task duplication, recurring occurrences, Task Templates, and Project Templates. They are planning metadata and stay separate from tracked work.
+
+## Time tracking
+
+Tasks can record manual time in positive whole minutes or run one timer at a time. Completed entries store exact elapsed milliseconds and an ISO recording timestamp. A running timer survives browser reload because its start instant is workspace data. Duplicates, recurring occurrences, and templates do not inherit completed entries or a running timer.

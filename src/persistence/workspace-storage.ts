@@ -38,6 +38,19 @@ function isValidTaskTimeEstimate(value: unknown): boolean {
   return typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) && value > 0
 }
 
+function isValidTaskTimeEntry(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    value.id.trim().length > 0 &&
+    typeof value.durationMs === 'number' &&
+    Number.isFinite(value.durationMs) &&
+    Number.isInteger(value.durationMs) &&
+    value.durationMs > 0 &&
+    isIsoInstant(value.recordedAt)
+  )
+}
+
 function isIsoInstant(value: unknown): value is string {
   if (typeof value !== 'string') {
     return false
@@ -84,6 +97,8 @@ function isValidTaskTemplateTask(value: unknown): boolean {
       value.priority === 'high') &&
     (value.description === undefined || typeof value.description === 'string') &&
     (value.estimateMinutes === undefined || isValidTaskTimeEstimate(value.estimateMinutes)) &&
+    value.timeEntries === undefined &&
+    value.timerStartedAt === undefined &&
     (value.parentTaskKey === undefined ||
       (typeof value.parentTaskKey === 'string' &&
         value.parentTaskKey.trim().length > 0)) &&
@@ -191,6 +206,8 @@ function isValidProjectTemplateTask(value: unknown): boolean {
     (value.description === undefined ||
       typeof value.description === 'string') &&
     (value.estimateMinutes === undefined || isValidTaskTimeEstimate(value.estimateMinutes)) &&
+    value.timeEntries === undefined &&
+    value.timerStartedAt === undefined &&
     (value.listKey === undefined ||
       (typeof value.listKey === 'string' && value.listKey.trim().length > 0)) &&
     (value.parentTaskKey === undefined ||
@@ -446,6 +463,10 @@ function isValidTask(value: unknown): boolean {
     (value.description !== undefined &&
       typeof value.description !== 'string') ||
     (value.estimateMinutes !== undefined && !isValidTaskTimeEstimate(value.estimateMinutes)) ||
+    (value.timeEntries !== undefined &&
+      (!Array.isArray(value.timeEntries) ||
+        !value.timeEntries.every(isValidTaskTimeEntry))) ||
+    (value.timerStartedAt !== undefined && !isIsoInstant(value.timerStartedAt)) ||
     (value.listId !== undefined &&
       (typeof value.listId !== 'string' || value.listId.trim().length === 0)) ||
     (value.parentTaskId !== undefined &&
@@ -470,6 +491,16 @@ function isValidTask(value: unknown): boolean {
         Array.isArray(value.customFieldValues)))
   ) {
     return false
+  }
+
+  if (value.timeEntries !== undefined) {
+    const entryIds = new Set(
+      (value.timeEntries as Array<{ id: string }>).map((entry) => entry.id),
+    )
+
+    if (entryIds.size !== value.timeEntries.length) {
+      return false
+    }
   }
 
   if (value.startDate !== undefined) {

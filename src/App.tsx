@@ -40,11 +40,12 @@ import {
   type TaskViewMode,
   type ViewPreferences,
 } from './domain/view-preferences'
-import type {
-  TaskPriority,
-  TaskRecurrenceRule,
-  TaskRecurrenceUnit,
-  TaskStatus,
+import {
+  getTaskTrackedMinutes,
+  type TaskPriority,
+  type TaskRecurrenceRule,
+  type TaskRecurrenceUnit,
+  type TaskStatus,
 } from './domain/task'
 import {
   evaluateCustomFieldFormula,
@@ -116,6 +117,10 @@ export interface AppProps {
   onChangeTaskStatus?: (taskId: string, status: TaskStatus) => void
   onChangeTaskRecurrence?: (taskId: string, recurrence: TaskRecurrenceRule | null) => void
   onChangeTaskTimeEstimate?: (taskId: string, estimateMinutes: number | null) => void
+  onAddTaskTrackedMinutes?: (taskId: string, minutes: number) => void
+  onStartTaskTimer?: (taskId: string) => void
+  onStopTaskTimer?: (taskId: string) => void
+  onDeleteTaskTimeEntry?: (taskId: string, entryId: string) => void
   onChangeTasksStatus?: (taskIds: string[], status: TaskStatus) => void
   onChangeTaskPriority?: (taskId: string, priority: TaskPriority) => void
   onChangeTasksPriority?: (taskIds: string[], priority: TaskPriority) => void
@@ -130,6 +135,12 @@ export interface AppProps {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Unable to complete action'
+}
+
+function formatTrackedMinutes(minutes: number): string {
+  return Number.isInteger(minutes)
+    ? String(minutes)
+    : String(Math.round(minutes * 100) / 100)
 }
 
 export function App({
@@ -192,6 +203,10 @@ export function App({
   onChangeTaskStatus,
   onChangeTaskRecurrence,
   onChangeTaskTimeEstimate,
+  onAddTaskTrackedMinutes,
+  onStartTaskTimer,
+  onStopTaskTimer,
+  onDeleteTaskTimeEntry,
   onChangeTasksStatus,
   onChangeTaskPriority,
   onChangeTasksPriority,
@@ -241,6 +256,7 @@ export function App({
   const [checklistEdits, setChecklistEdits] = useState<Record<string, string>>({})
   const [taskEdits, setTaskEdits] = useState<Record<string, string>>({})
   const [taskDescriptions, setTaskDescriptions] = useState<Record<string, string>>({})
+  const [taskTrackedMinuteDrafts, setTaskTrackedMinuteDrafts] = useState<Record<string, string>>({})
   const [taskTemplateProjects, setTaskTemplateProjects] = useState<Record<string, string>>({})
   const [taskTemplateLists, setTaskTemplateLists] = useState<Record<string, string>>({})
   const [filterSetName, setFilterSetName] = useState('')
@@ -3227,6 +3243,116 @@ export function App({
                                 }
                               }}
                             />
+                          </>
+                        ) : null}
+
+                        {onAddTaskTrackedMinutes &&
+                        onStartTaskTimer &&
+                        onStopTaskTimer &&
+                        onDeleteTaskTimeEntry ? (
+                          <>
+                            <p>
+                              Tracked time for {task.title}: {' '}
+                              {formatTrackedMinutes(getTaskTrackedMinutes(task))} minutes
+                            </p>
+                            <label htmlFor={`task-tracked-minutes-${task.id}`}>
+                              Add tracked minutes for {task.title}
+                            </label>
+                            <input
+                              id={`task-tracked-minutes-${task.id}`}
+                              type="number"
+                              min={1}
+                              step={1}
+                              value={taskTrackedMinuteDrafts[task.id] ?? ''}
+                              onChange={(event) =>
+                                setTaskTrackedMinuteDrafts((current) => ({
+                                  ...current,
+                                  [task.id]: event.target.value,
+                                }))
+                              }
+                            />
+                            <button
+                              type="button"
+                              aria-label={`Add tracked time for ${task.title}`}
+                              onClick={() => {
+                                try {
+                                  onAddTaskTrackedMinutes(
+                                    task.id,
+                                    Number(taskTrackedMinuteDrafts[task.id] ?? ''),
+                                  )
+                                  setTaskTrackedMinuteDrafts((current) => ({
+                                    ...current,
+                                    [task.id]: '',
+                                  }))
+                                  setError(null)
+                                } catch (caught) {
+                                  setError(errorMessage(caught))
+                                }
+                              }}
+                            >
+                              Add tracked time
+                            </button>
+
+                            {task.timerStartedAt === undefined ? (
+                              <button
+                                type="button"
+                                aria-label={`Start timer for ${task.title}`}
+                                onClick={() => {
+                                  try {
+                                    onStartTaskTimer(task.id)
+                                    setError(null)
+                                  } catch (caught) {
+                                    setError(errorMessage(caught))
+                                  }
+                                }}
+                              >
+                                Start timer
+                              </button>
+                            ) : (
+                              <>
+                                <p>
+                                  Timer running for {task.title} since {task.timerStartedAt}
+                                </p>
+                                <button
+                                  type="button"
+                                  aria-label={`Stop timer for ${task.title}`}
+                                  onClick={() => {
+                                    try {
+                                      onStopTaskTimer(task.id)
+                                      setError(null)
+                                    } catch (caught) {
+                                      setError(errorMessage(caught))
+                                    }
+                                  }}
+                                >
+                                  Stop timer
+                                </button>
+                              </>
+                            )}
+
+                            {task.timeEntries?.length ? (
+                              <ul aria-label={`Time entries for ${task.title}`}>
+                                {task.timeEntries.map((entry, index) => (
+                                  <li key={entry.id}>
+                                    {formatTrackedMinutes(entry.durationMs / 60_000)} minutes
+                                    <button
+                                      type="button"
+                                      aria-label={`Delete time entry ${index + 1} for ${task.title}`}
+                                      onClick={() => {
+                                        try {
+                                          onDeleteTaskTimeEntry(task.id, entry.id)
+                                          setError(null)
+                                        } catch (caught) {
+                                          setError(errorMessage(caught))
+                                        }
+                                      }}
+                                    >
+                                      Delete time entry
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : null}
                           </>
                         ) : null}
 

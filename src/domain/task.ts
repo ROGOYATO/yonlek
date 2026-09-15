@@ -10,6 +10,12 @@ export interface TaskRecurrenceRule {
   interval: number
 }
 
+export interface TaskTimeEntry {
+  id: string
+  durationMs: number
+  recordedAt: string
+}
+
 export interface Task {
   id: string
   projectId: string
@@ -22,6 +28,8 @@ export interface Task {
   dueDate?: string
   recurrence?: TaskRecurrenceRule
   estimateMinutes?: number
+  timeEntries?: TaskTimeEntry[]
+  timerStartedAt?: string
   description?: string
   listId?: string
   parentTaskId?: string
@@ -112,6 +120,9 @@ export function duplicateTask(
   if (task.customFieldValues !== undefined) {
     duplicate.customFieldValues = { ...task.customFieldValues }
   }
+
+  delete duplicate.timeEntries
+  delete duplicate.timerStartedAt
 
   return duplicate
 }
@@ -346,6 +357,9 @@ export function createNextRecurringTaskOccurrence(
     next.customFieldValues = { ...task.customFieldValues }
   }
 
+  delete next.timeEntries
+  delete next.timerStartedAt
+
   return next
 }
 
@@ -365,6 +379,140 @@ export function setTaskTimeEstimate(
   }
 
   return { ...task, estimateMinutes }
+}
+
+function isIsoInstant(value: string): boolean {
+  const instant = new Date(value)
+
+  return (
+    !Number.isNaN(instant.getTime()) &&
+    instant.toISOString() === value
+  )
+}
+
+function normalizeTaskTimeEntryId(entryId: string): string {
+  const normalized = entryId.trim()
+
+  if (!normalized) {
+    throw new Error('Task time entry ID is required')
+  }
+
+  return normalized
+}
+
+function appendTaskTimeEntry(task: Task, entry: TaskTimeEntry): Task {
+  const id = normalizeTaskTimeEntryId(entry.id)
+
+  if (
+    !Number.isFinite(entry.durationMs) ||
+    !Number.isInteger(entry.durationMs) ||
+    entry.durationMs <= 0
+  ) {
+    throw new Error('Task time entry duration must be positive milliseconds')
+  }
+
+  if (!isIsoInstant(entry.recordedAt)) {
+    throw new Error('Task time entry timestamp must be an ISO instant')
+  }
+
+  if ((task.timeEntries ?? []).some((candidate) => candidate.id === id)) {
+    throw new Error('Task time entry ID must be unique')
+  }
+
+  return {
+    ...task,
+    timeEntries: [
+      ...(task.timeEntries ?? []),
+      { ...entry, id },
+    ],
+  }
+}
+
+export function addTaskTrackedMinutes(
+  task: Task,
+  input: { id: string; minutes: number; now: string },
+): Task {
+  if (
+    !Number.isFinite(input.minutes) ||
+    !Number.isInteger(input.minutes) ||
+    input.minutes <= 0
+  ) {
+    throw new Error('Tracked minutes must be a positive integer')
+  }
+
+  return appendTaskTimeEntry(task, {
+    id: input.id,
+    durationMs: input.minutes * 60_000,
+    recordedAt: input.now,
+  })
+}
+
+export function startTaskTimer(task: Task, startedAt: string): Task {
+  if (task.timerStartedAt !== undefined) {
+    throw new Error('Task timer is already running')
+  }
+
+  if (!isIsoInstant(startedAt)) {
+    throw new Error('Task timer start time must be an ISO instant')
+  }
+
+  return { ...task, timerStartedAt: startedAt }
+}
+
+export function stopTaskTimer(
+  task: Task,
+  input: { id: string; stoppedAt: string },
+): Task {
+  if (task.timerStartedAt === undefined) {
+    throw new Error('Task timer is not running')
+  }
+
+  if (!isIsoInstant(input.stoppedAt)) {
+    throw new Error('Task timer stop time must be an ISO instant')
+  }
+
+  const durationMs =
+    new Date(input.stoppedAt).getTime() - new Date(task.timerStartedAt).getTime()
+
+  if (durationMs <= 0) {
+    throw new Error('Task timer stop time must be after start time')
+  }
+
+  const stopped = appendTaskTimeEntry(task, {
+    id: input.id,
+    durationMs,
+    recordedAt: input.stoppedAt,
+  })
+  const next = { ...stopped }
+  delete next.timerStartedAt
+  return next
+}
+
+export function deleteTaskTimeEntry(task: Task, entryId: string): Task {
+  const id = normalizeTaskTimeEntryId(entryId)
+  const entries = task.timeEntries ?? []
+
+  if (!entries.some((entry) => entry.id === id)) {
+    throw new Error('Task time entry does not exist')
+  }
+
+  const remaining = entries.filter((entry) => entry.id !== id)
+  const next = { ...task }
+
+  if (remaining.length === 0) {
+    delete next.timeEntries
+  } else {
+    next.timeEntries = remaining
+  }
+
+  return next
+}
+
+export function getTaskTrackedMinutes(task: Task): number {
+  return (task.timeEntries ?? []).reduce(
+    (total, entry) => total + entry.durationMs,
+    0,
+  ) / 60_000
 }
 
 export function setTaskDescription(

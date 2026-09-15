@@ -1199,6 +1199,16 @@ Recurring Task rules are Task-owned optional metadata with unit `day`, `week`, o
 
 `Task.estimateMinutes`, when present, is a positive finite integer number of minutes. Keep the same rule in live Task state, Task Templates, Project Templates, and storage validation. Do not add implicit string, decimal-hour, or duration-unit coercion.
 
+### Time-tracking invariant
+
+`Task.timeEntries`, when present, contains completed entries with a non-empty ID, a positive integer `durationMs`, and an ISO `recordedAt` instant. Entry IDs are unique within one Task. `Task.timerStartedAt`, when present, is the single running timer start instant.
+
+Manual time entry accepts positive integer minutes and converts them to milliseconds at the domain boundary. Timer start and stop use the injected workspace runtime. Stopping requires a later instant and stores the exact elapsed milliseconds. Keep each user operation on one workspace dispatch.
+
+Actual tracked work is history, not planning metadata. Task duplication, the next recurring occurrence, Task Templates, and Project Templates must not copy completed entries or a running timer. Time estimates keep their separate copy behavior. Storage version 1 keeps both tracking fields optional for backward compatibility and rejects tracking fields inside template blueprints.
+
+The first UI slice shows completed tracked minutes, manual entry controls, one start/stop timer control, and deletion of completed entries. It does not add a live ticking display, rollups, billable flags, People attribution, reports, or background timers.
+
 ### Focused test harness and RED validity
 
 Before packaging a new focused test, compare its setup with a currently passing neighboring test at the same public seam. Reuse repository constructors, stores, and persistence helpers instead of inventing imports, constructors, or raw storage keys. BrowserApp workspace fixtures must use `saveWorkspace`/`loadWorkspace` unless the test intentionally exercises malformed raw persistence. A UI RED is valid only after the fixture proves the expected Project/Task loaded; a missing-element error alone is not enough. If GREEN fails with the same setup or harness symptom as RED, treat the prior RED as invalid and stop before continuing the batch.

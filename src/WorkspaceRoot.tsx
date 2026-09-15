@@ -214,6 +214,18 @@ export function WorkspaceRoot({
       onChangeTaskTimeEstimate={(taskId, estimateMinutes) => {
         commands.changeTaskTimeEstimate(taskId, estimateMinutes)
       }}
+      onAddTaskTrackedMinutes={(taskId, minutes) => {
+        commands.addTaskTrackedMinutes(taskId, minutes)
+      }}
+      onStartTaskTimer={(taskId) => {
+        commands.startTaskTimer(taskId)
+      }}
+      onStopTaskTimer={(taskId) => {
+        commands.stopTaskTimer(taskId)
+      }}
+      onDeleteTaskTimeEntry={(taskId, entryId) => {
+        commands.deleteTaskTimeEntry(taskId, entryId)
+      }}
       onChangeTasksStatus={(taskIds, status) => {
         commands.changeTasksStatus(taskIds, status)
       }}

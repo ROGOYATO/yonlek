@@ -2918,3 +2918,13 @@ The first TDD 253 RED was invalid because the focused test imported a nonexisten
 ### TDD 255 resume correction
 
 The first TDD 255 RED was invalid because the new BrowserApp test seeded workspace JSON under an invented raw key, so BrowserApp rendered an empty workspace in both RED and GREEN. The approved correction changes only the new test fixture: it uses the existing `saveWorkspace`/`loadWorkspace` contract and domain constructors, and it proves the expected Task is loaded before asserting the missing Time-estimate control. The three behavioral test names, estimate values, recurrence behavior, error expectation, production patch, timeout settings, and worker settings remain unchanged. Future BrowserApp RED tests must prove fixture validity before a missing-element failure can count as RED.
+
+## TDD 256-260: Time tracking
+
+- 256: Task-local completed time entries, manual minute entry, one running timer, exact elapsed milliseconds, entry deletion, and tracked-minute totals.
+- 257: copy boundaries that keep actual tracked work and running timers out of Task duplication, recurring occurrences, Task Templates, and Project Templates.
+- 258: workspace reducer and command coverage for manual entry, timer start/stop, and entry deletion with one dispatch per user operation.
+- 259: storage version 1 validation for completed entries and a running timer, including legacy compatibility and rejection of tracking fields inside template blueprints.
+- 260: Task controls in the existing UI plus BrowserApp persistence for manual entries, timer state across reload, timer stop, entry deletion, and validation errors.
+
+Time estimates remain independent planning metadata. This batch does not add live ticking UI, rollups, billable time, People attribution, reporting, attachments, or activity history.
