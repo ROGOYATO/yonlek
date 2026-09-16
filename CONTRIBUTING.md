@@ -5,10 +5,10 @@
 The current user-confirmed behavior baseline is:
 
 - branch: `main`
-- confirmed starting commit for TDD 203-207: `cf536db` (`TDD 198-202: add timeline view`)
+- confirmed starting commit for TDD 261-265: `f24f767` (`TDD 256-260: add Task time tracking`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- verified suite at that checkpoint: 360 tests across 82 files
+- verified suite at that checkpoint: 482 tests across 140 files
 - lint: 0 warnings and 0 errors
 - production build: passed
 - post-commit tree: clean
@@ -117,6 +117,12 @@ If a test appears incorrect, malformed, outdated, or underspecified:
 Test-harness corrections such as DOM cleanup or build-boundary configuration
 may be made without changing behavior assertions, but they must be described
 explicitly.
+
+Vitest file-level concurrency is capped at four workers because the full UI suite
+can exceed the unchanged 5-second test timeout under all-core parallel load even
+when the same tests pass in isolation. Do not remove the cap, raise the timeout,
+or change worker/pool settings as a shortcut; reproduce the baseline and target
+states first.
 
 For rendered tests, scope assertions to the semantic section that owns the
 behavior when the same text can legitimately appear elsewhere. Prefer
@@ -1208,6 +1214,18 @@ Manual time entry accepts positive integer minutes and converts them to millisec
 Actual tracked work is history, not planning metadata. Task duplication, the next recurring occurrence, Task Templates, and Project Templates must not copy completed entries or a running timer. Time estimates keep their separate copy behavior. Storage version 1 keeps both tracking fields optional for backward compatibility and rejects tracking fields inside template blueprints.
 
 The first UI slice shows completed tracked minutes, manual entry controls, one start/stop timer control, and deletion of completed entries. It does not add a live ticking display, rollups, billable flags, People attribution, reports, or background timers.
+
+### Attachment metadata invariant
+
+`Task.attachments`, when present, contains metadata only. Each entry has a non-empty ID and name, a non-negative safe integer `sizeBytes`, an optional non-empty media type, and an ISO `addedAt` instant. Attachment IDs are unique within one Task. The domain normalizes IDs, names, and media types before accepting an entry.
+
+The browser file input may read `File.name`, `File.size`, and `File.type`. Do not persist file bytes, local filesystem paths, object URLs, previews, upload handles, or other content references in this slice. Task duplication, recurring occurrences, Task Templates, and Project Templates must not copy attachment metadata. Storage version 1 keeps `attachments` optional for backward compatibility and rejects attachment fields inside template blueprints.
+
+Each add or delete action uses one workspace dispatch. The UI must state that only metadata is stored so a saved file name is not mistaken for durable file access.
+
+### Package-script invocation in runners
+
+When a package script already contains a strict flag, invoke the package script directly. Do not append the same flag again through `npm run <script> -- ...`. The TDD 256-260 resume r2 called `npm run lint -- --deny-warnings` even though `package.json` already defined `lint` as `oxlint . --deny-warnings`; oxlint rejected the duplicated flag before any repository change. Preflight checks should inspect the package script contract instead of duplicating it.
 
 ### Focused test harness and RED validity
 

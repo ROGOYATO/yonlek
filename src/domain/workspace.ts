@@ -38,8 +38,10 @@ import {
   type ProjectTemplate,
 } from './project'
 import {
+  addTaskAttachment,
   addTaskTrackedMinutes,
   archiveTask,
+  deleteTaskAttachment,
   deleteTaskTimeEntry,
   moveTaskToProject,
   renameTask,
@@ -130,6 +132,16 @@ export type WorkspaceAction =
   | { type: 'task/timerStarted'; taskId: string; startedAt: string }
   | { type: 'task/timerStopped'; taskId: string; entryId: string; stoppedAt: string }
   | { type: 'task/timeEntryDeleted'; taskId: string; entryId: string }
+  | {
+      type: 'task/attachmentAdded'
+      taskId: string
+      attachmentId: string
+      name: string
+      sizeBytes: number
+      mediaType?: string
+      now: string
+    }
+  | { type: 'task/attachmentDeleted'; taskId: string; attachmentId: string }
   | { type: 'task/statusChangedBulk'; taskIds: string[]; status: TaskStatus }
   | { type: 'task/titleChanged'; taskId: string; title: string }
   | { type: 'task/priorityChanged'; taskId: string; priority: TaskPriority }
@@ -1054,6 +1066,32 @@ export function workspaceReducer(
         tasks: state.tasks.map((task) =>
           task.id === action.taskId
             ? deleteTaskTimeEntry(task, action.entryId)
+            : task,
+        ),
+      }
+
+    case 'task/attachmentAdded':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? addTaskAttachment(task, {
+                id: action.attachmentId,
+                name: action.name,
+                sizeBytes: action.sizeBytes,
+                mediaType: action.mediaType,
+                now: action.now,
+              })
+            : task,
+        ),
+      }
+
+    case 'task/attachmentDeleted':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? deleteTaskAttachment(task, action.attachmentId)
             : task,
         ),
       }

@@ -121,6 +121,11 @@ export interface AppProps {
   onStartTaskTimer?: (taskId: string) => void
   onStopTaskTimer?: (taskId: string) => void
   onDeleteTaskTimeEntry?: (taskId: string, entryId: string) => void
+  onAddTaskAttachment?: (
+    taskId: string,
+    input: { name: string; sizeBytes: number; mediaType?: string },
+  ) => void
+  onDeleteTaskAttachment?: (taskId: string, attachmentId: string) => void
   onChangeTasksStatus?: (taskIds: string[], status: TaskStatus) => void
   onChangeTaskPriority?: (taskId: string, priority: TaskPriority) => void
   onChangeTasksPriority?: (taskIds: string[], priority: TaskPriority) => void
@@ -207,6 +212,8 @@ export function App({
   onStartTaskTimer,
   onStopTaskTimer,
   onDeleteTaskTimeEntry,
+  onAddTaskAttachment,
+  onDeleteTaskAttachment,
   onChangeTasksStatus,
   onChangeTaskPriority,
   onChangeTasksPriority,
@@ -602,6 +609,10 @@ export function App({
         {activeProjects.length} {projectLabel} · {workspaceSummary.total}{' '}
         {taskLabel} · {workspaceSummary.done} done
       </p>
+
+      {onAddTaskAttachment && onDeleteTaskAttachment ? (
+        <p>Attachment metadata only. File content is not stored.</p>
+      ) : null}
 
       <label htmlFor="project-view">View project</label>
       <select
@@ -3348,6 +3359,68 @@ export function App({
                                       }}
                                     >
                                       Delete time entry
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : null}
+                          </>
+                        ) : null}
+
+                        {onAddTaskAttachment && onDeleteTaskAttachment ? (
+                          <>
+                            <label htmlFor={`task-attachment-${task.id}`}>
+                              Add attachment for {task.title}
+                            </label>
+                            <input
+                              id={`task-attachment-${task.id}`}
+                              type="file"
+                              onChange={(event) => {
+                                const input = event.currentTarget
+                                const file = input.files?.[0]
+
+                                if (!file) {
+                                  return
+                                }
+
+                                try {
+                                  onAddTaskAttachment(task.id, {
+                                    name: file.name,
+                                    sizeBytes: file.size,
+                                    ...(file.type ? { mediaType: file.type } : {}),
+                                  })
+                                  input.value = ''
+                                  setError(null)
+                                } catch (caught) {
+                                  setError(errorMessage(caught))
+                                }
+                              }}
+                            />
+                            {task.attachments?.length ? (
+                              <ul aria-label={`Attachments for ${task.title}`}>
+                                {task.attachments.map((attachment) => (
+                                  <li key={attachment.id}>
+                                    <span>{attachment.name}</span>{' '}
+                                    <span>{attachment.sizeBytes} bytes</span>
+                                    {attachment.mediaType ? (
+                                      <> <span>{attachment.mediaType}</span></>
+                                    ) : null}
+                                    <button
+                                      type="button"
+                                      aria-label={`Delete attachment ${attachment.name} from ${task.title}`}
+                                      onClick={() => {
+                                        try {
+                                          onDeleteTaskAttachment(
+                                            task.id,
+                                            attachment.id,
+                                          )
+                                          setError(null)
+                                        } catch (caught) {
+                                          setError(errorMessage(caught))
+                                        }
+                                      }}
+                                    >
+                                      Delete attachment
                                     </button>
                                   </li>
                                 ))}

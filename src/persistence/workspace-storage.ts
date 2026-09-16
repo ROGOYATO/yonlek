@@ -51,6 +51,23 @@ function isValidTaskTimeEntry(value: unknown): boolean {
   )
 }
 
+function isValidTaskAttachment(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    value.id.trim().length > 0 &&
+    typeof value.name === 'string' &&
+    value.name.trim().length > 0 &&
+    typeof value.sizeBytes === 'number' &&
+    Number.isSafeInteger(value.sizeBytes) &&
+    value.sizeBytes >= 0 &&
+    (value.mediaType === undefined ||
+      (typeof value.mediaType === 'string' &&
+        value.mediaType.trim().length > 0)) &&
+    isIsoInstant(value.addedAt)
+  )
+}
+
 function isIsoInstant(value: unknown): value is string {
   if (typeof value !== 'string') {
     return false
@@ -99,6 +116,7 @@ function isValidTaskTemplateTask(value: unknown): boolean {
     (value.estimateMinutes === undefined || isValidTaskTimeEstimate(value.estimateMinutes)) &&
     value.timeEntries === undefined &&
     value.timerStartedAt === undefined &&
+    value.attachments === undefined &&
     (value.parentTaskKey === undefined ||
       (typeof value.parentTaskKey === 'string' &&
         value.parentTaskKey.trim().length > 0)) &&
@@ -208,6 +226,7 @@ function isValidProjectTemplateTask(value: unknown): boolean {
     (value.estimateMinutes === undefined || isValidTaskTimeEstimate(value.estimateMinutes)) &&
     value.timeEntries === undefined &&
     value.timerStartedAt === undefined &&
+    value.attachments === undefined &&
     (value.listKey === undefined ||
       (typeof value.listKey === 'string' && value.listKey.trim().length > 0)) &&
     (value.parentTaskKey === undefined ||
@@ -467,6 +486,9 @@ function isValidTask(value: unknown): boolean {
       (!Array.isArray(value.timeEntries) ||
         !value.timeEntries.every(isValidTaskTimeEntry))) ||
     (value.timerStartedAt !== undefined && !isIsoInstant(value.timerStartedAt)) ||
+    (value.attachments !== undefined &&
+      (!Array.isArray(value.attachments) ||
+        !value.attachments.every(isValidTaskAttachment))) ||
     (value.listId !== undefined &&
       (typeof value.listId !== 'string' || value.listId.trim().length === 0)) ||
     (value.parentTaskId !== undefined &&
@@ -499,6 +521,18 @@ function isValidTask(value: unknown): boolean {
     )
 
     if (entryIds.size !== value.timeEntries.length) {
+      return false
+    }
+  }
+
+  if (value.attachments !== undefined) {
+    const attachmentIds = new Set(
+      (value.attachments as Array<{ id: string }>).map(
+        (attachment) => attachment.id,
+      ),
+    )
+
+    if (attachmentIds.size !== value.attachments.length) {
       return false
     }
   }

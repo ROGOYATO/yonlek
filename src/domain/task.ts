@@ -16,6 +16,14 @@ export interface TaskTimeEntry {
   recordedAt: string
 }
 
+export interface TaskAttachment {
+  id: string
+  name: string
+  sizeBytes: number
+  mediaType?: string
+  addedAt: string
+}
+
 export interface Task {
   id: string
   projectId: string
@@ -30,6 +38,7 @@ export interface Task {
   estimateMinutes?: number
   timeEntries?: TaskTimeEntry[]
   timerStartedAt?: string
+  attachments?: TaskAttachment[]
   description?: string
   listId?: string
   parentTaskId?: string
@@ -123,6 +132,7 @@ export function duplicateTask(
 
   delete duplicate.timeEntries
   delete duplicate.timerStartedAt
+  delete duplicate.attachments
 
   return duplicate
 }
@@ -359,6 +369,7 @@ export function createNextRecurringTaskOccurrence(
 
   delete next.timeEntries
   delete next.timerStartedAt
+  delete next.attachments
 
   return next
 }
@@ -513,6 +524,86 @@ export function getTaskTrackedMinutes(task: Task): number {
     (total, entry) => total + entry.durationMs,
     0,
   ) / 60_000
+}
+
+function normalizeTaskAttachmentId(attachmentId: string): string {
+  const normalized = attachmentId.trim()
+
+  if (!normalized) {
+    throw new Error('Task attachment ID is required')
+  }
+
+  return normalized
+}
+
+export function addTaskAttachment(
+  task: Task,
+  input: {
+    id: string
+    name: string
+    sizeBytes: number
+    mediaType?: string
+    now: string
+  },
+): Task {
+  const id = normalizeTaskAttachmentId(input.id)
+  const name = input.name.trim()
+
+  if (!name) {
+    throw new Error('Task attachment name is required')
+  }
+
+  if (!Number.isSafeInteger(input.sizeBytes) || input.sizeBytes < 0) {
+    throw new Error('Task attachment size must be a non-negative integer')
+  }
+
+  if (!isIsoInstant(input.now)) {
+    throw new Error('Task attachment timestamp must be an ISO instant')
+  }
+
+  if ((task.attachments ?? []).some((attachment) => attachment.id === id)) {
+    throw new Error('Task attachment ID must be unique')
+  }
+
+  const attachment: TaskAttachment = {
+    id,
+    name,
+    sizeBytes: input.sizeBytes,
+    addedAt: input.now,
+  }
+  const mediaType = input.mediaType?.trim()
+
+  if (mediaType) {
+    attachment.mediaType = mediaType
+  }
+
+  return {
+    ...task,
+    attachments: [...(task.attachments ?? []), attachment],
+  }
+}
+
+export function deleteTaskAttachment(
+  task: Task,
+  attachmentId: string,
+): Task {
+  const id = normalizeTaskAttachmentId(attachmentId)
+  const attachments = task.attachments ?? []
+
+  if (!attachments.some((attachment) => attachment.id === id)) {
+    throw new Error('Task attachment does not exist')
+  }
+
+  const remaining = attachments.filter((attachment) => attachment.id !== id)
+  const next = { ...task }
+
+  if (remaining.length === 0) {
+    delete next.attachments
+  } else {
+    next.attachments = remaining
+  }
+
+  return next
 }
 
 export function setTaskDescription(

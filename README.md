@@ -8,13 +8,13 @@ are being added before a final visual design system or backend is introduced.
 
 ## Verified behavior checkpoint
 
-The confirmed starting checkpoint for TDD 243-245 is TDD 242.
+The confirmed starting checkpoint for TDD 261-265 is TDD 260.
 
 - branch: `main`
-- behavior commit: `4108eab` (`TDD 238-242: add Formula Custom Fields`)
+- behavior commit: `f24f767` (`TDD 256-260: add Task time tracking`)
 - local repository: `C:\Users\yavuz\git\yonlek`
 - remote: `https://github.com/ROGOYATO/yonlek.git`
-- tests: 440 passed across 122 files
+- tests: 482 passed across 140 files
 - lint: 0 warnings, 0 errors with `oxlint . --deny-warnings`
 - production build: passed
 - working tree after the feature commit: clean
@@ -22,8 +22,8 @@ The confirmed starting checkpoint for TDD 243-245 is TDD 242.
 
 This checkpoint includes the core Project/Task model, archive/restore, templates,
 all current Task layouts, per-view filters/sorts, saved filter sets/views, bulk
-actions, Select, Date, and Formula Custom Fields, and type-aware Custom Field
-filtering and sorting.
+actions, current Custom Fields, recurring Tasks, time estimates, and Task time
+tracking.
 
 ## Current product model
 
@@ -612,3 +612,7 @@ Tasks may carry an optional positive integer `estimateMinutes`. Estimates are co
 ## Time tracking
 
 Tasks can record manual time in positive whole minutes or run one timer at a time. Completed entries store exact elapsed milliseconds and an ISO recording timestamp. A running timer survives browser reload because its start instant is workspace data. Duplicates, recurring occurrences, and templates do not inherit completed entries or a running timer.
+
+## Attachments
+
+Tasks can keep local attachment metadata with a stable ID, file name, byte size, optional media type, and ISO added timestamp. The browser file input reads only that metadata. File bytes, local paths, previews, uploads, downloads, and remote file storage are not implemented. Attachment metadata stays with the source Task and is not copied into duplicates, recurring occurrences, Task Templates, or Project Templates.

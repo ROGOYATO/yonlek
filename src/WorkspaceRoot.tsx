@@ -226,6 +226,12 @@ export function WorkspaceRoot({
       onDeleteTaskTimeEntry={(taskId, entryId) => {
         commands.deleteTaskTimeEntry(taskId, entryId)
       }}
+      onAddTaskAttachment={(taskId, input) => {
+        commands.addTaskAttachment(taskId, input)
+      }}
+      onDeleteTaskAttachment={(taskId, attachmentId) => {
+        commands.deleteTaskAttachment(taskId, attachmentId)
+      }}
       onChangeTasksStatus={(taskIds, status) => {
         commands.changeTasksStatus(taskIds, status)
       }}

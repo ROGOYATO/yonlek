@@ -2,25 +2,23 @@
 
 ## Current verified behavior checkpoint
 
-The latest user-confirmed behavior commit before TDD 198-202 is:
+The latest user-confirmed behavior commit before TDD 261-265 is:
 
 ```text
-bad27b3  TDD 193-197: add table view
+f24f767  TDD 256-260: add Task time tracking
 ```
 
 Verified on Windows from `C:\Users\yavuz\git\yonlek`:
 
 ```text
-Tests: 355 passed across 77 files
+Tests: 482 passed across 140 files
 Lint: 0 warnings, 0 errors
 Build: passed
 Working tree: clean after commit
-Push: origin/main updated from 10cf1b5 to bad27b3
+Push: origin/main updated from 864ef2f to f24f767
 ```
 
-TDD 193-197 added Table view on top of the confirmed Calendar checkpoint. The
-approved TDD 197 lint cleanup removed only an unused local binding in the focused
-Table test. It did not change production behavior or assertions.
+The live commit tree is `4ab0b5c1c6bfdfbe1b2b9bbdcdbc62f36c6193ed`.
 
 This log records completed behavior cycles. RED was observed before the
 corresponding production implementation unless a row is explicitly marked as
@@ -2928,3 +2926,71 @@ The first TDD 255 RED was invalid because the new BrowserApp test seeded workspa
 - 260: Task controls in the existing UI plus BrowserApp persistence for manual entries, timer state across reload, timer stop, entry deletion, and validation errors.
 
 Time estimates remain independent planning metadata. This batch does not add live ticking UI, rollups, billable time, People attribution, reporting, attachments, or activity history.
+
+## TDD 256-260 live completion notes
+
+The first TDD 256-260 full check stopped on the existing `BrowserApp.custom-field-filter-sort.test.tsx` 5-second timeout after the new focused Time-tracking coverage, build, and lint had already passed. The same historical test passed twice in isolation without changing its timeout or worker settings.
+
+Resume r1 then stopped in its own preflight because the guard looked for a literal test path even though the runner read that path from the manifest. Resume r2 fixed that guard but duplicated `--deny-warnings` onto an npm lint script that already contained the flag, so oxlint rejected the command before any repository change. Resume r3 invoked `npm run lint` directly. The full check then passed 482 tests across 140 files, commit `f24f767` was created, and a non-force push updated `origin/main`.
+
+## TDD 261 - Task attachment metadata domain
+
+**RED**
+
+Add focused Task-domain coverage requiring immutable attachment add/delete, normalized IDs and names, non-negative integer byte sizes including zero-byte files, optional media type normalization, canonical ISO timestamps, duplicate-ID rejection, and removal of the `attachments` property when the last entry is deleted.
+
+**GREEN**
+
+Add `TaskAttachment`, optional `Task.attachments`, `addTaskAttachment`, and `deleteTaskAttachment`. Store metadata only. No file bytes or local paths enter Task state.
+
+## TDD 262 - Attachment copy boundaries
+
+**RED**
+
+Add pure-domain coverage requiring Task duplication and the next recurring occurrence to exclude attachment metadata while preserving independent planning metadata such as time estimates. Require Task Templates and Project Templates to remain free of attachment fields.
+
+**GREEN**
+
+Explicitly remove attachments from duplicated Tasks and recurring occurrences. Keep the existing template whitelist behavior unchanged.
+
+## TDD 263 - Workspace attachment commands
+
+**RED**
+
+Add reducer-backed command coverage requiring one runtime-generated ID and timestamp for add, one dispatch per successful add/delete operation, exact metadata storage, and rejection of invalid metadata without accepting new Task state.
+
+**GREEN**
+
+Add attachment add/delete workspace actions, reducer delegation to the Task domain, and `WorkspaceCommands.addTaskAttachment` / `deleteTaskAttachment`.
+
+## TDD 264 - Attachment storage version 1
+
+**RED**
+
+Add storage coverage requiring valid attachment metadata to round-trip in workspace storage version 1, legacy Tasks without attachments to remain valid, and malformed metadata, duplicate attachment IDs, or attachment fields inside Task/Project Template blueprints to be rejected.
+
+**GREEN**
+
+Validate optional live Task attachments and unique attachment IDs without a storage-version bump. Keep template blueprints free of attachment metadata.
+
+## TDD 265 - Browser attachment metadata UI
+
+**RED**
+
+Add BrowserApp coverage that proves the expected Task fixture loaded before requiring a file input. Selecting a browser `File` must persist only its name, byte size, optional media type, runtime ID, and timestamp. Reload must preserve the metadata, delete must persist, and zero-byte files with no media type must not gain path or content fields.
+
+**GREEN**
+
+Wire attachment commands through WorkspaceRoot. Add a Task file input, metadata list, delete action, and one clear notice that file content is not stored. The UI does not add upload, download, preview, object-URL, local-path, or blob persistence.
+
+## Prepared verification target after TDD 265
+
+This batch starts from confirmed `main` at `f24f767a41cedbf169cccb5e865817ec62057ad7`, tree `4ab0b5c1c6bfdfbe1b2b9bbdcdbc62f36c6193ed`. Five focused RED files are prepared. If the live inventory is otherwise unchanged, the final suite is expected to contain 493 tests across 145 test files; live output remains authoritative. The runner must observe every intended RED before its GREEN patch, pass all five focused attachment suites together, run an explicit production build, zero-warning lint, the normal full check, LF and diff audits, exact changed-path/content gates, remote-tip checks, commit, and non-force push.
+
+## TDD 261-265 full-suite harness stabilization
+
+The first TDD 261-265 final full check passed all attachment RED/GREEN cycles, focused coverage, production build, and zero-warning lint, then hit the existing 5-second timeout in `BrowserApp.custom-field-filter-sort.test.tsx`; the same run also put `WorkspaceRoot.task-template.test.tsx` just over the threshold. A diagnostic resume showed both tests passing twice in isolation and together while the Custom Field test still timed out under the normal full suite.
+
+A scratch A/B run then compared the unchanged `f24f767` baseline with the exact 15-file Attachments target on the same machine and dependency tree. All three targeted rounds passed on both sides, while both baseline and target full suites timed out in the same Custom Field test. Attachments therefore are not the necessary cause of the failure; the unstable boundary is full-suite file-level resource contention.
+
+Keep the existing test bodies and 5-second timeout unchanged. Cap Vitest file-level concurrency at four workers in `vitest.config.ts`. Before applying that harness correction to the live dirty checkout, the continuation runner must reproduce the failing baseline in scratch, apply only the worker cap there, and require the normal baseline full check to pass. The harness change is committed separately before the 15-file Attachments commit.

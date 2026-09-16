@@ -4,11 +4,11 @@ This file tracks product behavior, not visual polish. A checkbox moves to
 complete only after the behavior has a confirmed GREEN cycle and the final
 verification gate has passed.
 
-Confirmed starting checkpoint for TDD 218-222:
+Confirmed starting checkpoint for TDD 261-265:
 
-- commit: `4c01e45` (`TDD 213-217: add per-view filters and sorts`)
-- TDD: 217 GREEN
-- tests: 383 passed across 97 files
+- commit: `f24f767` (`TDD 256-260: add Task time tracking`)
+- TDD: 260 GREEN
+- tests: 482 passed across 140 files
 - lint: 0 warnings, 0 errors
 - production build: passed
 
@@ -239,12 +239,14 @@ not copied when one Task is duplicated.
 - [x] Recurring Tasks
 - [x] Time estimates
 - [x] Time tracking
-- [ ] Attachments
+- [x] Attachments, metadata only
 - [ ] Activity history
 
 Recurring Tasks use completion-driven daily, weekly, or monthly rules with a positive interval and required due date. Completing a recurring Task preserves the completed occurrence and creates one fresh `todo` occurrence with calendar-advanced dates; monthly rules clamp safely at month end. Clearing a recurring Task's due date also clears its recurrence rule so persisted Task state cannot violate the due-date requirement.
 
 Time tracking stores completed Task-local entries as positive millisecond durations with stable entry IDs and ISO timestamps. A Task may also keep one running timer start instant. Manual entry accepts positive integer minutes; stopping a timer records the exact elapsed milliseconds. Actual tracked work and running timers stay with the source Task and are not copied into duplicates, recurring occurrences, Task Templates, or Project Templates.
+
+Task attachments currently store metadata only. Each record has a stable ID, file name, byte size, optional media type, and ISO added timestamp. Browser selection records those fields through the normal workspace command and persistence path. File bytes and local paths are never stored. Attachment metadata is source-Task state and is excluded from duplicates, recurring occurrences, Task Templates, and Project Templates. Actual file storage remains out of scope.
 
 ## Views
 

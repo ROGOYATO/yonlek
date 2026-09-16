@@ -101,6 +101,11 @@ export interface WorkspaceCommands {
   startTaskTimer(taskId: string): void
   stopTaskTimer(taskId: string): void
   deleteTaskTimeEntry(taskId: string, entryId: string): void
+  addTaskAttachment(
+    taskId: string,
+    input: { name: string; sizeBytes: number; mediaType?: string },
+  ): void
+  deleteTaskAttachment(taskId: string, attachmentId: string): void
   changeTasksStatus(taskIds: string[], status: TaskStatus): void
   changeTaskPriority(taskId: string, priority: TaskPriority): void
   changeTasksPriority(taskIds: string[], priority: TaskPriority): void
@@ -901,6 +906,26 @@ export function createWorkspaceCommands(
         type: 'task/timeEntryDeleted',
         taskId,
         entryId,
+      })
+    },
+
+    addTaskAttachment(taskId, input) {
+      store.dispatch({
+        type: 'task/attachmentAdded',
+        taskId,
+        attachmentId: runtime.nextId(),
+        name: input.name,
+        sizeBytes: input.sizeBytes,
+        mediaType: input.mediaType,
+        now: runtime.now(),
+      })
+    },
+
+    deleteTaskAttachment(taskId, attachmentId) {
+      store.dispatch({
+        type: 'task/attachmentDeleted',
+        taskId,
+        attachmentId,
       })
     },
 
