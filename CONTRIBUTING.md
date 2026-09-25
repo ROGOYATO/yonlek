@@ -1274,3 +1274,22 @@ defaults when its stored document cannot be migrated or validated. Loading a
 current-version document must not rewrite storage. Backup-file versioning is a
 separate compatibility boundary and must not be coupled to browser-storage
 version numbers.
+
+
+## Automation core contract
+
+Keep Automation configuration separate from execution. An Automation owns a
+stable non-empty ID, normalized non-empty name, boolean enabled state, one typed
+trigger, and typed condition/action arrays. Domain update helpers must return new
+Automation values and must never replace the stable ID.
+
+Workspace owns the optional Automation collection. Adding a duplicate Automation
+ID is invalid; deleting the final Automation removes the optional collection
+instead of leaving an empty persisted field. Workspace commands may create and
+edit configuration, but TDD 286-290 must not evaluate triggers, conditions, or
+actions.
+
+Do not observe the DOM to discover trigger events. TDD 291-295 must build on the
+existing Activity/event boundary. Keep browser storage at version 1 in this
+batch. Automation-specific persisted-data validation, execution composition, and
+UI belong to TDD 306-310.

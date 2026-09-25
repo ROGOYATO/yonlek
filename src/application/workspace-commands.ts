@@ -1,3 +1,9 @@
+import {
+  createAutomation,
+  type AutomationAction,
+  type AutomationCondition,
+  type AutomationTrigger,
+} from '../domain/automation'
 import { createChecklistItem } from '../domain/checklist'
 import {
   createCustomField,
@@ -40,6 +46,27 @@ export interface WorkspaceRuntime {
 }
 
 export interface WorkspaceCommands {
+  addAutomation(
+    name: string,
+    input: {
+      enabled: boolean
+      trigger: AutomationTrigger
+      conditions?: AutomationCondition[]
+      actions?: AutomationAction[]
+    },
+  ): ReturnType<typeof createAutomation>
+  renameAutomation(automationId: string, name: string): void
+  setAutomationEnabled(automationId: string, enabled: boolean): void
+  changeAutomationTrigger(automationId: string, trigger: AutomationTrigger): void
+  changeAutomationConditions(
+    automationId: string,
+    conditions: AutomationCondition[],
+  ): void
+  changeAutomationActions(
+    automationId: string,
+    actions: AutomationAction[],
+  ): void
+  deleteAutomation(automationId: string): void
   addTaskRelationship(type: TaskRelationshipType, sourceTaskId: string, targetTaskId: string): ReturnType<typeof createTaskRelationship>
   deleteTaskRelationship(relationshipId: string): void
   addCustomField(name: string, type: CustomFieldType): ReturnType<typeof createCustomField>
@@ -135,6 +162,71 @@ export function createWorkspaceCommands(
   }
 
   return {
+    addAutomation(name, input) {
+      const automation = createAutomation({
+        id: runtime.nextId(),
+        name,
+        enabled: input.enabled,
+        trigger: input.trigger,
+        conditions: input.conditions,
+        actions: input.actions,
+      })
+
+      store.dispatch({
+        type: 'automation/added',
+        automation,
+      })
+
+      return automation
+    },
+
+    renameAutomation(automationId, name) {
+      store.dispatch({
+        type: 'automation/nameChanged',
+        automationId,
+        name,
+      })
+    },
+
+    setAutomationEnabled(automationId, enabled) {
+      store.dispatch({
+        type: 'automation/enabledChanged',
+        automationId,
+        enabled,
+      })
+    },
+
+    changeAutomationTrigger(automationId, trigger) {
+      store.dispatch({
+        type: 'automation/triggerChanged',
+        automationId,
+        trigger,
+      })
+    },
+
+    changeAutomationConditions(automationId, conditions) {
+      store.dispatch({
+        type: 'automation/conditionsChanged',
+        automationId,
+        conditions,
+      })
+    },
+
+    changeAutomationActions(automationId, actions) {
+      store.dispatch({
+        type: 'automation/actionsChanged',
+        automationId,
+        actions,
+      })
+    },
+
+    deleteAutomation(automationId) {
+      store.dispatch({
+        type: 'automation/deleted',
+        automationId,
+      })
+    },
+
     addTaskRelationship(type, sourceTaskId, targetTaskId) {
       const relationship = createTaskRelationship({
         id: runtime.nextId(),

@@ -1,3 +1,15 @@
+import {
+  renameAutomation,
+  setAutomationActions,
+  setAutomationConditions,
+  setAutomationEnabled,
+  setAutomationTrigger,
+  validateAutomation,
+  type Automation,
+  type AutomationAction,
+  type AutomationCondition,
+  type AutomationTrigger,
+} from './automation'
 import { deriveTaskActivityEntries, type TaskActivityEntry } from './task-activity'
 import { renameArea, type Area } from './area'
 import {
@@ -64,6 +76,7 @@ import {
 
 export interface WorkspaceState {
   activity?: TaskActivityEntry[]
+  automations?: Automation[]
   areas?: Area[]
   lists?: TaskList[]
   tags?: Tag[]
@@ -84,6 +97,21 @@ export const emptyWorkspace: WorkspaceState = {
 }
 
 export type WorkspaceBaseAction =
+  | { type: 'automation/added'; automation: Automation }
+  | { type: 'automation/deleted'; automationId: string }
+  | { type: 'automation/nameChanged'; automationId: string; name: string }
+  | { type: 'automation/enabledChanged'; automationId: string; enabled: boolean }
+  | { type: 'automation/triggerChanged'; automationId: string; trigger: AutomationTrigger }
+  | {
+      type: 'automation/conditionsChanged'
+      automationId: string
+      conditions: AutomationCondition[]
+    }
+  | {
+      type: 'automation/actionsChanged'
+      automationId: string
+      actions: AutomationAction[]
+    }
   | { type: 'area/added'; area: Area }
   | { type: 'area/deleted'; areaId: string }
   | { type: 'area/nameChanged'; areaId: string; name: string }
@@ -285,6 +313,92 @@ export function workspaceReducer(
   }
 
   switch (action.type) {
+    case 'automation/added': {
+      validateAutomation(action.automation)
+
+      if (
+        (state.automations ?? []).some(
+          (automation) => automation.id === action.automation.id,
+        )
+      ) {
+        throw new Error('Automation id must be unique')
+      }
+
+      return {
+        ...state,
+        automations: [...(state.automations ?? []), action.automation],
+      }
+    }
+
+    case 'automation/nameChanged':
+      return {
+        ...state,
+        automations: (state.automations ?? []).map((automation) =>
+          automation.id === action.automationId
+            ? renameAutomation(automation, action.name)
+            : automation,
+        ),
+      }
+
+    case 'automation/enabledChanged':
+      return {
+        ...state,
+        automations: (state.automations ?? []).map((automation) =>
+          automation.id === action.automationId
+            ? setAutomationEnabled(automation, action.enabled)
+            : automation,
+        ),
+      }
+
+    case 'automation/triggerChanged':
+      return {
+        ...state,
+        automations: (state.automations ?? []).map((automation) =>
+          automation.id === action.automationId
+            ? setAutomationTrigger(automation, action.trigger)
+            : automation,
+        ),
+      }
+
+    case 'automation/conditionsChanged':
+      return {
+        ...state,
+        automations: (state.automations ?? []).map((automation) =>
+          automation.id === action.automationId
+            ? setAutomationConditions(automation, action.conditions)
+            : automation,
+        ),
+      }
+
+    case 'automation/actionsChanged':
+      return {
+        ...state,
+        automations: (state.automations ?? []).map((automation) =>
+          automation.id === action.automationId
+            ? setAutomationActions(automation, action.actions)
+            : automation,
+        ),
+      }
+
+    case 'automation/deleted': {
+      if (state.automations === undefined) {
+        return state
+      }
+
+      const automations = state.automations.filter(
+        (automation) => automation.id !== action.automationId,
+      )
+      const next = { ...state }
+
+      if (automations.length === 0) {
+        delete next.automations
+      } else {
+        next.automations = automations
+      }
+
+      return next
+    }
+
     case 'area/added':
       return {
         ...state,

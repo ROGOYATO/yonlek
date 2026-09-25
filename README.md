@@ -631,3 +631,17 @@ Tasks can record manual time in positive whole minutes or run one timer at a tim
 ## Attachments
 
 Tasks can keep local attachment metadata with a stable ID, file name, byte size, optional media type, and ISO added timestamp. The browser file input reads only that metadata. File bytes, local paths, previews, uploads, downloads, and remote file storage are not implemented. Attachment metadata stays with the source Task and is not copied into duplicates, recurring occurrences, Task Templates, or Project Templates.
+
+
+## Automation core model
+
+Automations now have a stable ID, name, enabled state, one typed trigger, typed
+conditions, and typed actions. Workspace state owns the Automation collection,
+and application commands can add, rename, enable or disable, edit, and delete
+Automations immutably.
+
+This batch defines configuration only. Automations do not execute yet, and there
+is no Automation editor UI. Trigger execution starts in TDD 291-295 from the
+existing Activity/event boundary rather than DOM observation. Automation-specific
+persisted-data validation remains deferred to TDD 306-310. Workspace storage
+stays at version 1.

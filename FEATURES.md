@@ -331,7 +331,14 @@ relationship edges, and original IDs. Instantiation generates fresh Task and
 Checklist IDs and attaches the new subtree to the selected active Project and
 optional compatible List.
 
-- [ ] Automation model with trigger, condition, and action
+- [x] Automation core model with typed trigger, condition, and action records
+
+Automations have stable IDs, names, enabled state, typed trigger/condition/action
+records, immutable domain updates, a Workspace collection, and Workspace commands.
+The core model does not execute rules yet. Local trigger execution begins in
+TDD 291-295 from the Activity/event boundary. Condition evaluation follows in
+296-300, actions in 301-305, and Automation-specific persistence validation,
+execution composition, and UI in 306-310. Storage remains version 1.
 - [ ] Goals or measurable targets
 - [ ] Dashboards and reporting
 

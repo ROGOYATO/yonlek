@@ -3064,3 +3064,18 @@ committed separately as a test-harness stabilization. Test bodies and the
 The current Workspace and View Preferences storage formats remain version 1.
 No fictional legacy schema was introduced. Backup-file versioning remains
 independent from browser-storage migration versions.
+
+
+## Cycles 286-290: Automation core model
+
+- **286:** add stable Automation identity with normalized non-empty ID/name and explicit enabled state.
+- **287:** add typed trigger, condition, and action records for the planned local Automation vocabulary without execution.
+- **288:** validate Automation records and add immutable updates for name, enabled state, trigger, conditions, and actions while preserving the stable ID.
+- **289:** add the optional Workspace Automation collection, duplicate-ID rejection, immutable updates, and deletion cleanup.
+- **290:** expose Automation configuration through Workspace commands and prove valid Automation state round-trips through the existing Workspace storage version 1 boundary.
+
+This batch does not execute Automations. TDD 291-295 begins trigger handling from
+the existing Activity/event boundary, not DOM observation. Condition evaluation
+is deferred to 296-300, action execution to 301-305, and Automation-specific
+persisted-data validation, execution composition, and UI to 306-310. The storage
+version remains 1.
