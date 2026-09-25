@@ -18,12 +18,17 @@ import { saveWorkspace, type KeyValueStore } from './persistence/workspace-stora
 import {
   createWorkspaceBackupDocument,
   createWorkspaceBackupFilename,
+  importWorkspaceBackup,
   serializeWorkspaceBackup,
 } from './persistence/workspace-backup'
 import {
   downloadBackupText,
   type BackupDownloadHandler,
 } from './browser/backup-download'
+import {
+  readBackupFileText,
+  type BackupFileReader,
+} from './browser/backup-file'
 import { emptyWorkspace } from './domain/workspace'
 import { WorkspaceRoot } from './WorkspaceRoot'
 
@@ -31,6 +36,7 @@ export interface BrowserAppProps {
   storage?: KeyValueStore
   runtime?: WorkspaceRuntime
   backupDownload?: BackupDownloadHandler
+  backupRead?: BackupFileReader
 }
 
 const defaultRuntime: WorkspaceRuntime = {
@@ -41,6 +47,8 @@ const defaultRuntime: WorkspaceRuntime = {
 const defaultBackupDownload: BackupDownloadHandler = (file) => {
   downloadBackupText(file)
 }
+
+const defaultBackupRead: BackupFileReader = (file) => readBackupFileText(file)
 
 function persistViewPreferences(
   storage: KeyValueStore,
@@ -81,6 +89,7 @@ function createBrowserApplication(
     return {
       store: null,
       commands: null,
+      viewPreferences: null,
       error: 'Saved workspace could not be loaded.',
     }
   }
@@ -90,6 +99,7 @@ export function BrowserApp({
   storage = globalThis.localStorage,
   runtime = defaultRuntime,
   backupDownload = defaultBackupDownload,
+  backupRead = defaultBackupRead,
 }: BrowserAppProps) {
   const [application, setApplication] = useState(() =>
     createBrowserApplication(storage, runtime),
@@ -97,6 +107,8 @@ export function BrowserApp({
   const viewPreferencesRef = useRef<ViewPreferences>(
     application.viewPreferences ?? createDefaultViewPreferences(),
   )
+  const [applicationRevision, setApplicationRevision] = useState(0)
+  const [backupImportError, setBackupImportError] = useState<string | null>(null)
 
   if (
     application.error ||
@@ -145,9 +157,39 @@ export function BrowserApp({
         >
           Export backup
         </button>
+        <label htmlFor="backup-import-file">Import backup</label>
+        <input
+          id="backup-import-file"
+          type="file"
+          accept=".json,application/json"
+          onChange={async (event) => {
+            const file = event.currentTarget.files?.[0]
+            event.currentTarget.value = ''
+
+            if (!file) {
+              return
+            }
+
+            try {
+              const contents = await backupRead(file)
+              const imported = importWorkspaceBackup(storage, contents)
+              const nextApplication = createBrowserApplication(storage, runtime)
+
+              viewPreferencesRef.current =
+                nextApplication.viewPreferences ?? imported.viewPreferences
+              setBackupImportError(null)
+              setApplication(nextApplication)
+              setApplicationRevision((current) => current + 1)
+            } catch {
+              setBackupImportError('Backup could not be imported.')
+            }
+          }}
+        />
+        {backupImportError ? <p role="alert">{backupImportError}</p> : null}
       </div>
 
       <WorkspaceRoot
+        key={applicationRevision}
         store={application.store}
         commands={application.commands}
         initialViewPreferences={application.viewPreferences as ViewPreferences}

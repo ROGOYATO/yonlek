@@ -3031,3 +3031,24 @@ Activity timestamps/state.
 - **275:** compose export into BrowserApp without mutating Workspace or persisted View Preferences.
 
 Backup import is deliberately deferred to TDD 276-280.
+
+## Cycles 276-280: backup import
+
+- **276:** parse only the exact version-1 backup envelope and reject malformed JSON, unsupported versions, non-canonical export timestamps, and extra top-level fields.
+- **277:** validate nested Workspace and View Preferences through the existing persistence validation boundaries.
+- **278:** import only after full validation, persist Workspace and View Preferences together, and roll back the previous values when the second persistence write fails.
+- **279:** add the JSON backup-file reader boundary and reject non-JSON names or empty files.
+- **280:** compose import into BrowserApp, remount WorkspaceRoot from imported state, restore imported View Preferences, and preserve the current application on invalid input.
+
+## TDD 276-280 full-suite worker stabilization
+
+After backup import passed focused checks, the historical Custom Field
+filter/sort browser test repeatedly crossed the unchanged 5000 ms timeout only
+under full-suite concurrency. It passed in isolation at 3985 ms. A full suite
+with `maxWorkers=3` passed once, but the immediately repeated full suite with the
+same checked-in cap failed again, so `maxWorkers=3` was rejected as unstable.
+
+The continuation requires two consecutive no-mutation full-suite passes with
+`maxWorkers=2` before changing configuration. If both pass, the worker cap is
+committed separately as a test-harness stabilization. Test bodies and the
+5000 ms timeout remain unchanged.

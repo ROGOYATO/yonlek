@@ -358,7 +358,7 @@ optional compatible List.
 ### Planned
 
 - [x] Export backup
-- [ ] Import backup
+- [x] Import backup
 - [ ] Explicit migration framework for a future storage version
 
 ## Integration and platform

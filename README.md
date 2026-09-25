@@ -452,10 +452,10 @@ remains current.
 
 ## Backup export
 
-Yönlek can export the current workspace and view preferences as a versioned JSON
-backup. The export contains structured application state only; it does not
-include attachment file bytes. Backup import remains a separate planned
-behavior.
+Yönlek can export and import the current workspace and view preferences as a
+versioned JSON backup. The backup contains structured application state only;
+it does not include attachment file bytes. Import validates the complete backup
+before replacing persisted state and keeps the current state on invalid input.
 
 ## Repository map
 
@@ -573,7 +573,6 @@ Not implemented yet:
 - notifications;
 - public API or webhooks;
 - file attachment storage;
-- import backup;
 - final responsive design and keyboard-navigation pass.
 
 `FEATURES.md` is the maintained checklist for these gaps.

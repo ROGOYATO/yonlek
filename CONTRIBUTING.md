@@ -1243,3 +1243,20 @@ deterministic and explicit: workspace state, view preferences, one canonical ISO
 export instant, and the backup format version. Export must not mutate workspace
 or preference state. Browser download mechanics belong behind the dedicated
 download boundary; import and validation behavior are implemented separately.
+
+## Backup import contract
+
+Backup import must validate the complete versioned document before mutating
+persistence. Reuse the existing Workspace and View Preferences validation
+boundaries rather than maintaining a second schema. If a later persistence
+write fails, restore the previously loaded Workspace and View Preferences when
+possible. Browser import must remount the application from imported state;
+invalid files must leave the current application usable and unchanged.
+
+## Vitest worker concurrency
+
+Keep Vitest worker concurrency low enough that timing-sensitive browser tests
+remain below the repository's unchanged 5000 ms default timeout under the full
+suite. The current cap is `maxWorkers: 2`. Do not raise it without repeated
+same-machine full-suite evidence, and do not lengthen individual test timeouts
+to hide contention.
