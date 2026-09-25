@@ -55,7 +55,11 @@ import {
   type CustomFieldType,
   type CustomFieldValue,
 } from './domain/custom-field'
-import { emptyWorkspace, type WorkspaceState } from './domain/workspace'
+import {
+  describeTaskActivityEntry,
+  emptyWorkspace,
+  type WorkspaceState,
+} from './domain/workspace'
 
 export interface AppProps {
   state?: WorkspaceState
@@ -225,6 +229,7 @@ export function App({
   initialViewPreferences = createDefaultViewPreferences(),
   onViewPreferencesChange,
 }: AppProps) {
+  const [activityHistoryOpen, setActivityHistoryOpen] = useState(false)
   const [relationshipTypes, setRelationshipTypes] = useState<
     Record<string, TaskRelationshipType>
   >({})
@@ -609,6 +614,33 @@ export function App({
         {activeProjects.length} {projectLabel} · {workspaceSummary.total}{' '}
         {taskLabel} · {workspaceSummary.done} done
       </p>
+
+      <button
+        type="button"
+        onClick={() => setActivityHistoryOpen((current) => !current)}
+      >
+        {activityHistoryOpen
+          ? 'Hide activity history'
+          : `Show activity history (${state.activity?.length ?? 0})`}
+      </button>
+
+      {activityHistoryOpen ? (
+        <section>
+          <h2>Activity history</h2>
+          {(state.activity?.length ?? 0) === 0 ? (
+            <p>No activity yet.</p>
+          ) : (
+            <ol aria-label="Activity history entries">
+              {[...(state.activity ?? [])].reverse().map((entry) => (
+                <li key={entry.sequence}>
+                  <time dateTime={entry.occurredAt}>{entry.occurredAt}</time>{' '}
+                  {describeTaskActivityEntry(entry)}
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      ) : null}
 
       {onAddTaskAttachment && onDeleteTaskAttachment ? (
         <p>Attachment metadata only. File content is not stored.</p>

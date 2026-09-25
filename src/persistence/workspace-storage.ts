@@ -82,6 +82,167 @@ function isIsoInstant(value: unknown): value is string {
 }
 
 
+function hasOnlyKeys(
+  value: Record<string, unknown>,
+  keys: readonly string[],
+): boolean {
+  const allowed = new Set(keys)
+  return Object.keys(value).every((key) => allowed.has(key))
+}
+
+function isNonBlankString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0
+}
+
+function isValidTaskActivityStatus(value: unknown): boolean {
+  return value === 'todo' || value === 'doing' || value === 'done'
+}
+
+function isValidTaskActivityPriority(value: unknown): boolean {
+  return value === 'low' || value === 'normal' || value === 'high'
+}
+
+function isValidTaskActivityDate(value: unknown): boolean {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false
+  }
+
+  const instant = new Date(`${value}T00:00:00.000Z`)
+  return !Number.isNaN(instant.getTime()) && instant.toISOString().slice(0, 10) === value
+}
+
+function isValidNullableTaskActivityDate(value: unknown): boolean {
+  return value === null || isValidTaskActivityDate(value)
+}
+
+function isValidTaskActivityListContext(
+  id: unknown,
+  name: unknown,
+): boolean {
+  return (
+    (id === null && name === null) ||
+    (isNonBlankString(id) && isNonBlankString(name))
+  )
+}
+
+function isValidTaskActivityEvent(value: unknown): boolean {
+  if (!isRecord(value) || !isNonBlankString(value.kind)) {
+    return false
+  }
+
+  switch (value.kind) {
+    case 'task.created': {
+      if (
+        !hasOnlyKeys(value, [
+          'kind',
+          'projectId',
+          'projectName',
+          'listId',
+          'listName',
+        ]) ||
+        !isNonBlankString(value.projectId) ||
+        !isNonBlankString(value.projectName)
+      ) {
+        return false
+      }
+
+      const hasListId = value.listId !== undefined
+      const hasListName = value.listName !== undefined
+      return (
+        hasListId === hasListName &&
+        (!hasListId ||
+          (isNonBlankString(value.listId) && isNonBlankString(value.listName)))
+      )
+    }
+
+    case 'task.titleChanged':
+      return (
+        hasOnlyKeys(value, ['kind', 'from', 'to']) &&
+        isNonBlankString(value.from) &&
+        isNonBlankString(value.to)
+      )
+
+    case 'task.statusChanged':
+      return (
+        hasOnlyKeys(value, ['kind', 'from', 'to']) &&
+        isValidTaskActivityStatus(value.from) &&
+        isValidTaskActivityStatus(value.to)
+      )
+
+    case 'task.priorityChanged':
+      return (
+        hasOnlyKeys(value, ['kind', 'from', 'to']) &&
+        isValidTaskActivityPriority(value.from) &&
+        isValidTaskActivityPriority(value.to)
+      )
+
+    case 'task.startDateChanged':
+    case 'task.dueDateChanged':
+      return (
+        hasOnlyKeys(value, ['kind', 'from', 'to']) &&
+        isValidNullableTaskActivityDate(value.from) &&
+        isValidNullableTaskActivityDate(value.to)
+      )
+
+    case 'task.projectChanged':
+      return (
+        hasOnlyKeys(value, [
+          'kind',
+          'fromProjectId',
+          'fromProjectName',
+          'toProjectId',
+          'toProjectName',
+        ]) &&
+        isNonBlankString(value.fromProjectId) &&
+        isNonBlankString(value.fromProjectName) &&
+        isNonBlankString(value.toProjectId) &&
+        isNonBlankString(value.toProjectName)
+      )
+
+    case 'task.listChanged':
+      return (
+        hasOnlyKeys(value, [
+          'kind',
+          'fromListId',
+          'fromListName',
+          'toListId',
+          'toListName',
+        ]) &&
+        isValidTaskActivityListContext(value.fromListId, value.fromListName) &&
+        isValidTaskActivityListContext(value.toListId, value.toListName)
+      )
+
+    case 'task.archived':
+    case 'task.restored':
+    case 'task.deleted':
+      return hasOnlyKeys(value, ['kind'])
+
+    default:
+      return false
+  }
+}
+
+function isValidTaskActivityEntry(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    hasOnlyKeys(value, [
+      'sequence',
+      'occurredAt',
+      'taskId',
+      'taskTitle',
+      'event',
+    ]) &&
+    typeof value.sequence === 'number' &&
+    Number.isSafeInteger(value.sequence) &&
+    value.sequence > 0 &&
+    isIsoInstant(value.occurredAt) &&
+    isNonBlankString(value.taskId) &&
+    isNonBlankString(value.taskTitle) &&
+    isValidTaskActivityEvent(value.event)
+  )
+}
+
+
 function isValidProject(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -618,6 +779,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
       !Array.isArray(workspace.projectTemplates)) ||
     (workspace.taskTemplates !== undefined &&
       !Array.isArray(workspace.taskTemplates)) ||
+    (workspace.activity !== undefined && !Array.isArray(workspace.activity)) ||
     !Array.isArray(workspace.projects) ||
     !Array.isArray(workspace.tasks)
   ) {
@@ -632,6 +794,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   const relationships = workspace.relationships ?? []
   const projectTemplates = workspace.projectTemplates ?? []
   const taskTemplates = workspace.taskTemplates ?? []
+  const activity = workspace.activity ?? []
 
   if (
     !areas.every(isValidArea) ||
@@ -642,8 +805,18 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     !relationships.every(isValidTaskRelationship) ||
     !projectTemplates.every(isValidProjectTemplate) ||
     !taskTemplates.every(isValidTaskTemplate) ||
+    !activity.every(isValidTaskActivityEntry) ||
     !workspace.projects.every(isValidProject) ||
     !workspace.tasks.every(isValidTask)
+  ) {
+    invalidStorage()
+  }
+
+  if (
+    activity.some(
+      (entry, index) =>
+        (entry as { sequence: number }).sequence !== index + 1,
+    )
   ) {
     invalidStorage()
   }

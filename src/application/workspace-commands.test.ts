@@ -88,7 +88,19 @@ describe('workspace mutation commands', () => {
 
     commands.deleteProject(project.id)
 
-    expect(store.getState()).toEqual({ projects: [], tasks: [] })
+    expect(store.getState().projects).toEqual([])
+    expect(store.getState().tasks).toEqual([])
+    expect(
+      store.getState().activity?.map((entry) => ({
+        taskId: entry.taskId,
+        kind: entry.event.kind,
+      })),
+    ).toEqual([
+      { taskId: 'task-1', kind: 'task.created' },
+      { taskId: 'task-2', kind: 'task.created' },
+      { taskId: 'task-1', kind: 'task.deleted' },
+      { taskId: 'task-2', kind: 'task.deleted' },
+    ])
   })
 })
 
@@ -577,6 +589,7 @@ describe('task duplicate command', () => {
       '2026-09-04T12:40:00.000Z',
       '2026-09-04T12:41:00.000Z',
       '2026-09-04T12:42:00.000Z',
+      '2026-09-04T12:43:00.000Z',
     ]
     const commands = createWorkspaceCommands(store, {
       nextId: () => ids.shift() ?? 'unexpected-id',
@@ -594,7 +607,7 @@ describe('task duplicate command', () => {
       projectId: project.id,
       title: 'Draft experiment plan',
       status: 'doing',
-      createdAt: '2026-09-04T12:42:00.000Z',
+      createdAt: '2026-09-04T12:43:00.000Z',
       description: 'Inspect the camera mount.',
     })
     expect(store.getState().tasks).toHaveLength(2)
@@ -613,6 +626,7 @@ describe('task archive commands', () => {
       '2026-09-04T18:31:00.000Z',
       '2026-09-04T18:32:00.000Z',
       '2026-09-04T18:33:00.000Z',
+      '2026-09-04T18:34:00.000Z',
     ]
     const commands = createWorkspaceCommands(store, {
       nextId: () => ids.shift() ?? 'unexpected-id',

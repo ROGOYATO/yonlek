@@ -61,6 +61,7 @@ describe('task template commands', () => {
     const times = [
       '2026-09-04T23:15:00.000Z',
       '2026-09-04T23:16:00.000Z',
+      '2026-09-04T23:17:00.000Z',
     ]
     const store = createWorkspaceStore(storage)
     const commands = createWorkspaceCommands(store, {
@@ -91,7 +92,7 @@ describe('task template commands', () => {
       status: 'doing',
       priority: 'high',
       description: 'Write the procedure',
-      createdAt: '2026-09-04T23:16:00.000Z',
+      createdAt: '2026-09-04T23:17:00.000Z',
     })
     expect(state.tasks).toEqual([
       root,
@@ -103,7 +104,7 @@ describe('task template commands', () => {
         title: 'Calibrate camera',
         status: 'todo',
         priority: 'normal',
-        createdAt: '2026-09-04T23:16:00.000Z',
+        createdAt: '2026-09-04T23:17:00.000Z',
       },
     ])
 

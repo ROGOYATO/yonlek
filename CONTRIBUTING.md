@@ -1230,3 +1230,8 @@ When a package script already contains a strict flag, invoke the package script 
 ### Focused test harness and RED validity
 
 Before packaging a new focused test, compare its setup with a currently passing neighboring test at the same public seam. Reuse repository constructors, stores, and persistence helpers instead of inventing imports, constructors, or raw storage keys. BrowserApp workspace fixtures must use `saveWorkspace`/`loadWorkspace` unless the test intentionally exercises malformed raw persistence. A UI RED is valid only after the fixture proves the expected Project/Task loaded; a missing-element error alone is not enough. If GREEN fails with the same setup or harness symptom as RED, treat the prior RED as invalid and stop before continuing the batch.
+### Task Activity atomicity invariant
+
+Task Activity history must remain atomic with the user mutation that produced it. Track supported lifecycle changes through the `workspace/taskActivityTracked` envelope so `WorkspaceStore` reduces and persists one final Workspace state. Never implement Activity as a second dispatch after the Task mutation.
+
+Activity derivation compares the actual pre-mutation and post-mutation Workspace state. No-op operations append no entry. Multi-Task operations keep deterministic pre-state Task ordering, and Activity must not consume `runtime.nextId()`. Reuse an operation timestamp when one already exists; otherwise obtain exactly one timestamp for the tracked command. Direct base-action dispatch remains untracked because the reducer must not invent time.

@@ -31,6 +31,7 @@ import {
   type TaskStatus,
 } from '../domain/task'
 import type { MoveDirection } from '../domain/manual-order'
+import type { ActivityTrackableWorkspaceAction } from '../domain/workspace'
 import type { WorkspaceStore } from './workspace-store'
 
 export interface WorkspaceRuntime {
@@ -122,6 +123,17 @@ export function createWorkspaceCommands(
   store: WorkspaceStore,
   runtime: WorkspaceRuntime,
 ): WorkspaceCommands {
+  function dispatchTracked(
+    action: ActivityTrackableWorkspaceAction,
+    occurredAt: string,
+  ) {
+    store.dispatch({
+      type: 'workspace/taskActivityTracked',
+      occurredAt,
+      action,
+    })
+  }
+
   return {
     addTaskRelationship(type, sourceTaskId, targetTaskId) {
       const relationship = createTaskRelationship({
@@ -433,11 +445,14 @@ export function createWorkspaceCommands(
     },
 
     changeTaskList(taskId, listId) {
-      store.dispatch({
-        type: 'task/listChanged',
-        taskId,
-        listId,
-      })
+      dispatchTracked(
+        {
+          type: 'task/listChanged',
+          taskId,
+          listId,
+        },
+        runtime.now(),
+      )
     },
 
     moveChecklistItem(taskId, itemId, direction) {
@@ -556,10 +571,13 @@ export function createWorkspaceCommands(
         nextId: () => runtime.nextId(),
       })
 
-      store.dispatch({
-        type: 'projectTemplate/instantiated',
-        ...instance,
-      })
+      dispatchTracked(
+        {
+          type: 'projectTemplate/instantiated',
+          ...instance,
+        },
+        now,
+      )
 
       return instance.project
     },
@@ -639,17 +657,21 @@ export function createWorkspaceCommands(
         throw new Error('Cannot create a task in an incompatible list')
       }
 
+      const now = runtime.now()
       const instance = instantiateTaskTemplate(template, {
         projectId,
         listId,
-        now: runtime.now(),
+        now,
         nextId: () => runtime.nextId(),
       })
 
-      store.dispatch({
-        type: 'taskTemplate/instantiated',
-        tasks: instance.tasks,
-      })
+      dispatchTracked(
+        {
+          type: 'taskTemplate/instantiated',
+          tasks: instance.tasks,
+        },
+        now,
+      )
 
       return instance.rootTask
     },
@@ -670,18 +692,23 @@ export function createWorkspaceCommands(
     },
 
     addTask(projectId, title, listId) {
+      const id = runtime.nextId()
+      const now = runtime.now()
       const task = createTask({
-        id: runtime.nextId(),
+        id,
         projectId,
         title,
-        now: runtime.now(),
+        now,
         listId,
       })
 
-      store.dispatch({
-        type: 'task/added',
-        task,
-      })
+      dispatchTracked(
+        {
+          type: 'task/added',
+          task,
+        },
+        now,
+      )
 
       return task
     },
@@ -695,17 +722,22 @@ export function createWorkspaceCommands(
         throw new Error('Cannot create a subtask for a missing task')
       }
 
+      const id = runtime.nextId()
+      const now = runtime.now()
       const task = createSubtask({
-        id: runtime.nextId(),
+        id,
         parent,
         title,
-        now: runtime.now(),
+        now,
       })
 
-      store.dispatch({
-        type: 'task/added',
-        task,
-      })
+      dispatchTracked(
+        {
+          type: 'task/added',
+          task,
+        },
+        now,
+      )
 
       return task
     },
@@ -719,15 +751,20 @@ export function createWorkspaceCommands(
         throw new Error('Cannot duplicate a missing task')
       }
 
+      const id = runtime.nextId()
+      const now = runtime.now()
       const task = duplicateTaskDomain(source, {
-        id: runtime.nextId(),
-        now: runtime.now(),
+        id,
+        now,
       })
 
-      store.dispatch({
-        type: 'task/added',
-        task,
-      })
+      dispatchTracked(
+        {
+          type: 'task/added',
+          task,
+        },
+        now,
+      )
 
       return task
     },
@@ -742,19 +779,27 @@ export function createWorkspaceCommands(
         throw new Error('Cannot archive a missing task')
       }
 
-      store.dispatch({
-        type: 'task/archived',
-        taskId,
-        archivedAt: runtime.now(),
-      })
+      const archivedAt = runtime.now()
+      dispatchTracked(
+        {
+          type: 'task/archived',
+          taskId,
+          archivedAt,
+        },
+        archivedAt,
+      )
     },
 
     archiveTasks(taskIds) {
-      store.dispatch({
-        type: 'task/archivedBulk',
-        taskIds: [...taskIds],
-        archivedAt: runtime.now(),
-      })
+      const archivedAt = runtime.now()
+      dispatchTracked(
+        {
+          type: 'task/archivedBulk',
+          taskIds: [...taskIds],
+          archivedAt,
+        },
+        archivedAt,
+      )
     },
 
     restoreTask(taskId) {
@@ -766,10 +811,13 @@ export function createWorkspaceCommands(
         throw new Error('Cannot restore a missing task')
       }
 
-      store.dispatch({
-        type: 'task/restored',
-        taskId,
-      })
+      dispatchTracked(
+        {
+          type: 'task/restored',
+          taskId,
+        },
+        runtime.now(),
+      )
     },
 
     archiveProject(projectId) {
@@ -820,42 +868,57 @@ export function createWorkspaceCommands(
     },
 
     renameTask(taskId, title) {
-      store.dispatch({
-        type: 'task/titleChanged',
-        taskId,
-        title,
-      })
+      dispatchTracked(
+        {
+          type: 'task/titleChanged',
+          taskId,
+          title,
+        },
+        runtime.now(),
+      )
     },
 
     changeTaskStatus(taskId, status) {
       const task = store.getState().tasks.find((candidate) => candidate.id === taskId)
+
+      if (task?.status === status) {
+        return
+      }
 
       if (
         task?.recurrence !== undefined &&
         task.status !== 'done' &&
         status === 'done'
       ) {
+        const id = runtime.nextId()
+        const now = runtime.now()
         const occurrence = createNextRecurringTaskOccurrence(
           { ...task, status: 'done' },
           {
-            id: runtime.nextId(),
-            now: runtime.now(),
+            id,
+            now,
           },
         )
 
-        store.dispatch({
-          type: 'task/recurringCompleted',
-          taskId,
-          occurrence,
-        })
+        dispatchTracked(
+          {
+            type: 'task/recurringCompleted',
+            taskId,
+            occurrence,
+          },
+          now,
+        )
         return
       }
 
-      store.dispatch({
-        type: 'task/statusChanged',
-        taskId,
-        status,
-      })
+      dispatchTracked(
+        {
+          type: 'task/statusChanged',
+          taskId,
+          status,
+        },
+        runtime.now(),
+      )
     },
 
     changeTaskRecurrence(taskId, recurrence) {
@@ -930,43 +993,58 @@ export function createWorkspaceCommands(
     },
 
     changeTasksStatus(taskIds, status) {
-      store.dispatch({
-        type: 'task/statusChangedBulk',
-        taskIds: [...taskIds],
-        status,
-      })
+      dispatchTracked(
+        {
+          type: 'task/statusChangedBulk',
+          taskIds: [...taskIds],
+          status,
+        },
+        runtime.now(),
+      )
     },
 
     changeTaskPriority(taskId, priority) {
-      store.dispatch({
-        type: 'task/priorityChanged',
-        taskId,
-        priority,
-      })
+      dispatchTracked(
+        {
+          type: 'task/priorityChanged',
+          taskId,
+          priority,
+        },
+        runtime.now(),
+      )
     },
 
     changeTasksPriority(taskIds, priority) {
-      store.dispatch({
-        type: 'task/priorityChangedBulk',
-        taskIds: [...taskIds],
-        priority,
-      })
+      dispatchTracked(
+        {
+          type: 'task/priorityChangedBulk',
+          taskIds: [...taskIds],
+          priority,
+        },
+        runtime.now(),
+      )
     },
 
     changeTaskStartDate(taskId, startDate) {
-      store.dispatch({
-        type: 'task/startDateChanged',
-        taskId,
-        startDate,
-      })
+      dispatchTracked(
+        {
+          type: 'task/startDateChanged',
+          taskId,
+          startDate,
+        },
+        runtime.now(),
+      )
     },
 
     changeTaskDueDate(taskId, dueDate) {
-      store.dispatch({
-        type: 'task/dueDateChanged',
-        taskId,
-        dueDate,
-      })
+      dispatchTracked(
+        {
+          type: 'task/dueDateChanged',
+          taskId,
+          dueDate,
+        },
+        runtime.now(),
+      )
     },
 
     changeTaskDescription(taskId, description) {
@@ -978,11 +1056,14 @@ export function createWorkspaceCommands(
     },
 
     changeTaskProject(taskId, projectId) {
-      store.dispatch({
-        type: 'task/projectChanged',
-        taskId,
-        projectId,
-      })
+      dispatchTracked(
+        {
+          type: 'task/projectChanged',
+          taskId,
+          projectId,
+        },
+        runtime.now(),
+      )
     },
 
     moveTask(taskId, direction) {
@@ -994,17 +1075,23 @@ export function createWorkspaceCommands(
     },
 
     deleteTask(taskId) {
-      store.dispatch({
-        type: 'task/deleted',
-        taskId,
-      })
+      dispatchTracked(
+        {
+          type: 'task/deleted',
+          taskId,
+        },
+        runtime.now(),
+      )
     },
 
     deleteProject(projectId) {
-      store.dispatch({
-        type: 'project/deleted',
-        projectId,
-      })
+      dispatchTracked(
+        {
+          type: 'project/deleted',
+          projectId,
+        },
+        runtime.now(),
+      )
     },
   }
 }

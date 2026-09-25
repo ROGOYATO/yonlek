@@ -158,7 +158,17 @@ describe('WorkspaceRoot project deletion', () => {
     expect(
       screen.queryByRole('heading', { name: 'Robotics Research' }),
     ).toBeNull()
-    expect(store.getState()).toEqual({ projects: [], tasks: [] })
+    expect(store.getState().projects).toEqual([])
+    expect(store.getState().tasks).toEqual([])
+    expect(
+      store.getState().activity?.map((entry) => ({
+        taskId: entry.taskId,
+        kind: entry.event.kind,
+      })),
+    ).toEqual([
+      { taskId: 'task-1', kind: 'task.created' },
+      { taskId: 'task-1', kind: 'task.deleted' },
+    ])
   })
 })
 
@@ -1732,6 +1742,7 @@ describe('WorkspaceRoot task duplication', () => {
       '2026-09-04T12:50:00.000Z',
       '2026-09-04T12:51:00.000Z',
       '2026-09-04T12:52:00.000Z',
+      '2026-09-04T12:53:00.000Z',
     ]
     const commands = createWorkspaceCommands(store, {
       nextId: () => ids.shift() ?? 'unexpected-id',
@@ -1772,6 +1783,7 @@ describe('WorkspaceRoot task archive lifecycle', () => {
       '2026-09-04T18:40:00.000Z',
       '2026-09-04T18:41:00.000Z',
       '2026-09-04T18:42:00.000Z',
+      '2026-09-04T18:43:00.000Z',
     ]
     const commands = createWorkspaceCommands(store, {
       nextId: () => ids.shift() ?? 'unexpected-id',

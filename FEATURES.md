@@ -240,13 +240,15 @@ not copied when one Task is duplicated.
 - [x] Time estimates
 - [x] Time tracking
 - [x] Attachments, metadata only
-- [ ] Activity history
+- [x] Activity history
 
 Recurring Tasks use completion-driven daily, weekly, or monthly rules with a positive interval and required due date. Completing a recurring Task preserves the completed occurrence and creates one fresh `todo` occurrence with calendar-advanced dates; monthly rules clamp safely at month end. Clearing a recurring Task's due date also clears its recurrence rule so persisted Task state cannot violate the due-date requirement.
 
 Time tracking stores completed Task-local entries as positive millisecond durations with stable entry IDs and ISO timestamps. A Task may also keep one running timer start instant. Manual entry accepts positive integer minutes; stopping a timer records the exact elapsed milliseconds. Actual tracked work and running timers stay with the source Task and are not copied into duplicates, recurring occurrences, Task Templates, or Project Templates.
 
 Task attachments currently store metadata only. Each record has a stable ID, file name, byte size, optional media type, and ISO added timestamp. Browser selection records those fields through the normal workspace command and persistence path. File bytes and local paths are never stored. Attachment metadata is source-Task state and is excluded from duplicates, recurring occurrences, Task Templates, and Project Templates. Actual file storage remains out of scope.
+
+Activity history is Workspace-level append-only metadata for core Task lifecycle changes. Tracked workspace commands persist the Task mutation and its Activity entries atomically through one reducer/store dispatch. Entries capture the Task title and relevant Project/List context at event time so deletion or later renaming does not make old history unreadable. The first UI is a lazy Workspace panel and does not add accounts, actors, comments, notifications, rollback, filtering, or retention rules.
 
 ## Views
 

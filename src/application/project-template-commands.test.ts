@@ -71,6 +71,7 @@ describe('project template commands', () => {
     const times = [
       '2026-09-04T21:23:00.000Z',
       '2026-09-04T21:24:00.000Z',
+      '2026-09-04T21:25:00.000Z',
     ]
     const store = createWorkspaceStore(storage)
     const commands = createWorkspaceCommands(store, {
@@ -93,14 +94,14 @@ describe('project template commands', () => {
       id: 'project-new',
       name: 'Robotics Research',
       description: 'Camera-guided arm experiments',
-      createdAt: '2026-09-04T21:24:00.000Z',
+      createdAt: '2026-09-04T21:25:00.000Z',
     })
     expect(state.lists).toEqual([
       {
         id: 'list-new',
         projectId: 'project-new',
         name: 'Experiments',
-        createdAt: '2026-09-04T21:24:00.000Z',
+        createdAt: '2026-09-04T21:25:00.000Z',
       },
     ])
     expect(state.tasks).toEqual([
@@ -112,7 +113,7 @@ describe('project template commands', () => {
         status: 'doing',
         priority: 'high',
         description: 'Write the repeatable experiment procedure',
-        createdAt: '2026-09-04T21:24:00.000Z',
+        createdAt: '2026-09-04T21:25:00.000Z',
         checklist: [
           {
             id: 'check-new',

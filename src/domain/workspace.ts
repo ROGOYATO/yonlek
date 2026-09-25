@@ -1,3 +1,4 @@
+import { deriveTaskActivityEntries, type TaskActivityEntry } from './task-activity'
 import { renameArea, type Area } from './area'
 import {
   renameChecklistItem,
@@ -62,6 +63,7 @@ import {
 } from './task'
 
 export interface WorkspaceState {
+  activity?: TaskActivityEntry[]
   areas?: Area[]
   lists?: TaskList[]
   tags?: Tag[]
@@ -81,7 +83,7 @@ export const emptyWorkspace: WorkspaceState = {
   tasks: [],
 }
 
-export type WorkspaceAction =
+export type WorkspaceBaseAction =
   | { type: 'area/added'; area: Area }
   | { type: 'area/deleted'; areaId: string }
   | { type: 'area/nameChanged'; areaId: string; name: string }
@@ -164,6 +166,40 @@ export type WorkspaceAction =
   | { type: 'task/checklistItemMoved'; taskId: string; itemId: string; direction: MoveDirection }
   | { type: 'task/deleted'; taskId: string }
 
+export type ActivityTrackableWorkspaceAction = Extract<
+  WorkspaceBaseAction,
+  {
+    type:
+      | 'projectTemplate/instantiated'
+      | 'taskTemplate/instantiated'
+      | 'project/deleted'
+      | 'task/added'
+      | 'task/archived'
+      | 'task/archivedBulk'
+      | 'task/restored'
+      | 'task/statusChanged'
+      | 'task/recurringCompleted'
+      | 'task/statusChangedBulk'
+      | 'task/titleChanged'
+      | 'task/priorityChanged'
+      | 'task/priorityChangedBulk'
+      | 'task/startDateChanged'
+      | 'task/dueDateChanged'
+      | 'task/projectChanged'
+      | 'task/listChanged'
+      | 'task/deleted'
+  }
+>
+
+export type WorkspaceAction =
+  | WorkspaceBaseAction
+  | {
+      type: 'workspace/taskActivityTracked'
+      occurredAt: string
+      action: ActivityTrackableWorkspaceAction
+    }
+
+
 
 function collectTaskSubtreeIds(tasks: Task[], rootTaskId: string): Set<string> {
   const taskIds = new Set([rootTaskId])
@@ -229,6 +265,25 @@ export function workspaceReducer(
   state: WorkspaceState,
   action: WorkspaceAction,
 ): WorkspaceState {
+  if (action.type === 'workspace/taskActivityTracked') {
+    const next = workspaceReducer(state, action.action)
+    const entries = deriveTaskActivityEntries(
+      state,
+      next,
+      action.action,
+      action.occurredAt,
+    )
+
+    if (entries.length === 0) {
+      return next
+    }
+
+    return {
+      ...next,
+      activity: [...(state.activity ?? []), ...entries],
+    }
+  }
+
   switch (action.type) {
     case 'area/added':
       return {
@@ -1578,3 +1633,5 @@ export function workspaceReducer(
     }
   }
 }
+
+export { deriveTaskActivityEntries, describeTaskActivityEntry } from './task-activity'

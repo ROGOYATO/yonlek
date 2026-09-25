@@ -2994,3 +2994,30 @@ The first TDD 261-265 final full check passed all attachment RED/GREEN cycles, f
 A scratch A/B run then compared the unchanged `f24f767` baseline with the exact 15-file Attachments target on the same machine and dependency tree. All three targeted rounds passed on both sides, while both baseline and target full suites timed out in the same Custom Field test. Attachments therefore are not the necessary cause of the failure; the unstable boundary is full-suite file-level resource contention.
 
 Keep the existing test bodies and 5-second timeout unchanged. Cap Vitest file-level concurrency at four workers in `vitest.config.ts`. Before applying that harness correction to the live dirty checkout, the continuation runner must reproduce the failing baseline in scratch, apply only the worker cap there, and require the normal baseline full check to pass. The harness change is committed separately before the 15-file Attachments commit.
+## TDD 266-270: Task Activity history
+
+- **266:** add the Workspace-level Task Activity entry/event model, deterministic descriptions, canonical timestamps, direct lifecycle derivation, and optional `WorkspaceState.activity`.
+- **267:** add the atomic `workspace/taskActivityTracked` envelope and track direct lifecycle workspace commands with one Store dispatch and no Activity ID consumption.
+- **268:** extend Activity to bulk/subtree operations, template-created Tasks, recurring completion, and Project deletion with deterministic per-Task ordering.
+- **269:** keep storage version 1 while validating optional Activity entries, contiguous sequences, canonical timestamps, strict event payloads, and historical references that no longer resolve to live entities.
+- **270:** add a Workspace-level lazy Activity panel and BrowserApp reload coverage, including readable history for a deleted Task.
+
+The Activity boundary is deliberately local and actor-free. It does not add accounts, comments, notifications, backend audit logging, rollback, retention, or history for every Task-owned field. Supported user-facing lifecycle commands wrap the existing base action in one tracked envelope so the existing `WorkspaceStore` persists the mutation and its derived Activity together.
+
+The live runner remains authoritative for RED/GREEN output, final test counts, commit SHA, and push result. It must preserve the committed four-worker Vitest cap and the existing default test timeout.
+
+## TDD 266-270 full-suite maintenance
+
+After the Activity-history focused cycles passed, the full suite exposed one
+production no-op regression and four historical test fixtures that predated
+Activity timestamps/state.
+
+- `changeTaskStatus()` now returns before reading `runtime.now()` when the Task
+  already has the requested status. This preserves recurring-completion
+  idempotence and avoids consuming a timestamp for a no-op.
+- Approved historical tests now account for persisted Activity state and the
+  additional legitimate Activity timestamps. Delete assertions continue to
+  verify empty Project/Task collections and also verify the expected Activity
+  lifecycle entries.
+- No historical test was weakened or changed outside the explicitly approved
+  files.
