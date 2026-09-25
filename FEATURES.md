@@ -359,7 +359,7 @@ optional compatible List.
 
 - [x] Export backup
 - [x] Import backup
-- [ ] Explicit migration framework for a future storage version
+- [x] Explicit migration framework for a future storage version
 
 ## Integration and platform
 

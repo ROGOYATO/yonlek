@@ -1260,3 +1260,17 @@ remain below the repository's unchanged 5000 ms default timeout under the full
 suite. The current cap is `maxWorkers: 2`. Do not raise it without repeated
 same-machine full-suite evidence, and do not lengthen individual test timeouts
 to hide contention.
+
+## Storage migration contract
+
+Persisted-data migrations must be explicit and sequential. Register one
+migration per source version and require each migration to advance exactly one
+version. Do not skip versions, infer unknown schemas, or mutate the source
+document in place.
+
+Workspace storage keeps its public distinction between invalid data and an
+unsupported storage version. View Preferences keeps its best-effort fallback to
+defaults when its stored document cannot be migrated or validated. Loading a
+current-version document must not rewrite storage. Backup-file versioning is a
+separate compatibility boundary and must not be coupled to browser-storage
+version numbers.

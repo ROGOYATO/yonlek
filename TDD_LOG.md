@@ -3052,3 +3052,15 @@ The continuation requires two consecutive no-mutation full-suite passes with
 `maxWorkers=2` before changing configuration. If both pass, the worker cap is
 committed separately as a test-harness stabilization. Test bodies and the
 5000 ms timeout remain unchanged.
+
+## Cycles 281-285: storage migration framework
+
+- **281:** add the current-version migration contract and explicit migration metadata.
+- **282:** apply registered migrations sequentially, one version at a time, without mutating the source document.
+- **283:** distinguish invalid envelopes, newer unsupported versions, missing migration steps, and invalid migration output.
+- **284:** route Workspace storage through the migration engine while preserving version-1 data, zero-write reads, and the existing unsupported-version error.
+- **285:** route View Preferences storage through the same engine while preserving best-effort fallback semantics and zero-write reads.
+
+The current Workspace and View Preferences storage formats remain version 1.
+No fictional legacy schema was introduced. Backup-file versioning remains
+independent from browser-storage migration versions.

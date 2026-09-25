@@ -11,9 +11,16 @@ import {
   type TaskRecurrenceRule,
 } from '../domain/task'
 import { emptyWorkspace, type WorkspaceState } from '../domain/workspace'
+import {
+  migrateVersionedDocument,
+  VersionedDocumentMigrationError,
+  type VersionedDocumentMigrationResult,
+  type VersionedDocumentMigrations,
+} from './versioned-document'
 
 const STORAGE_KEY = 'workspace-app.workspace'
 const STORAGE_VERSION = 1
+const WORKSPACE_STORAGE_MIGRATIONS: VersionedDocumentMigrations = {}
 
 export interface KeyValueStore {
   getItem(key: string): string | null
@@ -31,6 +38,28 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function invalidStorage(): never {
   throw new Error('Workspace storage is invalid')
+}
+
+export function migrateWorkspaceStorageDocument(
+  value: unknown,
+): VersionedDocumentMigrationResult {
+  try {
+    return migrateVersionedDocument(
+      value,
+      STORAGE_VERSION,
+      WORKSPACE_STORAGE_MIGRATIONS,
+    )
+  } catch (error) {
+    if (
+      error instanceof VersionedDocumentMigrationError &&
+      (error.code === 'unsupported-version' ||
+        error.code === 'missing-migration')
+    ) {
+      throw new Error('Unsupported workspace storage version')
+    }
+
+    invalidStorage()
+  }
 }
 
 
@@ -747,22 +776,15 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     return emptyWorkspace
   }
 
-  let document: unknown
+  let parsed: unknown
 
   try {
-    document = JSON.parse(raw)
+    parsed = JSON.parse(raw)
   } catch {
     invalidStorage()
   }
 
-  if (!isRecord(document)) {
-    invalidStorage()
-  }
-
-  if (document.version !== STORAGE_VERSION) {
-    throw new Error('Unsupported workspace storage version')
-  }
-
+  const document = migrateWorkspaceStorageDocument(parsed).document
   const workspace = document.workspace
 
   if (

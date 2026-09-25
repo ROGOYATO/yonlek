@@ -9,9 +9,15 @@ import {
 import type { TaskFilterSet } from '../domain/task-filter-set'
 import type { SavedTaskView } from '../domain/saved-task-view'
 import type { KeyValueStore } from './workspace-storage'
+import {
+  migrateVersionedDocument,
+  type VersionedDocumentMigrationResult,
+  type VersionedDocumentMigrations,
+} from './versioned-document'
 
 const STORAGE_KEY = 'workspace-app.view-preferences'
 const STORAGE_VERSION = 1
+const VIEW_PREFERENCES_STORAGE_MIGRATIONS: VersionedDocumentMigrations = {}
 
 interface StoredViewPreferencesV1 {
   version: 1
@@ -20,6 +26,20 @@ interface StoredViewPreferencesV1 {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
+}
+
+export function migrateViewPreferencesStorageDocument(
+  value: unknown,
+): VersionedDocumentMigrationResult | null {
+  try {
+    return migrateVersionedDocument(
+      value,
+      STORAGE_VERSION,
+      VIEW_PREFERENCES_STORAGE_MIGRATIONS,
+    )
+  } catch {
+    return null
+  }
 }
 
 
@@ -277,17 +297,17 @@ export function loadViewPreferences(
   }
 
   try {
-    const document: unknown = JSON.parse(raw)
+    const parsed: unknown = JSON.parse(raw)
+    const migration = migrateViewPreferencesStorageDocument(parsed)
 
     if (
-      !isRecord(document) ||
-      document.version !== STORAGE_VERSION ||
-      !isValidPreferences(document.preferences)
+      migration === null ||
+      !isValidPreferences(migration.document.preferences)
     ) {
       return createDefaultViewPreferences()
     }
 
-    return document.preferences
+    return migration.document.preferences
   } catch {
     return createDefaultViewPreferences()
   }

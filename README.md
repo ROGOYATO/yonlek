@@ -457,6 +457,15 @@ versioned JSON backup. The backup contains structured application state only;
 it does not include attachment file bytes. Import validates the complete backup
 before replacing persisted state and keeps the current state on invalid input.
 
+## Storage migrations
+
+Workspace storage and View Preferences now route versioned documents through a
+shared stepwise migration engine. The current persisted format remains version
+1, so existing data is read without rewriting it. Future versions must register
+one migration for each version step; gaps, newer unknown versions, and invalid
+migration output are rejected rather than guessed. Backup-file versioning stays
+a separate compatibility boundary.
+
 ## Repository map
 
 The most important paths are:
