@@ -1308,3 +1308,17 @@ order first and Automation collection order second so later condition/action
 stages receive deterministic input. Trigger matching must not mutate Workspace,
 append Activity, evaluate conditions, or execute actions. Those responsibilities
 remain in later TDD slices.
+
+
+## Automation condition matching contract
+
+Condition matching is a pure domain step against one supplied `WorkspaceState`
+snapshot and the Task ID produced by trigger matching. Supported predicates are
+Project ID, Task status, Task priority, due-date presence, and Tag assignment.
+Do not read rendered UI or browser state to answer a condition.
+
+All configured conditions use AND semantics. An empty condition list matches an
+existing Task. A missing Task never matches, even when the Automation has no
+conditions. Condition evaluation must not mutate Workspace, append Activity,
+change Automation configuration, or execute actions. Action application remains
+TDD 301-305; controlled command-transaction execution and UI remain TDD 306-310.

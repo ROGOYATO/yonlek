@@ -640,11 +640,10 @@ conditions, and typed actions. Workspace state owns the Automation collection,
 and application commands can add, rename, enable or disable, edit, and delete
 Automations immutably.
 
-This batch defines configuration only. Automations do not execute yet, and there
-is no Automation editor UI. Trigger execution starts in TDD 291-295 from the
-existing Activity/event boundary rather than DOM observation. Automation-specific
-persisted-data validation remains deferred to TDD 306-310. Workspace storage
-stays at version 1.
+This configuration remains separate from execution and there is no Automation
+editor UI yet. Trigger matching uses the existing Activity/event boundary rather
+than DOM observation. Automation-specific persisted-data validation remains
+deferred to TDD 306-310. Workspace storage stays at version 1.
 
 
 ## Automation trigger matching
@@ -655,7 +654,21 @@ due-date changes, archive, and restore. Disabled Automations do not match. Batch
 matching is deterministic in Activity-entry order and then Automation collection
 order.
 
-This layer only identifies trigger matches. It does not evaluate conditions or run
-actions. Condition evaluation remains TDD 296-300, action application remains
-TDD 301-305, and command-transaction execution plus UI remains TDD 306-310.
-There is no DOM observation and storage remains version 1.
+This trigger layer only identifies trigger matches. Condition evaluation is a
+separate pure Workspace-snapshot step. Actions remain TDD 301-305, and
+command-transaction execution plus UI remains TDD 306-310. There is no DOM
+observation and storage remains version 1.
+
+
+## Automation condition matching
+
+Automation conditions are now evaluated against the Task identified by a trigger
+match in one supplied Workspace snapshot. Project, status, priority, due-date
+presence, and Tag conditions are supported. Multiple conditions use AND semantics;
+an empty condition list matches an existing Task, while a missing Task never
+matches.
+
+Condition matching is pure and does not mutate Workspace, append Activity, or run
+Automation actions. Action application remains TDD 301-305. Controlled execution,
+Automation-specific persistence validation, and UI remain TDD 306-310. Storage
+version remains 1.

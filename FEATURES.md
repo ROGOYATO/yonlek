@@ -333,15 +333,16 @@ optional compatible List.
 
 - [x] Automation core model with typed trigger, condition, and action records
 - [x] Activity-bound local Automation trigger matching
+- [x] Workspace-snapshot Automation condition matching
 
 Automations have stable IDs, names, enabled state, typed trigger/condition/action
 records, immutable domain updates, a Workspace collection, and Workspace commands.
-Trigger matching now consumes Task Activity entries for Task creation, status,
-priority, due-date, archive, and restore events. Disabled rules are ignored and
-batch matching is deterministic. Conditions are not evaluated and actions are not
-executed yet. Condition evaluation follows in 296-300, actions in 301-305, and
-Automation-specific persistence validation, execution composition, and UI in
-306-310. Storage remains version 1.
+Trigger matching consumes Task Activity entries for Task creation, status, priority,
+due-date, archive, and restore events. Condition matching supports Project, status,
+priority, due-date presence, and Tag predicates with deterministic AND semantics
+against one Workspace snapshot. Actions are not executed yet. Actions follow in
+301-305, and Automation-specific persistence validation, execution composition,
+and UI in 306-310. Storage remains version 1.
 - [ ] Goals or measurable targets
 - [ ] Dashboards and reporting
 

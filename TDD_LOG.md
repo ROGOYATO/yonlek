@@ -3094,3 +3094,17 @@ Automation actions. It turns the existing Activity/event stream into stable trig
 matches only. Condition evaluation starts in TDD 296-300, action application in
 301-305, and controlled command-transaction execution plus UI in 306-310.
 Storage version remains 1.
+
+
+## Cycles 296-300: Automation conditions
+
+- **296:** evaluate the Project condition against the triggered Task in one Workspace snapshot and reject a missing Task.
+- **297:** add Task status condition matching.
+- **298:** add Task priority condition matching.
+- **299:** add due-date-presence matching for both present and absent due dates.
+- **300:** add Tag condition matching and deterministic AND evaluation across the full Automation condition list.
+
+Condition matching is pure and does not run Automation actions or mutate Workspace.
+Action application begins in TDD 301-305. Automation-specific persisted-data
+validation, controlled execution composition, and UI remain TDD 306-310. Storage
+version remains 1.
