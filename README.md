@@ -450,6 +450,13 @@ the application-command boundary so tests can inject deterministic values.
 it to memory and subscribers. If persistence fails, the old in-memory state
 remains current.
 
+## Backup export
+
+Yönlek can export the current workspace and view preferences as a versioned JSON
+backup. The export contains structured application state only; it does not
+include attachment file bytes. Backup import remains a separate planned
+behavior.
+
 ## Repository map
 
 The most important paths are:
@@ -566,7 +573,7 @@ Not implemented yet:
 - notifications;
 - public API or webhooks;
 - file attachment storage;
-- export/import backup;
+- import backup;
 - final responsive design and keyboard-navigation pass.
 
 `FEATURES.md` is the maintained checklist for these gaps.

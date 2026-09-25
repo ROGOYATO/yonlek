@@ -3021,3 +3021,13 @@ Activity timestamps/state.
   lifecycle entries.
 - No historical test was weakened or changed outside the explicitly approved
   files.
+
+## Cycles 271-275: backup export
+
+- **271:** define backup version 1 with Workspace state, View Preferences, and one canonical export instant.
+- **272:** serialize the backup deterministically as readable JSON with exactly one final line feed.
+- **273:** generate a deterministic Windows-safe JSON filename from the canonical export instant.
+- **274:** add the browser download boundary, including object-URL cleanup on both success and failure.
+- **275:** compose export into BrowserApp without mutating Workspace or persisted View Preferences.
+
+Backup import is deliberately deferred to TDD 276-280.

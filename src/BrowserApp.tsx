@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import {
   createWorkspaceCommands,
@@ -15,17 +15,31 @@ import {
   saveViewPreferences,
 } from './persistence/view-preferences-storage'
 import { saveWorkspace, type KeyValueStore } from './persistence/workspace-storage'
+import {
+  createWorkspaceBackupDocument,
+  createWorkspaceBackupFilename,
+  serializeWorkspaceBackup,
+} from './persistence/workspace-backup'
+import {
+  downloadBackupText,
+  type BackupDownloadHandler,
+} from './browser/backup-download'
 import { emptyWorkspace } from './domain/workspace'
 import { WorkspaceRoot } from './WorkspaceRoot'
 
 export interface BrowserAppProps {
   storage?: KeyValueStore
   runtime?: WorkspaceRuntime
+  backupDownload?: BackupDownloadHandler
 }
 
 const defaultRuntime: WorkspaceRuntime = {
   nextId: () => globalThis.crypto.randomUUID(),
   now: () => new Date().toISOString(),
+}
+
+const defaultBackupDownload: BackupDownloadHandler = (file) => {
+  downloadBackupText(file)
 }
 
 function persistViewPreferences(
@@ -75,9 +89,13 @@ function createBrowserApplication(
 export function BrowserApp({
   storage = globalThis.localStorage,
   runtime = defaultRuntime,
+  backupDownload = defaultBackupDownload,
 }: BrowserAppProps) {
   const [application, setApplication] = useState(() =>
     createBrowserApplication(storage, runtime),
+  )
+  const viewPreferencesRef = useRef<ViewPreferences>(
+    application.viewPreferences ?? createDefaultViewPreferences(),
   )
 
   if (
@@ -94,7 +112,9 @@ export function BrowserApp({
           type="button"
           onClick={() => {
             saveWorkspace(storage, emptyWorkspace)
-            persistViewPreferences(storage, createDefaultViewPreferences())
+            const preferences = createDefaultViewPreferences()
+            persistViewPreferences(storage, preferences)
+            viewPreferencesRef.current = preferences
             setApplication(createBrowserApplication(storage, runtime))
           }}
         >
@@ -105,13 +125,37 @@ export function BrowserApp({
   }
 
   return (
-    <WorkspaceRoot
-      store={application.store}
-      commands={application.commands}
-      initialViewPreferences={application.viewPreferences as ViewPreferences}
-      onViewPreferencesChange={(preferences) => {
-        persistViewPreferences(storage, preferences)
-      }}
-    />
+    <>
+      <div>
+        <button
+          type="button"
+          onClick={() => {
+            const exportedAt = runtime.now()
+            const backup = createWorkspaceBackupDocument(
+              application.store.getState(),
+              viewPreferencesRef.current,
+              exportedAt,
+            )
+
+            backupDownload({
+              filename: createWorkspaceBackupFilename(exportedAt),
+              contents: serializeWorkspaceBackup(backup),
+            })
+          }}
+        >
+          Export backup
+        </button>
+      </div>
+
+      <WorkspaceRoot
+        store={application.store}
+        commands={application.commands}
+        initialViewPreferences={application.viewPreferences as ViewPreferences}
+        onViewPreferencesChange={(preferences) => {
+          persistViewPreferences(storage, preferences)
+          viewPreferencesRef.current = preferences
+        }}
+      />
+    </>
   )
 }

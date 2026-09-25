@@ -1235,3 +1235,11 @@ Before packaging a new focused test, compare its setup with a currently passing 
 Task Activity history must remain atomic with the user mutation that produced it. Track supported lifecycle changes through the `workspace/taskActivityTracked` envelope so `WorkspaceStore` reduces and persists one final Workspace state. Never implement Activity as a second dispatch after the Task mutation.
 
 Activity derivation compares the actual pre-mutation and post-mutation Workspace state. No-op operations append no entry. Multi-Task operations keep deterministic pre-state Task ordering, and Activity must not consume `runtime.nextId()`. Reuse an operation timestamp when one already exists; otherwise obtain exactly one timestamp for the tracked command. Direct base-action dispatch remains untracked because the reducer must not invent time.
+
+## Backup export contract
+
+Backup export is a versioned application boundary. Keep the backup document
+deterministic and explicit: workspace state, view preferences, one canonical ISO
+export instant, and the backup format version. Export must not mutate workspace
+or preference state. Browser download mechanics belong behind the dedicated
+download boundary; import and validation behavior are implemented separately.
