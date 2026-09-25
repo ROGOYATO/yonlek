@@ -645,3 +645,17 @@ is no Automation editor UI. Trigger execution starts in TDD 291-295 from the
 existing Activity/event boundary rather than DOM observation. Automation-specific
 persisted-data validation remains deferred to TDD 306-310. Workspace storage
 stays at version 1.
+
+
+## Automation trigger matching
+
+Automation trigger matching now consumes the existing Task Activity event boundary.
+The local trigger vocabulary covers Task creation, status changes, priority changes,
+due-date changes, archive, and restore. Disabled Automations do not match. Batch
+matching is deterministic in Activity-entry order and then Automation collection
+order.
+
+This layer only identifies trigger matches. It does not evaluate conditions or run
+actions. Condition evaluation remains TDD 296-300, action application remains
+TDD 301-305, and command-transaction execution plus UI remains TDD 306-310.
+There is no DOM observation and storage remains version 1.

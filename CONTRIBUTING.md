@@ -1293,3 +1293,18 @@ Do not observe the DOM to discover trigger events. TDD 291-295 must build on the
 existing Activity/event boundary. Keep browser storage at version 1 in this
 batch. Automation-specific persisted-data validation, execution composition, and
 UI belong to TDD 306-310.
+
+
+## Automation trigger matching contract
+
+Trigger matching is a pure domain step over `TaskActivityEntry` values. Do not
+observe DOM changes, browser events, or rendered UI to discover Automation
+triggers. The supported local trigger kinds are `task.created`,
+`task.statusChanged`, `task.priorityChanged`, `task.dueDateChanged`,
+`task.archived`, and `task.restored`.
+
+A disabled Automation never matches. Batch matching must preserve Activity-entry
+order first and Automation collection order second so later condition/action
+stages receive deterministic input. Trigger matching must not mutate Workspace,
+append Activity, evaluate conditions, or execute actions. Those responsibilities
+remain in later TDD slices.

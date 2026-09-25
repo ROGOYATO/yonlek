@@ -332,13 +332,16 @@ Checklist IDs and attaches the new subtree to the selected active Project and
 optional compatible List.
 
 - [x] Automation core model with typed trigger, condition, and action records
+- [x] Activity-bound local Automation trigger matching
 
 Automations have stable IDs, names, enabled state, typed trigger/condition/action
 records, immutable domain updates, a Workspace collection, and Workspace commands.
-The core model does not execute rules yet. Local trigger execution begins in
-TDD 291-295 from the Activity/event boundary. Condition evaluation follows in
-296-300, actions in 301-305, and Automation-specific persistence validation,
-execution composition, and UI in 306-310. Storage remains version 1.
+Trigger matching now consumes Task Activity entries for Task creation, status,
+priority, due-date, archive, and restore events. Disabled rules are ignored and
+batch matching is deterministic. Conditions are not evaluated and actions are not
+executed yet. Condition evaluation follows in 296-300, actions in 301-305, and
+Automation-specific persistence validation, execution composition, and UI in
+306-310. Storage remains version 1.
 - [ ] Goals or measurable targets
 - [ ] Dashboards and reporting
 

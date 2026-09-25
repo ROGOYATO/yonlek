@@ -3079,3 +3079,18 @@ the existing Activity/event boundary, not DOM observation. Condition evaluation
 is deferred to 296-300, action execution to 301-305, and Automation-specific
 persisted-data validation, execution composition, and UI to 306-310. The storage
 version remains 1.
+
+
+## Cycles 291-295: Automation triggers
+
+- **291:** match enabled `task.created` Automations directly from Task Activity entries and ignore unrelated Activity events.
+- **292:** add `task.statusChanged` trigger matching.
+- **293:** add `task.priorityChanged` trigger matching.
+- **294:** add `task.dueDateChanged` trigger matching for both setting and clearing a due date.
+- **295:** add `task.archived` and `task.restored`, then expose deterministic batch matching in Activity-entry order followed by Automation collection order.
+
+This batch does not observe the DOM, evaluate Automation conditions, or execute
+Automation actions. It turns the existing Activity/event stream into stable trigger
+matches only. Condition evaluation starts in TDD 296-300, action application in
+301-305, and controlled command-transaction execution plus UI in 306-310.
+Storage version remains 1.
