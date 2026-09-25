@@ -5,6 +5,6 @@ export default defineConfig({
   plugins: [react()],
   test: {
     setupFiles: ['./test/setup.ts'],
-    maxWorkers: 4,
+    maxWorkers: 2,
   },
 })
