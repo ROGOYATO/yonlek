@@ -334,15 +334,18 @@ optional compatible List.
 - [x] Automation core model with typed trigger, condition, and action records
 - [x] Activity-bound local Automation trigger matching
 - [x] Workspace-snapshot Automation condition matching
+- [x] Pure bounded Automation action application
 
 Automations have stable IDs, names, enabled state, typed trigger/condition/action
 records, immutable domain updates, a Workspace collection, and Workspace commands.
 Trigger matching consumes Task Activity entries for Task creation, status, priority,
 due-date, archive, and restore events. Condition matching supports Project, status,
 priority, due-date presence, and Tag predicates with deterministic AND semantics
-against one Workspace snapshot. Actions are not executed yet. Actions follow in
-301-305, and Automation-specific persistence validation, execution composition,
-and UI in 306-310. Storage remains version 1.
+against one Workspace snapshot. The first action layer now applies status, priority,
+Project move, List move, and Task archive through existing Workspace invariants while
+threading an explicit bounded execution context. Automatic trigger-condition-action
+composition, Activity-aware command transactions, Automation-specific persistence
+validation, and UI remain TDD 306-310. Storage remains version 1.
 - [ ] Goals or measurable targets
 - [ ] Dashboards and reporting
 

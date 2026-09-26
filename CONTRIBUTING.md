@@ -1306,8 +1306,8 @@ triggers. The supported local trigger kinds are `task.created`,
 A disabled Automation never matches. Batch matching must preserve Activity-entry
 order first and Automation collection order second so later condition/action
 stages receive deterministic input. Trigger matching must not mutate Workspace,
-append Activity, evaluate conditions, or execute actions. Those responsibilities
-remain in later TDD slices.
+append Activity, evaluate conditions, or execute actions. Condition and action
+processing remain separate domain layers; automatic composition belongs to TDD 306-310.
 
 
 ## Automation condition matching contract
@@ -1320,5 +1320,21 @@ Do not read rendered UI or browser state to answer a condition.
 All configured conditions use AND semantics. An empty condition list matches an
 existing Task. A missing Task never matches, even when the Automation has no
 conditions. Condition evaluation must not mutate Workspace, append Activity,
-change Automation configuration, or execute actions. Action application remains
-TDD 301-305; controlled command-transaction execution and UI remain TDD 306-310.
+change Automation configuration, or execute actions. Action application is a separate
+explicit domain layer; controlled command-transaction execution and UI remain TDD 306-310.
+
+
+## Automation action application contract
+
+Keep Automation action application separate from automatic trigger execution. The
+action layer may transform one supplied `WorkspaceState` for one target Task, but it
+must not observe the DOM, append Activity, rediscover triggers, or recursively run
+other Automations. Reuse existing Workspace reducer actions so Project/List/subtask
+and archive invariants stay centralized.
+
+Every action application must receive an explicit `AutomationExecutionContext`. The
+context owns the canonical transaction timestamp and a positive caller-selected
+action-application budget. Each applied action consumes one step and returns a new
+context. An exhausted budget must fail before further mutation. Do not use module
+globals, hidden counters, or process-wide recursion state. TDD 306-310 must thread
+this same context through controlled trigger/condition/action composition.

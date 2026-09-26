@@ -3108,3 +3108,17 @@ Condition matching is pure and does not run Automation actions or mutate Workspa
 Action application begins in TDD 301-305. Automation-specific persisted-data
 validation, controlled execution composition, and UI remain TDD 306-310. Storage
 version remains 1.
+
+
+## Cycles 301-305: Automation actions
+
+- **301:** apply `status.set` immutably and introduce an explicit bounded `AutomationExecutionContext` with no hidden global state.
+- **302:** add `priority.set` through the existing Workspace reducer boundary.
+- **303:** add Project move while preserving subtree moves and incompatible-List cleanup.
+- **304:** add List move while preserving same-Project List validation.
+- **305:** add Task archive with the context timestamp while keeping Activity append and automatic Automation cascading out of this pure action layer.
+
+Each action consumes one caller-owned budget step. The action layer reuses existing
+Workspace invariants and does not compose triggers, conditions, Activity recording, or
+recursive Automation execution. Automation-specific persistence validation, controlled
+command-transaction execution, and UI remain TDD 306-310. Storage version remains 1.

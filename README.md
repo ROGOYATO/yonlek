@@ -654,10 +654,10 @@ due-date changes, archive, and restore. Disabled Automations do not match. Batch
 matching is deterministic in Activity-entry order and then Automation collection
 order.
 
-This trigger layer only identifies trigger matches. Condition evaluation is a
-separate pure Workspace-snapshot step. Actions remain TDD 301-305, and
-command-transaction execution plus UI remains TDD 306-310. There is no DOM
-observation and storage remains version 1.
+This trigger layer only identifies trigger matches. Condition evaluation and action
+application are separate pure domain steps. Automatic Activity-aware command-transaction
+execution plus UI remains TDD 306-310. There is no DOM observation and storage remains
+version 1.
 
 
 ## Automation condition matching
@@ -669,6 +669,22 @@ an empty condition list matches an existing Task, while a missing Task never
 matches.
 
 Condition matching is pure and does not mutate Workspace, append Activity, or run
-Automation actions. Action application remains TDD 301-305. Controlled execution,
-Automation-specific persistence validation, and UI remain TDD 306-310. Storage
-version remains 1.
+Automation actions. Action application is implemented as a separate explicit domain
+layer. Controlled execution, Automation-specific persistence validation, and UI remain
+TDD 306-310. Storage version remains 1.
+
+
+## Automation action application
+
+Automation actions now apply one typed action at a time as a pure Workspace
+transformation. The first local actions set Task status, set priority, move a Task
+across Projects, move it to a compatible List, and archive its Task subtree. The
+implementation reuses existing Workspace reducer invariants instead of duplicating
+Project/List/subtask/archive rules.
+
+Every action application requires an explicit `AutomationExecutionContext` with one
+canonical timestamp and a caller-owned remaining-action budget. Applying an action
+consumes one budget step; an exhausted budget stops further application. There is no
+hidden global recursion counter. This layer does not append Activity or cascade into
+other Automations. Controlled trigger/condition/action composition and Activity-aware
+command transactions remain TDD 306-310. Storage version remains 1.
