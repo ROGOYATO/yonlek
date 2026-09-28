@@ -1359,3 +1359,9 @@ It must support creation, rename, enable/disable, trigger editing, condition/act
 editing, and deletion, and configuration must survive a normal BrowserApp reload.
 Surface command errors in the Workspace UI without replacing the last accepted
 Workspace. Keep storage version 1 unless an actual storage-shape migration is needed.
+
+## Goal model boundary
+
+TDD 311-315 keeps Goals inside the domain layer. `src/domain/goal.ts` owns Goal identity, optional description, target type, target/current values, and validation. `src/domain/workspace.ts` owns only the optional Workspace Goal collection and its immutable CRUD-style reducer actions.
+
+Do not add Goal-to-Task linkage before TDD 316-320, progress derivation before TDD 321-325, or Goal persistence/UI before TDD 326-330.

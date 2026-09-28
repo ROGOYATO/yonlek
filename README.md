@@ -640,3 +640,9 @@ Automations are local Workspace rules with a stable ID, name, enabled state, one
 Execution uses the existing Task Activity boundary. An initiating tracked command is evaluated together with matching enabled Automations inside one controlled command transaction. Conditions for each Activity event are evaluated against one Workspace snapshot; matching actions run in order and their generated Activity can feed the bounded trigger queue. The explicit `AutomationExecutionContext` carries one canonical timestamp and a caller-owned action budget, so recursive Automation chains cannot rely on hidden global state. If execution fails, the command is rejected before the Workspace store accepts or persists partial state.
 
 Workspace storage remains version 1 and now validates persisted Automation records and duplicate Automation IDs. The browser includes a local Automation editor for creation, enable/disable, trigger changes, conditions, actions, rename, and deletion. Configuration persists through reload. Command failures are surfaced in the Workspace UI while the previously accepted Workspace remains intact.
+
+## Goals model
+
+Goals are workspace-level planning records. The model has a stable ID and name, an optional description, a measurable target type (`manual` or `linkedTasks`), and explicit non-negative target/current numeric values.
+
+TDD 311-315 adds only the Goal domain model and optional Workspace collection. Goal-to-Task linkage, progress derivation, persistence, and UI remain separate later roadmap blocks.

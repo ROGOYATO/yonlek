@@ -3137,3 +3137,13 @@ Activity may cascade through the same bounded queue. Conditions for one Activity
 use one Workspace snapshot, action order is deterministic, and failed transactions are
 rejected before Store dispatch. Workspace storage remains version 1. The Automation
 roadmap block 286-310 is complete; Goals begin at TDD 311.
+
+## TDD 311-315 — Goals model
+
+- TDD 311: added stable Goal identity/name validation.
+- TDD 312: added optional Goal description with trim/clear semantics.
+- TDD 313: added measurable `manual` and `linkedTasks` target types.
+- TDD 314: added finite non-negative target/current values without premature percentage clamping.
+- TDD 315: added full Goal validation and an optional immutable Workspace Goal collection with duplicate-ID rejection.
+
+Deferred by roadmap: Goal ↔ Task linkage (316-320), progress derivation (321-325), and persistence/UI (326-330).

@@ -449,3 +449,14 @@ Formal clearance remains open:
 - [ ] phonetic, visual, and semantic near-match review
 
 See `BRAND_NAME_RESEARCH.md` for the canonical naming and brand-research record.
+
+## Goals — model foundation
+
+- stable Goal ID and name
+- optional description
+- measurable target type: manual or linked Tasks
+- explicit target and current numeric values
+- validation and immutable updates
+- optional Workspace Goal collection
+
+Goal-to-Task linkage, derived progress, persistence, and Goals UI are not part of TDD 311-315.

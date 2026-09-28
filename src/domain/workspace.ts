@@ -10,6 +10,15 @@ import {
   type AutomationCondition,
   type AutomationTrigger,
 } from './automation'
+import {
+  renameGoal,
+  setGoalDescription,
+  setGoalTargetType,
+  setGoalValues,
+  validateGoal,
+  type Goal,
+  type GoalTargetType,
+} from './goal'
 import { deriveTaskActivityEntries, type TaskActivityEntry } from './task-activity'
 import { renameArea, type Area } from './area'
 import {
@@ -77,6 +86,7 @@ import {
 export interface WorkspaceState {
   activity?: TaskActivityEntry[]
   automations?: Automation[]
+  goals?: Goal[]
   areas?: Area[]
   lists?: TaskList[]
   tags?: Tag[]
@@ -97,6 +107,12 @@ export const emptyWorkspace: WorkspaceState = {
 }
 
 export type WorkspaceBaseAction =
+  | { type: 'goal/added'; goal: Goal }
+  | { type: 'goal/deleted'; goalId: string }
+  | { type: 'goal/nameChanged'; goalId: string; name: string }
+  | { type: 'goal/descriptionChanged'; goalId: string; description: string | null }
+  | { type: 'goal/targetTypeChanged'; goalId: string; targetType: GoalTargetType }
+  | { type: 'goal/valuesChanged'; goalId: string; targetValue: number; currentValue: number }
   | { type: 'automation/added'; automation: Automation }
   | { type: 'automation/deleted'; automationId: string }
   | { type: 'automation/nameChanged'; automationId: string; name: string }
@@ -402,6 +418,82 @@ export function workspaceReducer(
         delete next.automations
       } else {
         next.automations = automations
+      }
+
+      return next
+    }
+
+    case 'goal/added': {
+      validateGoal(action.goal)
+
+      if (
+        (state.goals ?? []).some(
+          (goal) => goal.id === action.goal.id,
+        )
+      ) {
+        throw new Error('Goal id must be unique')
+      }
+
+      return {
+        ...state,
+        goals: [...(state.goals ?? []), action.goal],
+      }
+    }
+
+    case 'goal/nameChanged':
+      return {
+        ...state,
+        goals: (state.goals ?? []).map((goal) =>
+          goal.id === action.goalId
+            ? renameGoal(goal, action.name)
+            : goal,
+        ),
+      }
+
+    case 'goal/descriptionChanged':
+      return {
+        ...state,
+        goals: (state.goals ?? []).map((goal) =>
+          goal.id === action.goalId
+            ? setGoalDescription(goal, action.description)
+            : goal,
+        ),
+      }
+
+    case 'goal/targetTypeChanged':
+      return {
+        ...state,
+        goals: (state.goals ?? []).map((goal) =>
+          goal.id === action.goalId
+            ? setGoalTargetType(goal, action.targetType)
+            : goal,
+        ),
+      }
+
+    case 'goal/valuesChanged':
+      return {
+        ...state,
+        goals: (state.goals ?? []).map((goal) =>
+          goal.id === action.goalId
+            ? setGoalValues(goal, action.targetValue, action.currentValue)
+            : goal,
+        ),
+      }
+
+    case 'goal/deleted': {
+      if (state.goals === undefined) {
+        return state
+      }
+
+      const goals = state.goals.filter(
+        (goal) => goal.id !== action.goalId,
+      )
+      const next = { ...state }
+
+      if (goals.length === 0) {
+        delete next.goals
+      } else {
+        next.goals = goals
       }
 
       return next
