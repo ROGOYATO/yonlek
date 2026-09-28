@@ -38,11 +38,13 @@ import {
 } from '../domain/task'
 import type { MoveDirection } from '../domain/manual-order'
 import type { ActivityTrackableWorkspaceAction } from '../domain/workspace'
+import { executeAutomationTransaction } from './automation-execution'
 import type { WorkspaceStore } from './workspace-store'
 
 export interface WorkspaceRuntime {
   nextId(): string
   now(): string
+  maxAutomationActionApplications?: number
 }
 
 export interface WorkspaceCommands {
@@ -154,10 +156,15 @@ export function createWorkspaceCommands(
     action: ActivityTrackableWorkspaceAction,
     occurredAt: string,
   ) {
-    store.dispatch({
-      type: 'workspace/taskActivityTracked',
-      occurredAt,
+    const result = executeAutomationTransaction(store.getState(), {
       action,
+      occurredAt,
+      maxActionApplications: runtime.maxAutomationActionApplications ?? 100,
+    })
+
+    store.dispatch({
+      type: 'workspace/automationTransactionCommitted',
+      workspace: result.workspace,
     })
   }
 

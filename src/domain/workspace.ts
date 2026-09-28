@@ -226,6 +226,10 @@ export type WorkspaceAction =
       occurredAt: string
       action: ActivityTrackableWorkspaceAction
     }
+  | {
+      type: 'workspace/automationTransactionCommitted'
+      workspace: WorkspaceState
+    }
 
 
 
@@ -293,6 +297,10 @@ export function workspaceReducer(
   state: WorkspaceState,
   action: WorkspaceAction,
 ): WorkspaceState {
+  if (action.type === 'workspace/automationTransactionCommitted') {
+    return action.workspace
+  }
+
   if (action.type === 'workspace/taskActivityTracked') {
     const next = workspaceReducer(state, action.action)
     const entries = deriveTaskActivityEntries(

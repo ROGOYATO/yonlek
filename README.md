@@ -633,58 +633,10 @@ Tasks can record manual time in positive whole minutes or run one timer at a tim
 Tasks can keep local attachment metadata with a stable ID, file name, byte size, optional media type, and ISO added timestamp. The browser file input reads only that metadata. File bytes, local paths, previews, uploads, downloads, and remote file storage are not implemented. Attachment metadata stays with the source Task and is not copied into duplicates, recurring occurrences, Task Templates, or Project Templates.
 
 
-## Automation core model
+## Automations
 
-Automations now have a stable ID, name, enabled state, one typed trigger, typed
-conditions, and typed actions. Workspace state owns the Automation collection,
-and application commands can add, rename, enable or disable, edit, and delete
-Automations immutably.
+Automations are local Workspace rules with a stable ID, name, enabled state, one typed trigger, zero or more conditions, and zero or more actions. The current trigger set covers Task creation, status changes, priority changes, due-date changes, archive, and restore. Conditions cover Project, status, priority, due-date presence, and Tag assignment. Actions can set status or priority, move a Task to a Project or compatible List, or archive its Task subtree.
 
-This configuration remains separate from execution and there is no Automation
-editor UI yet. Trigger matching uses the existing Activity/event boundary rather
-than DOM observation. Automation-specific persisted-data validation remains
-deferred to TDD 306-310. Workspace storage stays at version 1.
+Execution uses the existing Task Activity boundary. An initiating tracked command is evaluated together with matching enabled Automations inside one controlled command transaction. Conditions for each Activity event are evaluated against one Workspace snapshot; matching actions run in order and their generated Activity can feed the bounded trigger queue. The explicit `AutomationExecutionContext` carries one canonical timestamp and a caller-owned action budget, so recursive Automation chains cannot rely on hidden global state. If execution fails, the command is rejected before the Workspace store accepts or persists partial state.
 
-
-## Automation trigger matching
-
-Automation trigger matching now consumes the existing Task Activity event boundary.
-The local trigger vocabulary covers Task creation, status changes, priority changes,
-due-date changes, archive, and restore. Disabled Automations do not match. Batch
-matching is deterministic in Activity-entry order and then Automation collection
-order.
-
-This trigger layer only identifies trigger matches. Condition evaluation and action
-application are separate pure domain steps. Automatic Activity-aware command-transaction
-execution plus UI remains TDD 306-310. There is no DOM observation and storage remains
-version 1.
-
-
-## Automation condition matching
-
-Automation conditions are now evaluated against the Task identified by a trigger
-match in one supplied Workspace snapshot. Project, status, priority, due-date
-presence, and Tag conditions are supported. Multiple conditions use AND semantics;
-an empty condition list matches an existing Task, while a missing Task never
-matches.
-
-Condition matching is pure and does not mutate Workspace, append Activity, or run
-Automation actions. Action application is implemented as a separate explicit domain
-layer. Controlled execution, Automation-specific persistence validation, and UI remain
-TDD 306-310. Storage version remains 1.
-
-
-## Automation action application
-
-Automation actions now apply one typed action at a time as a pure Workspace
-transformation. The first local actions set Task status, set priority, move a Task
-across Projects, move it to a compatible List, and archive its Task subtree. The
-implementation reuses existing Workspace reducer invariants instead of duplicating
-Project/List/subtask/archive rules.
-
-Every action application requires an explicit `AutomationExecutionContext` with one
-canonical timestamp and a caller-owned remaining-action budget. Applying an action
-consumes one budget step; an exhausted budget stops further application. There is no
-hidden global recursion counter. This layer does not append Activity or cascade into
-other Automations. Controlled trigger/condition/action composition and Activity-aware
-command transactions remain TDD 306-310. Storage version remains 1.
+Workspace storage remains version 1 and now validates persisted Automation records and duplicate Automation IDs. The browser includes a local Automation editor for creation, enable/disable, trigger changes, conditions, actions, rename, and deletion. Configuration persists through reload. Command failures are surfaced in the Workspace UI while the previously accepted Workspace remains intact.

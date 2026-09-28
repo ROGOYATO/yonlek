@@ -1,4 +1,8 @@
 import {
+  validateAutomation,
+  type Automation,
+} from '../domain/automation'
+import {
   normalizeDateCustomFieldValue,
   validateCustomFieldFormulaDependencies,
   type CustomFieldDefinition,
@@ -62,6 +66,20 @@ export function migrateWorkspaceStorageDocument(
   }
 }
 
+
+
+function isValidAutomation(value: unknown): boolean {
+  if (!isRecord(value)) {
+    return false
+  }
+
+  try {
+    validateAutomation(value as unknown as Automation)
+    return true
+  } catch {
+    return false
+  }
+}
 
 function isValidTaskTimeEstimate(value: unknown): boolean {
   return typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) && value > 0
@@ -802,6 +820,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     (workspace.taskTemplates !== undefined &&
       !Array.isArray(workspace.taskTemplates)) ||
     (workspace.activity !== undefined && !Array.isArray(workspace.activity)) ||
+    (workspace.automations !== undefined && !Array.isArray(workspace.automations)) ||
     !Array.isArray(workspace.projects) ||
     !Array.isArray(workspace.tasks)
   ) {
@@ -817,6 +836,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   const projectTemplates = workspace.projectTemplates ?? []
   const taskTemplates = workspace.taskTemplates ?? []
   const activity = workspace.activity ?? []
+  const automations = workspace.automations ?? []
 
   if (
     !areas.every(isValidArea) ||
@@ -828,6 +848,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     !projectTemplates.every(isValidProjectTemplate) ||
     !taskTemplates.every(isValidTaskTemplate) ||
     !activity.every(isValidTaskActivityEntry) ||
+    !automations.every(isValidAutomation) ||
     !workspace.projects.every(isValidProject) ||
     !workspace.tasks.every(isValidTask)
   ) {
@@ -840,6 +861,14 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
         (entry as { sequence: number }).sequence !== index + 1,
     )
   ) {
+    invalidStorage()
+  }
+
+  const automationIds = new Set(
+    automations.map((automation) => (automation as { id: string }).id),
+  )
+
+  if (automationIds.size !== automations.length) {
     invalidStorage()
   }
 

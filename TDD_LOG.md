@@ -3122,3 +3122,18 @@ Each action consumes one caller-owned budget step. The action layer reuses exist
 Workspace invariants and does not compose triggers, conditions, Activity recording, or
 recursive Automation execution. Automation-specific persistence validation, controlled
 command-transaction execution, and UI remain TDD 306-310. Storage version remains 1.
+
+
+## Cycles 306-310: Automation persistence, execution, and UI
+
+- **306:** validate persisted Automation records and duplicate Automation IDs through the existing Workspace storage version 1 boundary.
+- **307:** compose trigger matching, fixed-snapshot condition evaluation, ordered actions, generated Activity, and the explicit bounded execution context in one pure Automation transaction.
+- **308:** route Activity-trackable Workspace commands through the controlled Automation transaction and commit the completed Workspace with one Store dispatch.
+- **309:** add the local Automation list/editor UI and prove configuration persists through BrowserApp reload.
+- **310:** surface command/Automation failures in WorkspaceRoot and prove invalid actions or exhausted execution budgets do not accept or persist initiating or intermediate Workspace state.
+
+Automation execution remains Activity-driven rather than DOM-driven. Action-produced
+Activity may cascade through the same bounded queue. Conditions for one Activity event
+use one Workspace snapshot, action order is deterministic, and failed transactions are
+rejected before Store dispatch. Workspace storage remains version 1. The Automation
+roadmap block 286-310 is complete; Goals begin at TDD 311.

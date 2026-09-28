@@ -1285,14 +1285,13 @@ Automation values and must never replace the stable ID.
 
 Workspace owns the optional Automation collection. Adding a duplicate Automation
 ID is invalid; deleting the final Automation removes the optional collection
-instead of leaving an empty persisted field. Workspace commands may create and
-edit configuration, but TDD 286-290 must not evaluate triggers, conditions, or
-actions.
+instead of leaving an empty persisted field. Workspace storage remains version 1
+and must validate each persisted Automation plus duplicate Automation IDs before
+accepting the document. Do not require referenced Project/List/Tag IDs to exist at
+load time; stale configuration references must remain inspectable and editable.
 
-Do not observe the DOM to discover trigger events. TDD 291-295 must build on the
-existing Activity/event boundary. Keep browser storage at version 1 in this
-batch. Automation-specific persisted-data validation, execution composition, and
-UI belong to TDD 306-310.
+Do not observe the DOM to discover trigger events. Automation execution must build
+on the existing Activity/event boundary.
 
 
 ## Automation trigger matching contract
@@ -1307,7 +1306,7 @@ A disabled Automation never matches. Batch matching must preserve Activity-entry
 order first and Automation collection order second so later condition/action
 stages receive deterministic input. Trigger matching must not mutate Workspace,
 append Activity, evaluate conditions, or execute actions. Condition and action
-processing remain separate domain layers; automatic composition belongs to TDD 306-310.
+processing remain separate domain layers; the application execution layer composes them.
 
 
 ## Automation condition matching contract
@@ -1320,8 +1319,8 @@ Do not read rendered UI or browser state to answer a condition.
 All configured conditions use AND semantics. An empty condition list matches an
 existing Task. A missing Task never matches, even when the Automation has no
 conditions. Condition evaluation must not mutate Workspace, append Activity,
-change Automation configuration, or execute actions. Action application is a separate
-explicit domain layer; controlled command-transaction execution and UI remain TDD 306-310.
+change Automation configuration, or execute actions. Action application remains a
+separate explicit domain layer; the application execution layer composes both steps.
 
 
 ## Automation action application contract
@@ -1336,5 +1335,27 @@ Every action application must receive an explicit `AutomationExecutionContext`. 
 context owns the canonical transaction timestamp and a positive caller-selected
 action-application budget. Each applied action consumes one step and returns a new
 context. An exhausted budget must fail before further mutation. Do not use module
-globals, hidden counters, or process-wide recursion state. TDD 306-310 must thread
-this same context through controlled trigger/condition/action composition.
+globals, hidden counters, or process-wide recursion state. Controlled execution must
+thread this same context through trigger/condition/action composition.
+
+
+## Automation execution transaction contract
+
+A user-initiated Activity-trackable command must be evaluated as one controlled
+Automation transaction before the Workspace store accepts the result. Derive the
+initiating Activity first, match enabled Automations from that Activity boundary,
+evaluate each matched Automation's conditions against one fixed Workspace snapshot
+for that Activity event, then apply its actions in configured order. Activity created
+by those actions may enter the same explicit queue and trigger later Automations.
+
+The transaction must use one canonical timestamp and one explicit bounded
+`AutomationExecutionContext`. The command boundary must commit the completed
+Workspace in one Store dispatch and therefore one persistence acceptance. If any
+Automation action, invariant, or execution limit throws, do not dispatch a partial
+Workspace and do not persist any initiating or intermediate mutation.
+
+The Automation editor is a local Workspace UI over the existing Automation commands.
+It must support creation, rename, enable/disable, trigger editing, condition/action
+editing, and deletion, and configuration must survive a normal BrowserApp reload.
+Surface command errors in the Workspace UI without replacing the last accepted
+Workspace. Keep storage version 1 unless an actual storage-shape migration is needed.

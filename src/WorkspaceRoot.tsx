@@ -1,9 +1,14 @@
-import { useSyncExternalStore } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 
 import { App } from './App'
+import { AutomationPanel } from './AutomationPanel'
 import type { WorkspaceCommands } from './application/workspace-commands'
 import type { WorkspaceStore } from './application/workspace-store'
 import type { ViewPreferences } from './domain/view-preferences'
+
+function commandErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Workspace command failed'
+}
 
 export interface WorkspaceRootProps {
   store: WorkspaceStore
@@ -23,236 +28,281 @@ export function WorkspaceRoot({
     store.getState,
     store.getState,
   )
+  const [commandError, setCommandError] = useState<string | null>(null)
+
+  function runCommand<T>(command: () => T): T | undefined {
+    try {
+      const result = command()
+      setCommandError(null)
+      return result
+    } catch (error) {
+      setCommandError(commandErrorMessage(error))
+      return undefined
+    }
+  }
+
+  const guardedCommands = new Proxy(commands, {
+    get(target, property, receiver) {
+      const value = Reflect.get(target, property, receiver)
+      if (typeof value !== 'function') return value
+
+      return (...args: unknown[]) =>
+        runCommand(() => (value as (...callArgs: unknown[]) => unknown)(...args))
+    },
+  }) as WorkspaceCommands
 
   return (
-    <App
+    <>
+      {commandError ? <p role="alert">{commandError}</p> : null}
+      <AutomationPanel
+        state={state}
+        onAddAutomation={(name, input) => guardedCommands.addAutomation(name, input)}
+        onRenameAutomation={(automationId, name) =>
+          guardedCommands.renameAutomation(automationId, name)
+        }
+        onSetAutomationEnabled={(automationId, enabled) =>
+          guardedCommands.setAutomationEnabled(automationId, enabled)
+        }
+        onChangeAutomationTrigger={(automationId, trigger) =>
+          guardedCommands.changeAutomationTrigger(automationId, trigger)
+        }
+        onChangeAutomationConditions={(automationId, conditions) =>
+          guardedCommands.changeAutomationConditions(automationId, conditions)
+        }
+        onChangeAutomationActions={(automationId, actions) =>
+          guardedCommands.changeAutomationActions(automationId, actions)
+        }
+        onDeleteAutomation={(automationId) => guardedCommands.deleteAutomation(automationId)}
+      />
+      <App
       state={state}
       initialViewPreferences={initialViewPreferences}
       onViewPreferencesChange={onViewPreferencesChange}
       onCreateTaskRelationship={(type, sourceTaskId, targetTaskId) => {
-        commands.addTaskRelationship(type, sourceTaskId, targetTaskId)
+        guardedCommands.addTaskRelationship(type, sourceTaskId, targetTaskId)
       }}
       onDeleteTaskRelationship={(relationshipId) => {
-        commands.deleteTaskRelationship(relationshipId)
+        guardedCommands.deleteTaskRelationship(relationshipId)
       }}
       onCreateCustomField={(name, type) => {
-        commands.addCustomField(name, type)
+        guardedCommands.addCustomField(name, type)
       }}
       onRenameCustomField={(fieldId, name) => {
-        commands.renameCustomField(fieldId, name)
+        guardedCommands.renameCustomField(fieldId, name)
       }}
       onChangeCustomFieldType={(fieldId, nextType) => {
-        commands.changeCustomFieldType(fieldId, nextType)
+        guardedCommands.changeCustomFieldType(fieldId, nextType)
       }}
       onDeleteCustomField={(fieldId) => {
-        commands.deleteCustomField(fieldId)
+        guardedCommands.deleteCustomField(fieldId)
       }}
       onConfigureCustomFieldFormula={(fieldId, formula) => {
-        commands.configureCustomFieldFormula(fieldId, formula)
+        guardedCommands.configureCustomFieldFormula(fieldId, formula)
       }}
       onAddCustomFieldOption={(fieldId, name) => {
-        commands.addCustomFieldOption(fieldId, name)
+        guardedCommands.addCustomFieldOption(fieldId, name)
       }}
       onRenameCustomFieldOption={(fieldId, optionId, name) => {
-        commands.renameCustomFieldOption(fieldId, optionId, name)
+        guardedCommands.renameCustomFieldOption(fieldId, optionId, name)
       }}
       onDeleteCustomFieldOption={(fieldId, optionId) => {
-        commands.deleteCustomFieldOption(fieldId, optionId)
+        guardedCommands.deleteCustomFieldOption(fieldId, optionId)
       }}
       onChangeTaskCustomFieldValue={(taskId, fieldId, value) => {
-        commands.changeTaskCustomFieldValue(taskId, fieldId, value)
+        guardedCommands.changeTaskCustomFieldValue(taskId, fieldId, value)
       }}
       onCreatePerson={(name) => {
-        commands.addPerson(name)
+        guardedCommands.addPerson(name)
       }}
       onRenamePerson={(personId, name) => {
-        commands.renamePerson(personId, name)
+        guardedCommands.renamePerson(personId, name)
       }}
       onDeletePerson={(personId) => {
-        commands.deletePerson(personId)
+        guardedCommands.deletePerson(personId)
       }}
       onChangeTaskAssignee={(taskId, personId, assigned) => {
         if (assigned) {
-          commands.assignTaskAssignee(taskId, personId)
+          guardedCommands.assignTaskAssignee(taskId, personId)
         } else {
-          commands.removeTaskAssignee(taskId, personId)
+          guardedCommands.removeTaskAssignee(taskId, personId)
         }
       }}
       onCreateTag={(name) => {
-        commands.addTag(name)
+        guardedCommands.addTag(name)
       }}
       onRenameTag={(tagId, name) => {
-        commands.renameTag(tagId, name)
+        guardedCommands.renameTag(tagId, name)
       }}
       onDeleteTag={(tagId) => {
-        commands.deleteTag(tagId)
+        guardedCommands.deleteTag(tagId)
       }}
       onChangeTaskTag={(taskId, tagId, assigned) => {
         if (assigned) {
-          commands.assignTaskTag(taskId, tagId)
+          guardedCommands.assignTaskTag(taskId, tagId)
         } else {
-          commands.removeTaskTag(taskId, tagId)
+          guardedCommands.removeTaskTag(taskId, tagId)
         }
       }}
       onCreateArea={(name) => {
-        commands.addArea(name)
+        guardedCommands.addArea(name)
       }}
       onRenameArea={(areaId, name) => {
-        commands.renameArea(areaId, name)
+        guardedCommands.renameArea(areaId, name)
       }}
       onDeleteArea={(areaId) => {
-        commands.deleteArea(areaId)
+        guardedCommands.deleteArea(areaId)
       }}
       onMoveArea={(areaId, direction) => {
-        commands.moveArea(areaId, direction)
+        guardedCommands.moveArea(areaId, direction)
       }}
       onChangeProjectArea={(projectId, areaId) => {
-        commands.changeProjectArea(projectId, areaId)
+        guardedCommands.changeProjectArea(projectId, areaId)
       }}
       onCreateTaskList={(projectId, name) => {
-        commands.addTaskList(projectId, name)
+        guardedCommands.addTaskList(projectId, name)
       }}
       onRenameTaskList={(listId, name) => {
-        commands.renameTaskList(listId, name)
+        guardedCommands.renameTaskList(listId, name)
       }}
       onDeleteTaskList={(listId) => {
-        commands.deleteTaskList(listId)
+        guardedCommands.deleteTaskList(listId)
       }}
       onMoveTaskList={(listId, direction) => {
-        commands.moveTaskList(listId, direction)
+        guardedCommands.moveTaskList(listId, direction)
       }}
       onChangeTaskList={(taskId, listId) => {
-        commands.changeTaskList(taskId, listId)
+        guardedCommands.changeTaskList(taskId, listId)
       }}
       onAddChecklistItem={(taskId, text) => {
-        commands.addChecklistItem(taskId, text)
+        guardedCommands.addChecklistItem(taskId, text)
       }}
       onRenameChecklistItem={(taskId, itemId, text) => {
-        commands.renameChecklistItem(taskId, itemId, text)
+        guardedCommands.renameChecklistItem(taskId, itemId, text)
       }}
       onChangeChecklistItemCompleted={(taskId, itemId, completed) => {
-        commands.changeChecklistItemCompleted(taskId, itemId, completed)
+        guardedCommands.changeChecklistItemCompleted(taskId, itemId, completed)
       }}
       onDeleteChecklistItem={(taskId, itemId) => {
-        commands.deleteChecklistItem(taskId, itemId)
+        guardedCommands.deleteChecklistItem(taskId, itemId)
       }}
       onMoveChecklistItem={(taskId, itemId, direction) => {
-        commands.moveChecklistItem(taskId, itemId, direction)
+        guardedCommands.moveChecklistItem(taskId, itemId, direction)
       }}
       onMoveProject={(projectId, direction) => {
-        commands.moveProject(projectId, direction)
+        guardedCommands.moveProject(projectId, direction)
       }}
       onCreateProject={(name) => {
-        commands.addProject(name)
+        guardedCommands.addProject(name)
       }}
       onSaveProjectTemplate={(projectId, name) => {
-        commands.saveProjectTemplate(projectId, name)
+        guardedCommands.saveProjectTemplate(projectId, name)
       }}
       onCreateProjectFromTemplate={(templateId) => {
-        commands.createProjectFromTemplate(templateId)
+        guardedCommands.createProjectFromTemplate(templateId)
       }}
       onDeleteProjectTemplate={(templateId) => {
-        commands.deleteProjectTemplate(templateId)
+        guardedCommands.deleteProjectTemplate(templateId)
       }}
       onSaveTaskTemplate={(taskId, name) => {
-        commands.saveTaskTemplate(taskId, name)
+        guardedCommands.saveTaskTemplate(taskId, name)
       }}
       onCreateTaskFromTemplate={(templateId, projectId, listId) => {
-        commands.createTaskFromTemplate(templateId, projectId, listId)
+        guardedCommands.createTaskFromTemplate(templateId, projectId, listId)
       }}
       onDeleteTaskTemplate={(templateId) => {
-        commands.deleteTaskTemplate(templateId)
+        guardedCommands.deleteTaskTemplate(templateId)
       }}
       onArchiveProject={(projectId) => {
-        commands.archiveProject(projectId)
+        guardedCommands.archiveProject(projectId)
       }}
       onRestoreProject={(projectId) => {
-        commands.restoreProject(projectId)
+        guardedCommands.restoreProject(projectId)
       }}
       onRenameProject={(projectId, name) => {
-        commands.renameProject(projectId, name)
+        guardedCommands.renameProject(projectId, name)
       }}
       onChangeProjectDescription={(projectId, description) => {
-        commands.changeProjectDescription(projectId, description)
+        guardedCommands.changeProjectDescription(projectId, description)
       }}
       onCreateTask={(projectId, title, listId) => {
-        commands.addTask(projectId, title, listId)
+        guardedCommands.addTask(projectId, title, listId)
       }}
       onCreateSubtask={(parentTaskId, title) => {
-        commands.addSubtask(parentTaskId, title)
+        guardedCommands.addSubtask(parentTaskId, title)
       }}
       onDuplicateTask={(taskId) => {
-        commands.duplicateTask(taskId)
+        guardedCommands.duplicateTask(taskId)
       }}
       onArchiveTask={(taskId) => {
-        commands.archiveTask(taskId)
+        guardedCommands.archiveTask(taskId)
       }}
       onArchiveTasks={(taskIds) => {
-        commands.archiveTasks(taskIds)
+        guardedCommands.archiveTasks(taskIds)
       }}
       onRestoreTask={(taskId) => {
-        commands.restoreTask(taskId)
+        guardedCommands.restoreTask(taskId)
       }}
       onDeleteProject={(projectId) => {
-        commands.deleteProject(projectId)
+        guardedCommands.deleteProject(projectId)
       }}
       onRenameTask={(taskId, title) => {
-        commands.renameTask(taskId, title)
+        guardedCommands.renameTask(taskId, title)
       }}
       onDeleteTask={(taskId) => {
-        commands.deleteTask(taskId)
+        guardedCommands.deleteTask(taskId)
       }}
       onMoveTask={(taskId, direction) => {
-        commands.moveTask(taskId, direction)
+        guardedCommands.moveTask(taskId, direction)
       }}
       onChangeTaskStatus={(taskId, status) => {
-        commands.changeTaskStatus(taskId, status)
+        guardedCommands.changeTaskStatus(taskId, status)
       }}
       onChangeTaskRecurrence={(taskId, recurrence) => {
-        commands.changeTaskRecurrence(taskId, recurrence)
+        guardedCommands.changeTaskRecurrence(taskId, recurrence)
       }}
       onChangeTaskTimeEstimate={(taskId, estimateMinutes) => {
-        commands.changeTaskTimeEstimate(taskId, estimateMinutes)
+        guardedCommands.changeTaskTimeEstimate(taskId, estimateMinutes)
       }}
       onAddTaskTrackedMinutes={(taskId, minutes) => {
-        commands.addTaskTrackedMinutes(taskId, minutes)
+        guardedCommands.addTaskTrackedMinutes(taskId, minutes)
       }}
       onStartTaskTimer={(taskId) => {
-        commands.startTaskTimer(taskId)
+        guardedCommands.startTaskTimer(taskId)
       }}
       onStopTaskTimer={(taskId) => {
-        commands.stopTaskTimer(taskId)
+        guardedCommands.stopTaskTimer(taskId)
       }}
       onDeleteTaskTimeEntry={(taskId, entryId) => {
-        commands.deleteTaskTimeEntry(taskId, entryId)
+        guardedCommands.deleteTaskTimeEntry(taskId, entryId)
       }}
       onAddTaskAttachment={(taskId, input) => {
-        commands.addTaskAttachment(taskId, input)
+        guardedCommands.addTaskAttachment(taskId, input)
       }}
       onDeleteTaskAttachment={(taskId, attachmentId) => {
-        commands.deleteTaskAttachment(taskId, attachmentId)
+        guardedCommands.deleteTaskAttachment(taskId, attachmentId)
       }}
       onChangeTasksStatus={(taskIds, status) => {
-        commands.changeTasksStatus(taskIds, status)
+        guardedCommands.changeTasksStatus(taskIds, status)
       }}
       onChangeTaskPriority={(taskId, priority) => {
-        commands.changeTaskPriority(taskId, priority)
+        guardedCommands.changeTaskPriority(taskId, priority)
       }}
       onChangeTasksPriority={(taskIds, priority) => {
-        commands.changeTasksPriority(taskIds, priority)
+        guardedCommands.changeTasksPriority(taskIds, priority)
       }}
       onChangeTaskStartDate={(taskId, startDate) => {
-        commands.changeTaskStartDate(taskId, startDate)
+        guardedCommands.changeTaskStartDate(taskId, startDate)
       }}
       onChangeTaskDueDate={(taskId, dueDate) => {
-        commands.changeTaskDueDate(taskId, dueDate)
+        guardedCommands.changeTaskDueDate(taskId, dueDate)
       }}
       onChangeTaskDescription={(taskId, description) => {
-        commands.changeTaskDescription(taskId, description)
+        guardedCommands.changeTaskDescription(taskId, description)
       }}
       onChangeTaskProject={(taskId, projectId) => {
-        commands.changeTaskProject(taskId, projectId)
+        guardedCommands.changeTaskProject(taskId, projectId)
       }}
-    />
+      />
+    </>
   )
 }

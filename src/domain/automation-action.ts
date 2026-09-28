@@ -1,5 +1,9 @@
 import type { AutomationAction } from './automation'
-import { workspaceReducer, type WorkspaceBaseAction, type WorkspaceState } from './workspace'
+import {
+  workspaceReducer,
+  type ActivityTrackableWorkspaceAction,
+  type WorkspaceState,
+} from './workspace'
 
 export interface CreateAutomationExecutionContextInput {
   occurredAt: string
@@ -63,11 +67,11 @@ function consumeExecutionContext(
   }
 }
 
-function workspaceActionForAutomationAction(
+export function workspaceActionForAutomationAction(
   action: AutomationAction,
   taskId: string,
   context: AutomationExecutionContext,
-): WorkspaceBaseAction {
+): ActivityTrackableWorkspaceAction {
   assertExecutionContext(context)
 
   switch (action.kind) {
