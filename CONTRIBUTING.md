@@ -1364,7 +1364,7 @@ Workspace. Keep storage version 1 unless an actual storage-shape migration is ne
 
 TDD 311-315 keeps Goals inside the domain layer. `src/domain/goal.ts` owns Goal identity, optional description, target type, target/current values, and validation. `src/domain/workspace.ts` owns only the optional Workspace Goal collection and its immutable CRUD-style reducer actions.
 
-Do not add Goal-to-Task linkage before TDD 316-320, progress derivation before TDD 321-325, or Goal persistence/UI before TDD 326-330.
+Goal-to-Task linkage is implemented by TDD 316-320 and pure progress derivation by TDD 321-325. Keep Goal persistence validation, browser reload, progress rendering, and CRUD UI deferred to TDD 326-330.
 
 
 ## Goal ↔ Task linkage contract
@@ -1372,3 +1372,9 @@ Do not add Goal-to-Task linkage before TDD 316-320, progress derivation before T
 Keep Goal linkage owned by the Goal record as an optional ordered `linkedTaskIds` collection. Link/unlink operations are immutable, preserve insertion order, reject missing Goal/Task references at the Workspace reducer boundary, and never create duplicate Task IDs. Removing the final link removes the optional field.
 
 When Task deletion removes a Task subtree or Project deletion removes Tasks, remove those Task IDs from every Goal in the same reducer result. Task duplication, Task-template instantiation, and Project-template instantiation create new Tasks without copying Goal links. Goal updates must preserve existing link order. Storage validation/browser reload for Goals remain deferred to TDD 326-330; do not broaden TDD 316-320 into Goal persistence or UI.
+
+## Goal progress derivation contract
+
+Keep progress derivation pure and separate from Workspace mutation, persistence, and UI. `manual` Goals derive progress from their stored `currentValue` and `targetValue`. `linkedTasks` Goals ignore those stored numeric fields for derived progress: the target is the ordered linked-Task ID count and the current value is the number of supplied linked Tasks whose status is `done`. Unrelated Tasks do not contribute. If a linked Task is absent from the supplied Task snapshot, keep it in the target count and treat it as incomplete.
+
+Percentage derivation clamps to the inclusive 0-100 range. A zero target with zero current reports 0%; a zero target with positive current reports 100%. `summarizeGoalProgress` must compose the mode-specific values and percentage without mutating the Goal or Task inputs. Do not persist derived summaries or add Goal UI in TDD 321-325; TDD 326-330 owns storage validation, browser reload, linked-Task summary rendering, progress rendering, and CRUD UI.

@@ -463,5 +463,9 @@ See `BRAND_NAME_RESEARCH.md` for the canonical naming and brand-research record.
 - deterministic linked-Task ID order with duplicate prevention
 - automatic Goal-link cleanup when linked Tasks are deleted
 - Task duplication and template instantiation do not copy Goal links
+- pure manual numeric progress derivation
+- linked-Task completion progress derivation
+- 0-100 percentage clamp with explicit zero-target behavior
+- pure Goal progress summary helper
 
-Derived progress remains TDD 321-325. Storage validation, browser reload, and Goals UI remain TDD 326-330.
+Storage validation, browser reload, linked-Task summary rendering, and Goals UI remain TDD 326-330.

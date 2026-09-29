@@ -3158,3 +3158,13 @@ Deferred by roadmap: Goal ↔ Task linkage (316-320), progress derivation (321-3
 - **320:** make linkage deterministic by deduplicating repeated links, validate persisted linkage IDs at the Goal boundary, reject prelinked Goals that reference missing Tasks, and lock the regression that Task duplication/template instantiation does not copy Goal links.
 
 Goal progress derivation remains TDD 321-325. Goal storage validation, CRUD UI, linked-Task summaries, progress rendering, and browser reload remain TDD 326-330. Storage version remains 1.
+
+## TDD 321-325 — Goal progress derivation
+
+- **321:** derive manual Goal progress directly from stored non-negative current/target values without mutating the Goal.
+- **322:** derive linked-Task progress from ordered Goal links, counting linked `done` Tasks as current progress and linked Task IDs as the target while ignoring unrelated Tasks.
+- **323:** derive percentage for positive targets and clamp output to the inclusive 0-100 range.
+- **324:** define zero-target behavior explicitly: 0/0 reports 0%, while positive current over a zero target reports 100%.
+- **325:** expose one pure Goal progress summary helper that returns target type, current value, target value, and percent for either target mode without mutating inputs.
+
+Goal progress remains derived state and is not persisted. Goal storage validation, browser reload, CRUD UI, linked-Task summary rendering, and progress rendering remain TDD 326-330. Storage version remains 1.
