@@ -11,10 +11,12 @@ import {
   type AutomationTrigger,
 } from './automation'
 import {
+  linkGoalTask,
   renameGoal,
   setGoalDescription,
   setGoalTargetType,
   setGoalValues,
+  unlinkGoalTask,
   validateGoal,
   type Goal,
   type GoalTargetType,
@@ -113,6 +115,8 @@ export type WorkspaceBaseAction =
   | { type: 'goal/descriptionChanged'; goalId: string; description: string | null }
   | { type: 'goal/targetTypeChanged'; goalId: string; targetType: GoalTargetType }
   | { type: 'goal/valuesChanged'; goalId: string; targetValue: number; currentValue: number }
+  | { type: 'goal/taskLinked'; goalId: string; taskId: string }
+  | { type: 'goal/taskUnlinked'; goalId: string; taskId: string }
   | { type: 'automation/added'; automation: Automation }
   | { type: 'automation/deleted'; automationId: string }
   | { type: 'automation/nameChanged'; automationId: string; name: string }
@@ -309,6 +313,33 @@ function createsDependencyCycle(
   return false
 }
 
+
+function removeGoalTaskLinksForDeletedTasks(
+  goals: Goal[] | undefined,
+  deletedTaskIds: Set<string>,
+): Goal[] | undefined {
+  if (goals === undefined) {
+    return undefined
+  }
+
+  return goals.map((goal) => {
+    if (goal.linkedTaskIds === undefined) {
+      return goal
+    }
+    const linkedTaskIds = goal.linkedTaskIds.filter((taskId) => !deletedTaskIds.has(taskId))
+    if (linkedTaskIds.length === goal.linkedTaskIds.length) {
+      return goal
+    }
+    const next = { ...goal }
+    if (linkedTaskIds.length === 0) {
+      delete next.linkedTaskIds
+    } else {
+      next.linkedTaskIds = linkedTaskIds
+    }
+    return next
+  })
+}
+
 export function workspaceReducer(
   state: WorkspaceState,
   action: WorkspaceAction,
@@ -427,6 +458,14 @@ export function workspaceReducer(
       validateGoal(action.goal)
 
       if (
+        (action.goal.linkedTaskIds ?? []).some(
+          (taskId) => !state.tasks.some((task) => task.id === taskId),
+        )
+      ) {
+        throw new Error('Cannot add a Goal linked to a missing Task')
+      }
+
+      if (
         (state.goals ?? []).some(
           (goal) => goal.id === action.goal.id,
         )
@@ -479,6 +518,36 @@ export function workspaceReducer(
             : goal,
         ),
       }
+
+    case 'goal/taskLinked': {
+      if (!(state.goals ?? []).some((goal) => goal.id === action.goalId)) {
+        throw new Error('Cannot link a Task to a missing Goal')
+      }
+      if (!state.tasks.some((task) => task.id === action.taskId)) {
+        throw new Error('Cannot link a missing Task to a Goal')
+      }
+      return {
+        ...state,
+        goals: (state.goals ?? []).map((goal) =>
+          goal.id === action.goalId ? linkGoalTask(goal, action.taskId) : goal,
+        ),
+      }
+    }
+
+    case 'goal/taskUnlinked': {
+      if (!(state.goals ?? []).some((goal) => goal.id === action.goalId)) {
+        throw new Error('Cannot unlink a Task from a missing Goal')
+      }
+      if (!state.tasks.some((task) => task.id === action.taskId)) {
+        throw new Error('Cannot unlink a missing Task from a Goal')
+      }
+      return {
+        ...state,
+        goals: (state.goals ?? []).map((goal) =>
+          goal.id === action.goalId ? unlinkGoalTask(goal, action.taskId) : goal,
+        ),
+      }
+    }
 
     case 'goal/deleted': {
       if (state.goals === undefined) {
@@ -1133,6 +1202,10 @@ export function workspaceReducer(
         tasks: state.tasks.filter(
           (task) => task.projectId !== action.projectId,
         ),
+      }
+
+      if (state.goals !== undefined) {
+        next.goals = removeGoalTaskLinksForDeletedTasks(state.goals, deletedTaskIds)
       }
 
       if (state.areas === undefined || state.areas.length === 0) {
@@ -1833,6 +1906,11 @@ export function workspaceReducer(
       const next: WorkspaceState = {
         ...state,
         tasks: state.tasks.filter((task) => !deletedIds.has(task.id)),
+      }
+
+
+      if (state.goals !== undefined) {
+        next.goals = removeGoalTaskLinksForDeletedTasks(state.goals, deletedIds)
       }
 
       if (state.relationships !== undefined) {

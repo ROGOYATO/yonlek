@@ -85,6 +85,7 @@ export function createGoalTarget(
 export interface Goal extends GoalTargetDefinition {
   targetValue: number
   currentValue: number
+  linkedTaskIds?: string[]
 }
 
 export interface CreateGoalInput extends CreateGoalTargetInput {
@@ -126,6 +127,22 @@ export function setGoalValues(
 
 export function validateGoal(goal: Goal): void {
   createGoal(goal)
+
+  if (goal.linkedTaskIds === undefined) {
+    return
+  }
+
+  const seen = new Set<string>()
+  for (const taskId of goal.linkedTaskIds) {
+    const normalizedTaskId = taskId.trim()
+    if (!normalizedTaskId) {
+      throw new Error('Goal linked Task id is required')
+    }
+    if (seen.has(normalizedTaskId)) {
+      throw new Error('Goal linked Task ids must be unique')
+    }
+    seen.add(normalizedTaskId)
+  }
 }
 
 export function renameGoal(goal: Goal, nextName: string): Goal {
@@ -151,4 +168,35 @@ export function setGoalTargetType(
     ...goal,
     targetType: normalizeGoalTargetType(targetType),
   }
+}
+
+export function linkGoalTask(goal: Goal, taskId: string): Goal {
+  const normalizedTaskId = taskId.trim()
+  if (!normalizedTaskId) {
+    throw new Error('Goal linked Task id is required')
+  }
+
+  if ((goal.linkedTaskIds ?? []).includes(normalizedTaskId)) {
+    return goal
+  }
+
+  return {
+    ...goal,
+    linkedTaskIds: [...(goal.linkedTaskIds ?? []), normalizedTaskId],
+  }
+}
+
+export function unlinkGoalTask(goal: Goal, taskId: string): Goal {
+  if (goal.linkedTaskIds === undefined) {
+    return goal
+  }
+
+  const linkedTaskIds = goal.linkedTaskIds.filter((linkedTaskId) => linkedTaskId !== taskId)
+  const next = { ...goal }
+  if (linkedTaskIds.length === 0) {
+    delete next.linkedTaskIds
+  } else {
+    next.linkedTaskIds = linkedTaskIds
+  }
+  return next
 }

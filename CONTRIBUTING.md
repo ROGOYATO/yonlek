@@ -1365,3 +1365,10 @@ Workspace. Keep storage version 1 unless an actual storage-shape migration is ne
 TDD 311-315 keeps Goals inside the domain layer. `src/domain/goal.ts` owns Goal identity, optional description, target type, target/current values, and validation. `src/domain/workspace.ts` owns only the optional Workspace Goal collection and its immutable CRUD-style reducer actions.
 
 Do not add Goal-to-Task linkage before TDD 316-320, progress derivation before TDD 321-325, or Goal persistence/UI before TDD 326-330.
+
+
+## Goal ↔ Task linkage contract
+
+Keep Goal linkage owned by the Goal record as an optional ordered `linkedTaskIds` collection. Link/unlink operations are immutable, preserve insertion order, reject missing Goal/Task references at the Workspace reducer boundary, and never create duplicate Task IDs. Removing the final link removes the optional field.
+
+When Task deletion removes a Task subtree or Project deletion removes Tasks, remove those Task IDs from every Goal in the same reducer result. Task duplication, Task-template instantiation, and Project-template instantiation create new Tasks without copying Goal links. Goal updates must preserve existing link order. Storage validation/browser reload for Goals remain deferred to TDD 326-330; do not broaden TDD 316-320 into Goal persistence or UI.

@@ -3147,3 +3147,14 @@ roadmap block 286-310 is complete; Goals begin at TDD 311.
 - TDD 315: added full Goal validation and an optional immutable Workspace Goal collection with duplicate-ID rejection.
 
 Deferred by roadmap: Goal ↔ Task linkage (316-320), progress derivation (321-325), and persistence/UI (326-330).
+
+
+## TDD 316-320 — Goal ↔ Task linkage
+
+- **316:** add immutable Goal-side Task linking with ordered Task IDs.
+- **317:** add unlinking and remove the optional linkage field when the final Task is unlinked.
+- **318:** expose Workspace link/unlink actions and reject missing Goal or Task references.
+- **319:** remove Goal links automatically when direct Task/subtree deletion or Project deletion removes linked Tasks.
+- **320:** make linkage deterministic by deduplicating repeated links, validate persisted linkage IDs at the Goal boundary, reject prelinked Goals that reference missing Tasks, and lock the regression that Task duplication/template instantiation does not copy Goal links.
+
+Goal progress derivation remains TDD 321-325. Goal storage validation, CRUD UI, linked-Task summaries, progress rendering, and browser reload remain TDD 326-330. Storage version remains 1.

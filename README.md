@@ -645,4 +645,4 @@ Workspace storage remains version 1 and now validates persisted Automation recor
 
 Goals are workspace-level planning records. The model has a stable ID and name, an optional description, a measurable target type (`manual` or `linkedTasks`), and explicit non-negative target/current numeric values.
 
-TDD 311-315 adds only the Goal domain model and optional Workspace collection. Goal-to-Task linkage, progress derivation, persistence, and UI remain separate later roadmap blocks.
+TDD 311-315 adds the Goal domain model and optional Workspace collection. TDD 316-320 adds explicit Goal-to-Task links with deterministic insertion order, duplicate prevention, missing-reference rejection, unlink cleanup, and automatic removal when linked Tasks are deleted. Task duplication and template instantiation do not copy Goal links. Progress derivation remains TDD 321-325; storage validation and Goals UI remain TDD 326-330.

@@ -459,4 +459,9 @@ See `BRAND_NAME_RESEARCH.md` for the canonical naming and brand-research record.
 - validation and immutable updates
 - optional Workspace Goal collection
 
-Goal-to-Task linkage, derived progress, persistence, and Goals UI are not part of TDD 311-315.
+- explicit Goal-to-Task link/unlink operations
+- deterministic linked-Task ID order with duplicate prevention
+- automatic Goal-link cleanup when linked Tasks are deleted
+- Task duplication and template instantiation do not copy Goal links
+
+Derived progress remains TDD 321-325. Storage validation, browser reload, and Goals UI remain TDD 326-330.
