@@ -3168,3 +3168,13 @@ Goal progress derivation remains TDD 321-325. Goal storage validation, CRUD UI, 
 - **325:** expose one pure Goal progress summary helper that returns target type, current value, target value, and percent for either target mode without mutating inputs.
 
 Goal progress remains derived state and is not persisted. Goal storage validation, browser reload, CRUD UI, linked-Task summary rendering, and progress rendering remain TDD 326-330. Storage version remains 1.
+
+## TDD 326-330 — Goals persistence and UI
+
+- **326:** validate the optional Goal collection in Workspace storage version 1, including malformed records, duplicate Goal IDs, and missing linked-Task references.
+- **327:** expose Goal create/update/delete and Task link/unlink operations through `WorkspaceCommands` so Goal changes use the normal persisted Store path.
+- **328:** add the local Goals CRUD panel for creation, rename, description, target type, manual values, and deletion.
+- **329:** add linked-Task assignment controls and render completed/linked Task summaries for `linkedTasks` Goals.
+- **330:** render the pure Goal progress summary in the browser UI and lock BrowserApp reload persistence for created Goals.
+
+Derived progress remains non-persisted. Storage version remains 1. The Goals roadmap block TDD 311-330 is complete; reporting/dashboard primitives begin at TDD 331.

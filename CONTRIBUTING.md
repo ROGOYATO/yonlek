@@ -1378,3 +1378,9 @@ When Task deletion removes a Task subtree or Project deletion removes Tasks, rem
 Keep progress derivation pure and separate from Workspace mutation, persistence, and UI. `manual` Goals derive progress from their stored `currentValue` and `targetValue`. `linkedTasks` Goals ignore those stored numeric fields for derived progress: the target is the ordered linked-Task ID count and the current value is the number of supplied linked Tasks whose status is `done`. Unrelated Tasks do not contribute. If a linked Task is absent from the supplied Task snapshot, keep it in the target count and treat it as incomplete.
 
 Percentage derivation clamps to the inclusive 0-100 range. A zero target with zero current reports 0%; a zero target with positive current reports 100%. `summarizeGoalProgress` must compose the mode-specific values and percentage without mutating the Goal or Task inputs. Do not persist derived summaries or add Goal UI in TDD 321-325; TDD 326-330 owns storage validation, browser reload, linked-Task summary rendering, progress rendering, and CRUD UI.
+
+## Goal persistence and UI contract
+
+Keep Goals inside Workspace storage version 1 unless the stored shape actually requires a migration. The storage boundary must validate each Goal, reject duplicate Goal IDs, and reject linked Task IDs that are absent from the same Workspace snapshot before accepting persisted JSON.
+
+Browser Goal editing must go through `WorkspaceCommands` and the existing Store so accepted changes are persisted by the same command path as other Workspace data. UI progress is derived with `summarizeGoalProgress`; do not persist calculated percentages or linked-Task completion counts. Linked-Task controls may change only explicit Goal links. A normal BrowserApp remount must reconstruct the same Goal configuration from storage.

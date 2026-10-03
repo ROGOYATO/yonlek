@@ -7,6 +7,7 @@ import {
   validateCustomFieldFormulaDependencies,
   type CustomFieldDefinition,
 } from '../domain/custom-field'
+import { validateGoal, type Goal } from '../domain/goal'
 import {
   setTaskDueDate,
   setTaskRecurrence,
@@ -67,6 +68,19 @@ export function migrateWorkspaceStorageDocument(
 }
 
 
+
+function isValidGoal(value: unknown): boolean {
+  if (!isRecord(value)) {
+    return false
+  }
+
+  try {
+    validateGoal(value as unknown as Goal)
+    return true
+  } catch {
+    return false
+  }
+}
 
 function isValidAutomation(value: unknown): boolean {
   if (!isRecord(value)) {
@@ -821,6 +835,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
       !Array.isArray(workspace.taskTemplates)) ||
     (workspace.activity !== undefined && !Array.isArray(workspace.activity)) ||
     (workspace.automations !== undefined && !Array.isArray(workspace.automations)) ||
+    (workspace.goals !== undefined && !Array.isArray(workspace.goals)) ||
     !Array.isArray(workspace.projects) ||
     !Array.isArray(workspace.tasks)
   ) {
@@ -837,6 +852,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   const taskTemplates = workspace.taskTemplates ?? []
   const activity = workspace.activity ?? []
   const automations = workspace.automations ?? []
+  const goals = workspace.goals ?? []
 
   if (
     !areas.every(isValidArea) ||
@@ -849,6 +865,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     !taskTemplates.every(isValidTaskTemplate) ||
     !activity.every(isValidTaskActivityEntry) ||
     !automations.every(isValidAutomation) ||
+    !goals.every(isValidGoal) ||
     !workspace.projects.every(isValidProject) ||
     !workspace.tasks.every(isValidTask)
   ) {
@@ -869,6 +886,14 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   )
 
   if (automationIds.size !== automations.length) {
+    invalidStorage()
+  }
+
+  const goalIds = new Set(
+    goals.map((goal) => (goal as { id: string }).id),
+  )
+
+  if (goalIds.size !== goals.length) {
     invalidStorage()
   }
 
@@ -993,6 +1018,16 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   )
 
   if (taskIds.size !== workspace.tasks.length) {
+    invalidStorage()
+  }
+
+  if (
+    goals.some((goal) =>
+      ((goal as { linkedTaskIds?: string[] }).linkedTaskIds ?? []).some(
+        (taskId) => !taskIds.has(taskId),
+      ),
+    )
+  ) {
     invalidStorage()
   }
 

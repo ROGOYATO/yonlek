@@ -5,6 +5,7 @@ import {
   type AutomationTrigger,
 } from '../domain/automation'
 import { createChecklistItem } from '../domain/checklist'
+import { createGoal, type GoalTargetType } from '../domain/goal'
 import {
   createCustomField,
   type CustomFieldFormula,
@@ -48,6 +49,22 @@ export interface WorkspaceRuntime {
 }
 
 export interface WorkspaceCommands {
+  addGoal(
+    name: string,
+    input: {
+      description?: string
+      targetType: GoalTargetType
+      targetValue: number
+      currentValue: number
+    },
+  ): ReturnType<typeof createGoal>
+  renameGoal(goalId: string, name: string): void
+  changeGoalDescription(goalId: string, description: string | null): void
+  changeGoalTargetType(goalId: string, targetType: GoalTargetType): void
+  changeGoalValues(goalId: string, targetValue: number, currentValue: number): void
+  linkGoalTask(goalId: string, taskId: string): void
+  unlinkGoalTask(goalId: string, taskId: string): void
+  deleteGoal(goalId: string): void
   addAutomation(
     name: string,
     input: {
@@ -169,6 +186,53 @@ export function createWorkspaceCommands(
   }
 
   return {
+    addGoal(name, input) {
+      const goal = createGoal({
+        id: runtime.nextId(),
+        name,
+        description: input.description,
+        targetType: input.targetType,
+        targetValue: input.targetValue,
+        currentValue: input.currentValue,
+      })
+
+      store.dispatch({ type: 'goal/added', goal })
+      return goal
+    },
+
+    renameGoal(goalId, name) {
+      store.dispatch({ type: 'goal/nameChanged', goalId, name })
+    },
+
+    changeGoalDescription(goalId, description) {
+      store.dispatch({ type: 'goal/descriptionChanged', goalId, description })
+    },
+
+    changeGoalTargetType(goalId, targetType) {
+      store.dispatch({ type: 'goal/targetTypeChanged', goalId, targetType })
+    },
+
+    changeGoalValues(goalId, targetValue, currentValue) {
+      store.dispatch({
+        type: 'goal/valuesChanged',
+        goalId,
+        targetValue,
+        currentValue,
+      })
+    },
+
+    linkGoalTask(goalId, taskId) {
+      store.dispatch({ type: 'goal/taskLinked', goalId, taskId })
+    },
+
+    unlinkGoalTask(goalId, taskId) {
+      store.dispatch({ type: 'goal/taskUnlinked', goalId, taskId })
+    },
+
+    deleteGoal(goalId) {
+      store.dispatch({ type: 'goal/deleted', goalId })
+    },
+
     addAutomation(name, input) {
       const automation = createAutomation({
         id: runtime.nextId(),

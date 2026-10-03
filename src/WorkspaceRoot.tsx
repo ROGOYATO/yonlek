@@ -2,6 +2,7 @@ import { useState, useSyncExternalStore } from 'react'
 
 import { App } from './App'
 import { AutomationPanel } from './AutomationPanel'
+import { GoalPanel } from './GoalPanel'
 import type { WorkspaceCommands } from './application/workspace-commands'
 import type { WorkspaceStore } from './application/workspace-store'
 import type { ViewPreferences } from './domain/view-preferences'
@@ -54,6 +55,25 @@ export function WorkspaceRoot({
   return (
     <>
       {commandError ? <p role="alert">{commandError}</p> : null}
+      <GoalPanel
+        state={state}
+        onAddGoal={(name, input) => guardedCommands.addGoal(name, input)}
+        onRenameGoal={(goalId, name) => guardedCommands.renameGoal(goalId, name)}
+        onChangeGoalDescription={(goalId, description) =>
+          guardedCommands.changeGoalDescription(goalId, description)
+        }
+        onChangeGoalTargetType={(goalId, targetType) =>
+          guardedCommands.changeGoalTargetType(goalId, targetType)
+        }
+        onChangeGoalValues={(goalId, targetValue, currentValue) =>
+          guardedCommands.changeGoalValues(goalId, targetValue, currentValue)
+        }
+        onLinkGoalTask={(goalId, taskId) => guardedCommands.linkGoalTask(goalId, taskId)}
+        onUnlinkGoalTask={(goalId, taskId) =>
+          guardedCommands.unlinkGoalTask(goalId, taskId)
+        }
+        onDeleteGoal={(goalId) => guardedCommands.deleteGoal(goalId)}
+      />
       <AutomationPanel
         state={state}
         onAddAutomation={(name, input) => guardedCommands.addAutomation(name, input)}

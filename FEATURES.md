@@ -469,3 +469,15 @@ See `BRAND_NAME_RESEARCH.md` for the canonical naming and brand-research record.
 - pure Goal progress summary helper
 
 Storage validation, browser reload, linked-Task summary rendering, and Goals UI remain TDD 326-330.
+
+## Goals — persistence and UI
+
+- [x] storage version 1 validation for optional Goals
+- [x] duplicate Goal ID and missing linked-Task rejection on load
+- [x] Goal command surface for create/update/delete and Task link/unlink
+- [x] local Goals CRUD panel
+- [x] linked-Task assignment controls and completed/linked summary
+- [x] derived progress rendering
+- [x] BrowserApp reload persistence
+
+The Goals block TDD 311-330 is complete. Reporting primitives begin at TDD 331.
