@@ -347,8 +347,9 @@ actions execute inside one bounded command transaction and action-produced Activ
 can feed the same explicit queue. Errors are rejected before partial Workspace state
 is accepted or persisted. The browser editor persists Automation configuration across
 reload. Workspace storage remains version 1.
-- [ ] Goals or measurable targets
-- [ ] Dashboards and reporting
+- [x] Goals or measurable targets
+- [x] Reporting primitives for Task status, priority, due dates, Project completion, and Goal progress
+- [ ] Dashboards and reporting UI
 
 ## Knowledge
 
@@ -480,4 +481,4 @@ Storage validation, browser reload, linked-Task summary rendering, and Goals UI 
 - [x] derived progress rendering
 - [x] BrowserApp reload persistence
 
-The Goals block TDD 311-330 is complete. Reporting primitives begin at TDD 331.
+The Goals block TDD 311-330 is complete. TDD 331-335 adds pure reporting primitives; dashboard composition and browser UI remain for TDD 336-345.

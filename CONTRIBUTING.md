@@ -1384,3 +1384,9 @@ Percentage derivation clamps to the inclusive 0-100 range. A zero target with ze
 Keep Goals inside Workspace storage version 1 unless the stored shape actually requires a migration. The storage boundary must validate each Goal, reject duplicate Goal IDs, and reject linked Task IDs that are absent from the same Workspace snapshot before accepting persisted JSON.
 
 Browser Goal editing must go through `WorkspaceCommands` and the existing Store so accepted changes are persisted by the same command path as other Workspace data. UI progress is derived with `summarizeGoalProgress`; do not persist calculated percentages or linked-Task completion counts. Linked-Task controls may change only explicit Goal links. A normal BrowserApp remount must reconstruct the same Goal configuration from storage.
+
+## Reporting derivation contract
+
+Keep reporting pure and read-only. TDD 331-335 may derive data from one supplied `WorkspaceState`, but must not dispatch actions, write storage, mutate Tasks/Projects/Goals, or persist report output. Active Task reporting excludes archived Tasks and Tasks whose Project is archived. Status and priority reports count the remaining Tasks; open-task due-date reporting excludes completed Tasks and compares normalized Task due dates against an explicit caller-supplied `YYYY-MM-DD` report date rather than reading the clock.
+
+Project completion rows preserve active Workspace Project order, include zero-task Projects, and derive completion from reportable Tasks only. Goal report rows must reuse `summarizeGoalProgress` so Goal semantics stay centralized. The combined reporting snapshot is a composition of those pure helpers. Storage remains version 1; TDD 331-335 does not add persisted dashboard state or browser UI.

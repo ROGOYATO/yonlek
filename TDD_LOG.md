@@ -3178,3 +3178,13 @@ Goal progress remains derived state and is not persisted. Goal storage validatio
 - **330:** render the pure Goal progress summary in the browser UI and lock BrowserApp reload persistence for created Goals.
 
 Derived progress remains non-persisted. Storage version remains 1. The Goals roadmap block TDD 311-330 is complete; reporting/dashboard primitives begin at TDD 331.
+
+## TDD 331-335 — Reporting primitives
+
+- **331:** derive active Task status counts and completion percentage while excluding archived Tasks and Tasks hidden by archived Projects.
+- **332:** derive active Task priority counts without mutating Workspace state.
+- **333:** classify active incomplete Tasks into overdue, due-today, upcoming, and unscheduled buckets against an explicit report date.
+- **334:** derive ordered active Project completion rows with total/done Task counts and completion percentage, including zero-task Projects.
+- **335:** reuse pure Goal progress summaries and compose Task, Project, and Goal metrics into one immutable Workspace reporting snapshot.
+
+Reporting output remains derived and is not persisted. Workspace storage remains version 1. Dashboard composition and browser UI remain TDD 336-345.

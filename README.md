@@ -652,3 +652,9 @@ TDD 321-325 adds pure Goal progress derivation. `manual` Goals use their stored 
 ## Goals persistence and UI
 
 Goals remain part of Workspace storage version 1. Loading validates each Goal, duplicate Goal IDs, and linked Task references before accepting persisted state. The browser Goals panel supports local creation, rename, description, target type, manual values, deletion, and linked-Task assignment. Linked-Task Goals show completed/linked counts; all Goals render the pure derived progress summary. Goal configuration and links persist through BrowserApp reload.
+
+## Reporting primitives
+
+TDD 331-335 adds a pure reporting layer over the current Workspace snapshot. Active Task reporting excludes archived Tasks and Tasks hidden by archived Projects, then derives status counts, priority counts, and deterministic open-task due-date buckets from an explicit report date. Project reporting preserves active Project order and derives total/done counts plus completion percentage, including zero-task Projects. Goal reporting reuses the existing pure Goal progress summary rather than persisting new derived fields.
+
+`deriveWorkspaceReportingSnapshot` composes those primitives without mutating Workspace state or changing storage version 1. Dashboard composition and browser rendering remain TDD 336-345.
