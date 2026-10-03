@@ -349,7 +349,7 @@ is accepted or persisted. The browser editor persists Automation configuration a
 reload. Workspace storage remains version 1.
 - [x] Goals or measurable targets
 - [x] Reporting primitives for Task status, priority, due dates, Project completion, and Goal progress
-- [ ] Dashboards and reporting UI
+- [ ] Dashboards and reporting UI — pure dashboard composition complete; browser UI pending TDD 341-345
 
 ## Knowledge
 
@@ -482,3 +482,15 @@ Storage validation, browser reload, linked-Task summary rendering, and Goals UI 
 - [x] BrowserApp reload persistence
 
 The Goals block TDD 311-330 is complete. TDD 331-335 adds pure reporting primitives; dashboard composition and browser UI remain for TDD 336-345.
+
+
+## Dashboard composition
+
+- [x] headline active/completed/open/overdue Task KPIs
+- [x] stable Task status distribution rows with percentages
+- [x] stable Task priority distribution rows with percentages
+- [x] due-date attention summary with overdue + due-today attention count
+- [x] immutable composition of KPI/distribution/attention/Project/Goal rows
+- [ ] browser Dashboard rendering and report-date integration (TDD 341-345)
+
+Dashboard output remains derived and is not persisted. Storage version remains 1.

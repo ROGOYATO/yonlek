@@ -658,3 +658,10 @@ Goals remain part of Workspace storage version 1. Loading validates each Goal, d
 TDD 331-335 adds a pure reporting layer over the current Workspace snapshot. Active Task reporting excludes archived Tasks and Tasks hidden by archived Projects, then derives status counts, priority counts, and deterministic open-task due-date buckets from an explicit report date. Project reporting preserves active Project order and derives total/done counts plus completion percentage, including zero-task Projects. Goal reporting reuses the existing pure Goal progress summary rather than persisting new derived fields.
 
 `deriveWorkspaceReportingSnapshot` composes those primitives without mutating Workspace state or changing storage version 1. Dashboard composition and browser rendering remain TDD 336-345.
+
+
+## Dashboard composition
+
+TDD 336-340 turns a `WorkspaceReportingSnapshot` into a browser-ready but still pure dashboard view model. Headline KPIs expose active, completed, open, overdue, and completion-percentage values. Task status and priority distributions use fixed display order and derive percentages from their report totals. The attention summary preserves overdue, due-today, upcoming, unscheduled, and total-open counts and defines immediate attention as overdue plus due-today work.
+
+`deriveDashboardViewModel` composes those sections and returns copied Project and Goal rows so dashboard consumers cannot mutate the underlying reporting snapshot by alias. It does not read the clock, storage, or Workspace commands, and it does not persist derived dashboard state. Browser Dashboard rendering and report-date integration remain TDD 341-345. Storage remains version 1.

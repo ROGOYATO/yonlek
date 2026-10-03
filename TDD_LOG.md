@@ -3188,3 +3188,14 @@ Derived progress remains non-persisted. Storage version remains 1. The Goals roa
 - **335:** reuse pure Goal progress summaries and compose Task, Project, and Goal metrics into one immutable Workspace reporting snapshot.
 
 Reporting output remains derived and is not persisted. Workspace storage remains version 1. Dashboard composition and browser UI remain TDD 336-345.
+
+
+## TDD 336-340 — Dashboard composition
+
+- **336:** derive headline active/completed/open/overdue Task KPIs and reuse the reporting completion percentage.
+- **337:** derive stable To do / Doing / Done distribution rows and percentages from Task status reporting.
+- **338:** derive stable Low / Normal / High distribution rows and percentages from Task priority reporting.
+- **339:** compose due-date attention counts and define immediate attention as overdue plus due-today open Tasks.
+- **340:** compose the complete immutable Dashboard view model with copied Project and Goal rows so Dashboard consumers cannot mutate reporting inputs by alias.
+
+Dashboard composition remains pure derived state and is not persisted. Workspace storage remains version 1. Browser Dashboard rendering and report-date integration remain TDD 341-345.

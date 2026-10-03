@@ -1390,3 +1390,10 @@ Browser Goal editing must go through `WorkspaceCommands` and the existing Store 
 Keep reporting pure and read-only. TDD 331-335 may derive data from one supplied `WorkspaceState`, but must not dispatch actions, write storage, mutate Tasks/Projects/Goals, or persist report output. Active Task reporting excludes archived Tasks and Tasks whose Project is archived. Status and priority reports count the remaining Tasks; open-task due-date reporting excludes completed Tasks and compares normalized Task due dates against an explicit caller-supplied `YYYY-MM-DD` report date rather than reading the clock.
 
 Project completion rows preserve active Workspace Project order, include zero-task Projects, and derive completion from reportable Tasks only. Goal report rows must reuse `summarizeGoalProgress` so Goal semantics stay centralized. The combined reporting snapshot is a composition of those pure helpers. Storage remains version 1; TDD 331-335 does not add persisted dashboard state or browser UI.
+
+
+## Dashboard composition contract
+
+TDD 336-340 consumes `WorkspaceReportingSnapshot` as an already-derived, read-only input. Keep dashboard composition pure: do not read Workspace storage, dispatch commands, mutate reporting rows, read the clock, or persist dashboard output. Headline KPIs may reuse Task totals/completion and open/overdue counts from the reporting snapshot; distribution rows must use stable status and priority ordering and derive percentages from the corresponding report total with a zero-total result of 0%.
+
+The attention summary combines only due-date reporting fields and defines `attentionNow` as overdue plus due-today open Tasks. The full dashboard view model must compose these helpers and copy Project/Goal rows so consumers cannot mutate the reporting snapshot through returned collections. Browser rendering, report-date selection, and Dashboard interaction remain TDD 341-345. Storage remains version 1.
