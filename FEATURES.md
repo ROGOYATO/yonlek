@@ -491,6 +491,11 @@ The Goals block TDD 311-330 is complete. TDD 331-335 adds pure reporting primiti
 - [x] stable Task priority distribution rows with percentages
 - [x] due-date attention summary with overdue + due-today attention count
 - [x] immutable composition of KPI/distribution/attention/Project/Goal rows
-- [ ] browser Dashboard rendering and report-date integration (TDD 341-345)
+- [x] browser Dashboard KPI rendering
+- [x] browser Task status and priority distribution rendering
+- [x] due-date attention rendering
+- [x] active Project and Goal progress rendering
+- [x] explicit report-date integration with local-date production fallback
+- [x] reactive Dashboard updates from accepted Workspace Store changes
 
-Dashboard output remains derived and is not persisted. Storage version remains 1.
+Dashboard output remains derived and is not persisted. Storage version remains 1. The reporting/dashboard block TDD 331-345 is complete; Notes/Docs/Wiki begin at TDD 346.

@@ -1397,3 +1397,9 @@ Project completion rows preserve active Workspace Project order, include zero-ta
 TDD 336-340 consumes `WorkspaceReportingSnapshot` as an already-derived, read-only input. Keep dashboard composition pure: do not read Workspace storage, dispatch commands, mutate reporting rows, read the clock, or persist dashboard output. Headline KPIs may reuse Task totals/completion and open/overdue counts from the reporting snapshot; distribution rows must use stable status and priority ordering and derive percentages from the corresponding report total with a zero-total result of 0%.
 
 The attention summary combines only due-date reporting fields and defines `attentionNow` as overdue plus due-today open Tasks. The full dashboard view model must compose these helpers and copy Project/Goal rows so consumers cannot mutate the reporting snapshot through returned collections. Browser rendering, report-date selection, and Dashboard interaction remain TDD 341-345. Storage remains version 1.
+
+## Browser Dashboard contract
+
+TDD 341-345 renders only derived Dashboard data. `DashboardPanel` receives a `DashboardViewModel`; it must not access Workspace storage, dispatch commands, mutate report rows, or calculate domain reporting rules itself. KPI, distribution, attention, Project, and Goal sections render the values already supplied by the Dashboard view model.
+
+`WorkspaceRoot` owns Dashboard composition because it already subscribes to the accepted Workspace Store state. It derives `WorkspaceReportingSnapshot`, then `DashboardViewModel`, using one `YYYY-MM-DD` report date for that render. Tests may inject the report date explicitly; normal browser rendering may derive the local calendar date. Store updates must naturally recompute the Dashboard through the existing subscription. Dashboard data remains non-persisted and Workspace storage remains version 1.

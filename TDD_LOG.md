@@ -3199,3 +3199,14 @@ Reporting output remains derived and is not persisted. Workspace storage remains
 - **340:** compose the complete immutable Dashboard view model with copied Project and Goal rows so Dashboard consumers cannot mutate reporting inputs by alias.
 
 Dashboard composition remains pure derived state and is not persisted. Workspace storage remains version 1. Browser Dashboard rendering and report-date integration remain TDD 341-345.
+
+
+## TDD 341-345 — Browser Dashboard UI
+
+- **341:** render headline active/completed/open/overdue Task KPIs and completion percentage in a dedicated `DashboardPanel`.
+- **342:** render the stable Task status and priority distribution rows supplied by the Dashboard view model.
+- **343:** render immediate due-date attention plus overdue, due-today, upcoming, unscheduled, and total-open counts.
+- **344:** render active Project completion rows and Goal progress rows, including explicit empty-state messages.
+- **345:** integrate Dashboard derivation into `WorkspaceRoot` with an injectable report date, local-calendar fallback, and reactive recomputation after accepted Workspace Store changes.
+
+Dashboard rendering remains derived state: `DashboardPanel` does not dispatch commands or write storage, and Workspace storage remains version 1. The reporting/dashboard roadmap block TDD 331-345 is complete; Notes/Docs/Wiki begin at TDD 346.

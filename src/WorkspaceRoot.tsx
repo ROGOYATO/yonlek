@@ -2,13 +2,23 @@ import { useState, useSyncExternalStore } from 'react'
 
 import { App } from './App'
 import { AutomationPanel } from './AutomationPanel'
+import { DashboardPanel } from './DashboardPanel'
 import { GoalPanel } from './GoalPanel'
 import type { WorkspaceCommands } from './application/workspace-commands'
 import type { WorkspaceStore } from './application/workspace-store'
+import { deriveDashboardViewModel } from './domain/dashboard'
+import { deriveWorkspaceReportingSnapshot } from './domain/reporting'
 import type { ViewPreferences } from './domain/view-preferences'
 
 function commandErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Workspace command failed'
+}
+
+function localReportDate(date = new Date()): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 export interface WorkspaceRootProps {
@@ -16,6 +26,7 @@ export interface WorkspaceRootProps {
   commands: WorkspaceCommands
   initialViewPreferences?: ViewPreferences
   onViewPreferencesChange?: (preferences: ViewPreferences) => void
+  dashboardReportDate?: string
 }
 
 export function WorkspaceRoot({
@@ -23,6 +34,7 @@ export function WorkspaceRoot({
   commands,
   initialViewPreferences,
   onViewPreferencesChange,
+  dashboardReportDate,
 }: WorkspaceRootProps) {
   const state = useSyncExternalStore(
     store.subscribe,
@@ -30,6 +42,12 @@ export function WorkspaceRoot({
     store.getState,
   )
   const [commandError, setCommandError] = useState<string | null>(null)
+  const dashboard = deriveDashboardViewModel(
+    deriveWorkspaceReportingSnapshot(
+      state,
+      dashboardReportDate ?? localReportDate(),
+    ),
+  )
 
   function runCommand<T>(command: () => T): T | undefined {
     try {
@@ -55,6 +73,7 @@ export function WorkspaceRoot({
   return (
     <>
       {commandError ? <p role="alert">{commandError}</p> : null}
+      <DashboardPanel dashboard={dashboard} />
       <GoalPanel
         state={state}
         onAddGoal={(name, input) => guardedCommands.addGoal(name, input)}

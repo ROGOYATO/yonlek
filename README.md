@@ -665,3 +665,9 @@ TDD 331-335 adds a pure reporting layer over the current Workspace snapshot. Act
 TDD 336-340 turns a `WorkspaceReportingSnapshot` into a browser-ready but still pure dashboard view model. Headline KPIs expose active, completed, open, overdue, and completion-percentage values. Task status and priority distributions use fixed display order and derive percentages from their report totals. The attention summary preserves overdue, due-today, upcoming, unscheduled, and total-open counts and defines immediate attention as overdue plus due-today work.
 
 `deriveDashboardViewModel` composes those sections and returns copied Project and Goal rows so dashboard consumers cannot mutate the underlying reporting snapshot by alias. It does not read the clock, storage, or Workspace commands, and it does not persist derived dashboard state. Browser Dashboard rendering and report-date integration remain TDD 341-345. Storage remains version 1.
+
+## Browser Dashboard
+
+TDD 341-345 renders the derived Dashboard in `WorkspaceRoot`. `DashboardPanel` shows headline KPIs, Task status and priority distributions, due-date attention, active Project completion, and Goal progress without dispatching commands or writing storage. `WorkspaceRoot` derives one reporting snapshot from the current Store state and an explicit report date, then composes the Dashboard view model. Tests can inject that date; production falls back to the local calendar date.
+
+Because the Dashboard is derived from the subscribed Workspace state, accepted Task changes update the visible metrics immediately. No Dashboard values are persisted and Workspace storage remains version 1. The reporting/dashboard roadmap block TDD 331-345 is complete; Notes/Docs/Wiki begin at TDD 346.
