@@ -21,6 +21,17 @@ import {
   type Goal,
   type GoalTargetType,
 } from './goal'
+import {
+  linkKnowledgeDocumentToProject,
+  renameKnowledgeDocument,
+  setKnowledgeDocumentContent,
+  setKnowledgeDocumentKind,
+  setKnowledgeDocumentSourceOfTruth,
+  unlinkKnowledgeDocumentFromProject,
+  validateKnowledgeDocument,
+  type KnowledgeDocument,
+  type KnowledgeDocumentKind,
+} from './knowledge-document'
 import { deriveTaskActivityEntries, type TaskActivityEntry } from './task-activity'
 import { renameArea, type Area } from './area'
 import {
@@ -89,6 +100,7 @@ export interface WorkspaceState {
   activity?: TaskActivityEntry[]
   automations?: Automation[]
   goals?: Goal[]
+  knowledgeDocuments?: KnowledgeDocument[]
   areas?: Area[]
   lists?: TaskList[]
   tags?: Tag[]
@@ -117,6 +129,25 @@ export type WorkspaceBaseAction =
   | { type: 'goal/valuesChanged'; goalId: string; targetValue: number; currentValue: number }
   | { type: 'goal/taskLinked'; goalId: string; taskId: string }
   | { type: 'goal/taskUnlinked'; goalId: string; taskId: string }
+  | { type: 'knowledgeDocument/added'; document: KnowledgeDocument }
+  | { type: 'knowledgeDocument/deleted'; documentId: string }
+  | { type: 'knowledgeDocument/titleChanged'; documentId: string; title: string }
+  | { type: 'knowledgeDocument/contentChanged'; documentId: string; content: string }
+  | {
+      type: 'knowledgeDocument/kindChanged'
+      documentId: string
+      kind: KnowledgeDocumentKind
+    }
+  | {
+      type: 'knowledgeDocument/projectChanged'
+      documentId: string
+      projectId: string | null
+    }
+  | {
+      type: 'knowledgeDocument/sourceOfTruthChanged'
+      documentId: string
+      sourceOfTruth: boolean
+    }
   | { type: 'automation/added'; automation: Automation }
   | { type: 'automation/deleted'; automationId: string }
   | { type: 'automation/nameChanged'; automationId: string; name: string }
@@ -368,6 +399,117 @@ export function workspaceReducer(
   }
 
   switch (action.type) {
+    case 'knowledgeDocument/added': {
+      validateKnowledgeDocument(action.document)
+
+      if (
+        action.document.projectId !== undefined &&
+        !state.projects.some((project) => project.id === action.document.projectId)
+      ) {
+        throw new Error('Cannot add a Knowledge document linked to a missing Project')
+      }
+
+      if (
+        (state.knowledgeDocuments ?? []).some(
+          (document) => document.id === action.document.id,
+        )
+      ) {
+        throw new Error('Knowledge document id must be unique')
+      }
+
+      return {
+        ...state,
+        knowledgeDocuments: [
+          ...(state.knowledgeDocuments ?? []),
+          action.document,
+        ],
+      }
+    }
+
+    case 'knowledgeDocument/titleChanged':
+      return {
+        ...state,
+        knowledgeDocuments: (state.knowledgeDocuments ?? []).map((document) =>
+          document.id === action.documentId
+            ? renameKnowledgeDocument(document, action.title)
+            : document,
+        ),
+      }
+
+    case 'knowledgeDocument/contentChanged':
+      return {
+        ...state,
+        knowledgeDocuments: (state.knowledgeDocuments ?? []).map((document) =>
+          document.id === action.documentId
+            ? setKnowledgeDocumentContent(document, action.content)
+            : document,
+        ),
+      }
+
+    case 'knowledgeDocument/kindChanged':
+      return {
+        ...state,
+        knowledgeDocuments: (state.knowledgeDocuments ?? []).map((document) =>
+          document.id === action.documentId
+            ? setKnowledgeDocumentKind(document, action.kind)
+            : document,
+        ),
+      }
+
+    case 'knowledgeDocument/projectChanged': {
+      if (
+        action.projectId !== null &&
+        !state.projects.some((project) => project.id === action.projectId)
+      ) {
+        throw new Error('Cannot link a Knowledge document to a missing Project')
+      }
+
+      return {
+        ...state,
+        knowledgeDocuments: (state.knowledgeDocuments ?? []).map((document) => {
+          if (document.id !== action.documentId) {
+            return document
+          }
+
+          return action.projectId === null
+            ? unlinkKnowledgeDocumentFromProject(document)
+            : linkKnowledgeDocumentToProject(document, action.projectId)
+        }),
+      }
+    }
+
+    case 'knowledgeDocument/sourceOfTruthChanged':
+      return {
+        ...state,
+        knowledgeDocuments: (state.knowledgeDocuments ?? []).map((document) =>
+          document.id === action.documentId
+            ? setKnowledgeDocumentSourceOfTruth(
+                document,
+                action.sourceOfTruth,
+              )
+            : document,
+        ),
+      }
+
+    case 'knowledgeDocument/deleted': {
+      if (state.knowledgeDocuments === undefined) {
+        return state
+      }
+
+      const knowledgeDocuments = state.knowledgeDocuments.filter(
+        (document) => document.id !== action.documentId,
+      )
+      const next = { ...state }
+
+      if (knowledgeDocuments.length === 0) {
+        delete next.knowledgeDocuments
+      } else {
+        next.knowledgeDocuments = knowledgeDocuments
+      }
+
+      return next
+    }
+
     case 'automation/added': {
       validateAutomation(action.automation)
 
@@ -1202,6 +1344,14 @@ export function workspaceReducer(
         tasks: state.tasks.filter(
           (task) => task.projectId !== action.projectId,
         ),
+      }
+
+      if (state.knowledgeDocuments !== undefined) {
+        next.knowledgeDocuments = state.knowledgeDocuments.map((document) =>
+          document.projectId === action.projectId
+            ? unlinkKnowledgeDocumentFromProject(document)
+            : document,
+        )
       }
 
       if (state.goals !== undefined) {

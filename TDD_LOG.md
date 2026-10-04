@@ -3210,3 +3210,13 @@ Dashboard composition remains pure derived state and is not persisted. Workspace
 - **345:** integrate Dashboard derivation into `WorkspaceRoot` with an injectable report date, local-calendar fallback, and reactive recomputation after accepted Workspace Store changes.
 
 Dashboard rendering remains derived state: `DashboardPanel` does not dispatch commands or write storage, and Workspace storage remains version 1. The reporting/dashboard roadmap block TDD 331-345 is complete; Notes/Docs/Wiki begin at TDD 346.
+
+## TDD 346-350 — Knowledge document model
+
+- **346:** add stable trimmed Knowledge document identity and title validation.
+- **347:** add explicit `note` / `doc` kind plus exact editable string content, immutable rename/content/kind helpers, and full document validation.
+- **348:** add optional normalized Project linkage with immutable link/unlink helpers.
+- **349:** add a sparse source-of-truth marker whose false state removes the optional field.
+- **350:** add the optional ordered Workspace Knowledge document collection, duplicate-ID and missing-Project rejection, immutable document edit actions, final-delete cleanup, and Project-deletion unlink semantics that preserve document content.
+
+Knowledge documents are not persisted or rendered by the browser yet. Storage validation, command composition, browser reload, and Notes/Docs/Wiki UI remain TDD 351-360. Workspace storage remains version 1.

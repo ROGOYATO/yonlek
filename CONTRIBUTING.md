@@ -1403,3 +1403,7 @@ The attention summary combines only due-date reporting fields and defines `atten
 TDD 341-345 renders only derived Dashboard data. `DashboardPanel` receives a `DashboardViewModel`; it must not access Workspace storage, dispatch commands, mutate report rows, or calculate domain reporting rules itself. KPI, distribution, attention, Project, and Goal sections render the values already supplied by the Dashboard view model.
 
 `WorkspaceRoot` owns Dashboard composition because it already subscribes to the accepted Workspace Store state. It derives `WorkspaceReportingSnapshot`, then `DashboardViewModel`, using one `YYYY-MM-DD` report date for that render. Tests may inject the report date explicitly; normal browser rendering may derive the local calendar date. Store updates must naturally recompute the Dashboard through the existing subscription. Dashboard data remains non-persisted and Workspace storage remains version 1.
+
+## Knowledge document boundary after TDD 350
+
+Knowledge documents are domain-owned Workspace records. Keep document identity, kind/content validation, Project-link normalization, and source-of-truth semantics in `src/domain/knowledge-document.ts`; UI code must not duplicate those rules. Project deletion preserves Knowledge documents and removes only the optional Project link. TDD 346-350 does not make `knowledgeDocuments` persistence-safe yet: do not route browser commands through storage until the storage validator and command surface are added in TDD 351-360. Workspace storage remains version 1.

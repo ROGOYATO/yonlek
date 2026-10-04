@@ -671,3 +671,9 @@ TDD 336-340 turns a `WorkspaceReportingSnapshot` into a browser-ready but still 
 TDD 341-345 renders the derived Dashboard in `WorkspaceRoot`. `DashboardPanel` shows headline KPIs, Task status and priority distributions, due-date attention, active Project completion, and Goal progress without dispatching commands or writing storage. `WorkspaceRoot` derives one reporting snapshot from the current Store state and an explicit report date, then composes the Dashboard view model. Tests can inject that date; production falls back to the local calendar date.
 
 Because the Dashboard is derived from the subscribed Workspace state, accepted Task changes update the visible metrics immediately. No Dashboard values are persisted and Workspace storage remains version 1. The reporting/dashboard roadmap block TDD 331-345 is complete; Notes/Docs/Wiki begin at TDD 346.
+
+## Knowledge document model
+
+TDD 346-350 introduces the browser-local Knowledge document domain model without adding persistence or UI yet. A Knowledge document has a stable trimmed ID and title, an explicit `note` or `doc` kind, and editable string content that is preserved exactly rather than trimmed. Documents may optionally link to one Project and may carry a sparse source-of-truth marker.
+
+The Workspace owns an optional ordered `knowledgeDocuments` collection. Duplicate document IDs are rejected, new Project links must reference an existing Project, and document edits reuse immutable domain helpers. Deleting a linked Project preserves the document and removes only its Project link so knowledge is not lost with Project lifecycle cleanup. Deleting the final document removes the optional collection. Storage validation, commands, browser persistence, and the Notes/Docs/Wiki UI remain TDD 351-360. Workspace storage remains version 1.
