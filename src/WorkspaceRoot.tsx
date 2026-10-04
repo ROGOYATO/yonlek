@@ -4,6 +4,7 @@ import { App } from './App'
 import { AutomationPanel } from './AutomationPanel'
 import { DashboardPanel } from './DashboardPanel'
 import { GoalPanel } from './GoalPanel'
+import { KnowledgePanel } from './KnowledgePanel'
 import type { WorkspaceCommands } from './application/workspace-commands'
 import type { WorkspaceStore } from './application/workspace-store'
 import { deriveDashboardViewModel } from './domain/dashboard'
@@ -74,6 +75,30 @@ export function WorkspaceRoot({
     <>
       {commandError ? <p role="alert">{commandError}</p> : null}
       <DashboardPanel dashboard={dashboard} />
+      <KnowledgePanel
+        state={state}
+        onAddKnowledgeDocument={(title, input) =>
+          guardedCommands.addKnowledgeDocument(title, input)
+        }
+        onRenameKnowledgeDocument={(documentId, title) =>
+          guardedCommands.renameKnowledgeDocument(documentId, title)
+        }
+        onChangeKnowledgeDocumentContent={(documentId, content) =>
+          guardedCommands.changeKnowledgeDocumentContent(documentId, content)
+        }
+        onChangeKnowledgeDocumentKind={(documentId, kind) =>
+          guardedCommands.changeKnowledgeDocumentKind(documentId, kind)
+        }
+        onChangeKnowledgeDocumentProject={(documentId, projectId) =>
+          guardedCommands.changeKnowledgeDocumentProject(documentId, projectId)
+        }
+        onChangeKnowledgeDocumentSourceOfTruth={(documentId, sourceOfTruth) =>
+          guardedCommands.changeKnowledgeDocumentSourceOfTruth(documentId, sourceOfTruth)
+        }
+        onDeleteKnowledgeDocument={(documentId) =>
+          guardedCommands.deleteKnowledgeDocument(documentId)
+        }
+      />
       <GoalPanel
         state={state}
         onAddGoal={(name, input) => guardedCommands.addGoal(name, input)}

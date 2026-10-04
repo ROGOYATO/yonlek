@@ -683,4 +683,11 @@ The Workspace owns an optional ordered `knowledgeDocuments` collection. Duplicat
 
 TDD 351-355 makes Knowledge documents persistence-safe while keeping Workspace storage at version 1. Loading validates every persisted Knowledge document, duplicate document IDs, and optional Project references before accepting the Workspace. Older version-1 documents with no `knowledgeDocuments` field remain valid.
 
-`WorkspaceCommands` now creates, renames, edits, retypes, links/unlinks, marks/unmarks source-of-truth, and deletes Knowledge documents through the same persisted Store path used by the rest of the browser-local product. Document content continues to preserve exact string bytes at the domain boundary. Browser Notes/Docs/Wiki rendering and reload interaction remain TDD 356-360.
+`WorkspaceCommands` now creates, renames, edits, retypes, links/unlinks, marks/unmarks source-of-truth, and deletes Knowledge documents through the same persisted Store path used by the rest of the browser-local product. Document content continues to preserve exact string bytes at the domain boundary. Browser Notes/Docs/Wiki rendering and reload interaction are completed by TDD 356-360.
+
+
+## Browser Notes / Docs / Wiki
+
+TDD 356-360 adds the browser Knowledge workspace. Users can create Notes or Docs with exact editable content, optionally link them to a Project, mark or unmark them as source-of-truth, rename or retype them, and delete them through the persisted `WorkspaceCommands` path. The browser groups ordinary `note` records under Notes, ordinary `doc` records under Docs, and any source-of-truth record under Wiki so one document appears in exactly one primary Knowledge section.
+
+Knowledge documents reload from Workspace storage version 1 with Project linkage, content, kind, and source-of-truth state intact. UI-only grouping is derived and is not persisted. Project deletion still preserves Knowledge content and clears only the optional Project link. The Notes/Docs/Wiki roadmap block TDD 346-360 is complete; additional Task relationships begin at TDD 361.

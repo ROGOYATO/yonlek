@@ -3230,4 +3230,15 @@ Knowledge documents are not persisted or rendered by the browser yet. Storage va
 - **354:** edit title, exact content, kind, and source-of-truth through persisted commands.
 - **355:** link/unlink Project context and delete Knowledge documents through persisted commands, including final optional-collection cleanup.
 
-Workspace storage remains version 1. Browser Notes/Docs/Wiki CRUD, reload, and presentation continue at TDD 356-360.
+Workspace storage remains version 1. Browser Notes/Docs/Wiki CRUD, reload, and presentation are completed by TDD 356-360.
+
+
+## TDD 356-360 — Browser Notes / Docs / Wiki
+
+- **356:** add the Knowledge browser panel and create `note` / `doc` records with exact content through the supplied command boundary.
+- **357:** add browser title, content, and kind editing without duplicating domain validation rules.
+- **358:** add Project context selection plus explicit source-of-truth controls, including Project unlink through `null`.
+- **359:** derive mutually exclusive Notes, Docs, and Wiki sections and route document deletion through the command callback.
+- **360:** integrate the Knowledge panel into `WorkspaceRoot` and prove a Project-linked source-of-truth document survives a normal `BrowserApp` reload from storage version 1.
+
+Knowledge UI state is derived from persisted Workspace documents; no new preference or storage document is introduced. Storage version remains 1. TDD 346-360 is complete; the roadmap continues with additional Task relationships at TDD 361.

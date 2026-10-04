@@ -353,9 +353,9 @@ reload. Workspace storage remains version 1.
 
 ## Knowledge
 
-- [ ] Notes or Docs — domain model complete; persistence, commands, and browser UI pending TDD 351-360
-- [ ] Project-linked documents — optional Project linkage and safe unlink-on-Project-delete semantics implemented in the domain model
-- [ ] Wiki or source-of-truth markers — sparse source-of-truth marker implemented in the domain model; browser workflows pending
+- [x] Notes or Docs — browser creation, editing, persistence, reload, and exact-content preservation
+- [x] Project-linked documents — browser Project assignment with safe unlink-on-Project-delete semantics
+- [x] Wiki or source-of-truth markers — browser toggle and dedicated Wiki section
 
 ## Persistence and recovery
 
@@ -510,4 +510,17 @@ TDD 346-350 adds the pure Knowledge document model and optional Workspace collec
 - [x] create Knowledge documents through the persisted Workspace command path
 - [x] edit title, content, kind, and source-of-truth through commands
 - [x] link/unlink Project context and delete documents through commands
-- [ ] render and edit Notes/Docs/Wiki in the browser (TDD 356-360)
+- [x] render and edit Notes/Docs/Wiki in the browser (TDD 356-360)
+
+
+## Knowledge documents — browser UI
+
+- [x] create Notes and Docs through `WorkspaceCommands`
+- [x] edit title, exact content, and kind
+- [x] assign or clear optional Project context
+- [x] mark or unmark source-of-truth
+- [x] group ordinary Notes, ordinary Docs, and source-of-truth Wiki records without duplicate rendering
+- [x] delete Knowledge documents through the persisted command path
+- [x] reload Project-linked Wiki documents from storage version 1
+
+Knowledge section membership is derived UI state and is not persisted separately. The Knowledge roadmap block TDD 346-360 is complete.

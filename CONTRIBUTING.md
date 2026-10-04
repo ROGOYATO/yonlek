@@ -1414,3 +1414,10 @@ Knowledge documents are domain-owned Workspace records. Keep document identity, 
 Knowledge documents now travel through normal Workspace storage and commands. Keep storage version 1 backward-compatible with workspaces that omit `knowledgeDocuments`; persisted records must pass `validateKnowledgeDocument`, document IDs must be unique, and any persisted `projectId` must resolve to an existing Project. Do not persist derived Knowledge UI state.
 
 Browser features must call `WorkspaceCommands` rather than dispatching Knowledge actions directly. Content remains an exact string and must not be trimmed by persistence or UI adapters. Project deletion semantics remain domain-owned: preserve the document and clear only its Project link. Browser Notes/Docs/Wiki UI and reload coverage continue at TDD 356-360.
+
+
+## Browser Knowledge UI contract after TDD 360
+
+Keep Notes/Docs/Wiki editing on the existing `WorkspaceCommands` and subscribed Workspace Store path. `KnowledgePanel` may derive presentation buckets, but it must not reimplement Knowledge validation, mutate Workspace records directly, or persist separate section membership. A source-of-truth document renders in Wiki; otherwise `note` renders in Notes and `doc` renders in Docs, so one document has one primary browser section.
+
+Document content remains an exact string across textarea editing and storage reload. Project selection maps an empty choice to `null` and a concrete choice to the existing Project ID. Project deletion continues to preserve the document and clear only the Project link. Browser reload must reconstruct kind, content, Project context, and source-of-truth from Workspace storage version 1. Screenshot/demo data used for visual review must stay outside committed production source and tests.
