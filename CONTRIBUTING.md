@@ -1457,3 +1457,7 @@ Publish Wiki updates only from confirmed live checkpoints. Screenshot fixtures
 and capture helpers stay outside committed production source. If a feature batch
 changes UI, architecture, data model, persistence, or roadmap state, update the
 affected Wiki pages after the main repository commit/push succeeds.
+
+## Bulk lifecycle invariant - TDD 366-370
+
+Bulk Task restore/delete must remain atomic at the command/store boundary. Caller IDs may repeat, subtree membership is deduplicated, Activity follows pre-mutation Workspace Task order, and bulk delete must retain an explicit UI confirmation boundary.

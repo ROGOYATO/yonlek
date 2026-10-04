@@ -306,6 +306,9 @@ export function WorkspaceRoot({
       onRestoreTask={(taskId) => {
         guardedCommands.restoreTask(taskId)
       }}
+      onRestoreTasks={(taskIds) => {
+        guardedCommands.restoreTasks(taskIds)
+      }}
       onDeleteProject={(projectId) => {
         guardedCommands.deleteProject(projectId)
       }}
@@ -314,6 +317,9 @@ export function WorkspaceRoot({
       }}
       onDeleteTask={(taskId) => {
         guardedCommands.deleteTask(taskId)
+      }}
+      onDeleteTasks={(taskIds) => {
+        guardedCommands.deleteTasks(taskIds)
       }}
       onMoveTask={(taskId, direction) => {
         guardedCommands.moveTask(taskId, direction)

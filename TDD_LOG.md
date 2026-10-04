@@ -3261,3 +3261,13 @@ Knowledge UI state is derived from persisted Workspace documents; no new prefere
 Storage version remains 1. Only `blocks` participates in dependency-cycle
 validation; `related` remains symmetric. Additional relationship summary state is
 derived and is not persisted.
+
+## TDD 366-370 - Bulk restore and delete
+
+- 366: bulk restore reducer semantics, including subtree union and duplicate caller IDs.
+- 367: bulk delete reducer semantics with relationship and Goal-link cleanup.
+- 368: one-dispatch commands and ordered Activity integration for restore/delete.
+- 369: archived-root selection and bulk restore UI.
+- 370: selected active Task bulk delete with explicit two-step confirmation.
+
+Storage remains version 1. The batch extends existing lifecycle semantics rather than introducing a parallel archive/delete model.

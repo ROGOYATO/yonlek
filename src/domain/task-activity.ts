@@ -84,7 +84,9 @@ export type TaskActivityAction =
   | { type: 'task/archived'; taskId: string; archivedAt: string }
   | { type: 'task/archivedBulk'; taskIds: string[]; archivedAt: string }
   | { type: 'task/restored'; taskId: string }
+  | { type: 'task/restoredBulk'; taskIds: string[] }
   | { type: 'task/deleted'; taskId: string }
+  | { type: 'task/deletedBulk'; taskIds: string[] }
   | { type: 'task/recurringCompleted'; taskId: string; occurrence: TaskActivityTaskSnapshot }
   | { type: 'taskTemplate/instantiated'; tasks: TaskActivityTaskSnapshot[] }
   | {
@@ -298,6 +300,7 @@ export function deriveTaskActivityEntries(
       break
 
     case 'task/restored':
+    case 'task/restoredBulk':
       for (const previous of before.tasks) {
         const next = taskById(after, previous.id)
         if (!next || !isArchived(previous) || isArchived(next)) continue
@@ -306,6 +309,7 @@ export function deriveTaskActivityEntries(
       break
 
     case 'task/deleted':
+    case 'task/deletedBulk':
     case 'project/deleted':
       for (const previous of before.tasks) {
         if (!taskById(after, previous.id)) {

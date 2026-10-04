@@ -115,9 +115,11 @@ export interface AppProps {
   onDuplicateTask?: (taskId: string) => void
   onArchiveTask?: (taskId: string) => void
   onRestoreTask?: (taskId: string) => void
+  onRestoreTasks?: (taskIds: string[]) => void
   onDeleteProject?: (projectId: string) => void
   onRenameTask?: (taskId: string, title: string) => void
   onDeleteTask?: (taskId: string) => void
+  onDeleteTasks?: (taskIds: string[]) => void
   onMoveTask?: (taskId: string, direction: MoveDirection) => void
   onChangeTaskStatus?: (taskId: string, status: TaskStatus) => void
   onChangeTaskRecurrence?: (taskId: string, recurrence: TaskRecurrenceRule | null) => void
@@ -206,9 +208,11 @@ export function App({
   onDuplicateTask,
   onArchiveTask,
   onRestoreTask,
+  onRestoreTasks,
   onDeleteProject,
   onRenameTask,
   onDeleteTask,
+  onDeleteTasks,
   onMoveTask,
   onChangeTaskStatus,
   onChangeTaskRecurrence,
@@ -275,6 +279,8 @@ export function App({
   const [filterSetName, setFilterSetName] = useState('')
   const [savedViewName, setSavedViewName] = useState('')
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
+  const [selectedArchivedTaskIds, setSelectedArchivedTaskIds] = useState<string[]>([])
+  const [bulkDeletePending, setBulkDeletePending] = useState(false)
   const [bulkStatus, setBulkStatus] = useState<TaskStatus>('todo')
   const [bulkPriority, setBulkPriority] = useState<TaskPriority>('normal')
   const [customFieldFilterFieldId, setCustomFieldFilterFieldId] = useState(
@@ -533,6 +539,15 @@ export function App({
     )
     return parent?.archivedAt === undefined
   })
+  const archivedTaskRootIds = archivedTaskRoots.map((task) => task.id)
+  const archivedTaskRootIdSet = new Set(archivedTaskRootIds)
+  const selectedVisibleArchivedTaskIds = selectedArchivedTaskIds.filter((taskId) =>
+    archivedTaskRootIdSet.has(taskId),
+  )
+  const selectedVisibleArchivedTaskIdSet = new Set(selectedVisibleArchivedTaskIds)
+  const allArchivedTaskRootsSelected =
+    archivedTaskRootIds.length > 0 &&
+    archivedTaskRootIds.every((taskId) => selectedVisibleArchivedTaskIdSet.has(taskId))
   const workspaceSummary = summarizeTasks(activeTasks)
   const projectLabel = activeProjects.length === 1 ? 'project' : 'projects'
   const taskLabel = workspaceSummary.total === 1 ? 'task' : 'tasks'
@@ -602,6 +617,31 @@ export function App({
     try {
       action()
       setSelectedTaskIds([])
+      setBulkDeletePending(false)
+      setError(null)
+    } catch (caught) {
+      setError(errorMessage(caught))
+    }
+  }
+
+  function changeArchivedTaskSelection(taskId: string, selected: boolean) {
+    setSelectedArchivedTaskIds((current) => {
+      if (selected) {
+        return current.includes(taskId) ? current : [...current, taskId]
+      }
+
+      return current.filter((candidate) => candidate !== taskId)
+    })
+  }
+
+  function changeAllArchivedTaskSelection(selected: boolean) {
+    setSelectedArchivedTaskIds(selected ? [...archivedTaskRootIds] : [])
+  }
+
+  function runArchivedBulkAction(action: () => void) {
+    try {
+      action()
+      setSelectedArchivedTaskIds([])
       setError(null)
     } catch (caught) {
       setError(errorMessage(caught))
@@ -958,6 +998,15 @@ export function App({
         {selectedVisibleTaskIds.length}{' '}
         {selectedVisibleTaskIds.length === 1 ? 'task' : 'tasks'} selected
       </span>
+      {onRestoreTasks ? (
+        <span>
+          {selectedVisibleArchivedTaskIds.length}{' '}
+          {selectedVisibleArchivedTaskIds.length === 1
+            ? 'archived task'
+            : 'archived tasks'}{' '}
+          selected
+        </span>
+      ) : null}
 
       {onChangeTasksStatus ? (
         <>
@@ -1025,6 +1074,37 @@ export function App({
         >
           Archive selected tasks
         </button>
+      ) : null}
+
+      {onDeleteTasks ? (
+        <>
+          <button
+            type="button"
+            disabled={selectedVisibleTaskIds.length === 0}
+            onClick={() => setBulkDeletePending(true)}
+          >
+            Delete selected tasks
+          </button>
+          {bulkDeletePending && selectedVisibleTaskIds.length > 0 ? (
+            <div role="group" aria-label="Confirm bulk task delete">
+              <p>Delete {selectedVisibleTaskIds.length} selected tasks?</p>
+              <button
+                type="button"
+                onClick={() =>
+                  runBulkAction(() => onDeleteTasks(selectedVisibleTaskIds))
+                }
+              >
+                Confirm delete selected tasks
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkDeletePending(false)}
+              >
+                Cancel bulk delete
+              </button>
+            </div>
+          ) : null}
+        </>
       ) : null}
 
       <label htmlFor="filter-set-name">Filter set name</label>
@@ -3845,9 +3925,48 @@ export function App({
       {archivedTaskRoots.length > 0 ? (
         <section>
           <h2>Archived tasks</h2>
+          {onRestoreTasks ? (
+            <>
+              <label>
+                <input
+                  type="checkbox"
+                  aria-label="Select all archived tasks"
+                  checked={allArchivedTaskRootsSelected}
+                  onChange={(event) =>
+                    changeAllArchivedTaskSelection(event.target.checked)
+                  }
+                />
+                Select all archived tasks
+              </label>
+              <button
+                type="button"
+                disabled={selectedVisibleArchivedTaskIds.length === 0}
+                onClick={() =>
+                  runArchivedBulkAction(() =>
+                    onRestoreTasks(selectedVisibleArchivedTaskIds),
+                  )
+                }
+              >
+                Restore selected archived tasks
+              </button>
+            </>
+          ) : null}
           <ul>
             {archivedTaskRoots.map((task) => (
               <li key={task.id}>
+                {onRestoreTasks ? (
+                  <label>
+                    <input
+                      type="checkbox"
+                      aria-label={`Select archived task ${task.title}`}
+                      checked={selectedVisibleArchivedTaskIdSet.has(task.id)}
+                      onChange={(event) =>
+                        changeArchivedTaskSelection(task.id, event.target.checked)
+                      }
+                    />
+                    Select archived task {task.title}
+                  </label>
+                ) : null}
                 <span>{task.title}</span>
                 {onRestoreTask ? (
                   <button

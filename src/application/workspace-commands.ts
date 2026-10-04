@@ -161,6 +161,7 @@ export interface WorkspaceCommands {
   archiveTask(taskId: string): void
   archiveTasks(taskIds: string[]): void
   restoreTask(taskId: string): void
+  restoreTasks(taskIds: string[]): void
   archiveProject(projectId: string): void
   restoreProject(projectId: string): void
   renameProject(projectId: string, name: string): void
@@ -187,6 +188,7 @@ export interface WorkspaceCommands {
   changeTaskProject(taskId: string, projectId: string): void
   moveTask(taskId: string, direction: MoveDirection): void
   deleteTask(taskId: string): void
+  deleteTasks(taskIds: string[]): void
   deleteProject(projectId: string): void
 }
 
@@ -1066,6 +1068,16 @@ export function createWorkspaceCommands(
       )
     },
 
+    restoreTasks(taskIds) {
+      dispatchTracked(
+        {
+          type: 'task/restoredBulk',
+          taskIds: [...taskIds],
+        },
+        runtime.now(),
+      )
+    },
+
     archiveProject(projectId) {
       const exists = store
         .getState()
@@ -1325,6 +1337,16 @@ export function createWorkspaceCommands(
         {
           type: 'task/deleted',
           taskId,
+        },
+        runtime.now(),
+      )
+    },
+
+    deleteTasks(taskIds) {
+      dispatchTracked(
+        {
+          type: 'task/deletedBulk',
+          taskIds: [...taskIds],
         },
         runtime.now(),
       )

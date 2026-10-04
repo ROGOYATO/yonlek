@@ -713,3 +713,7 @@ renders directional labels plus counts. New edges use the same
 `WorkspaceCommands` -> Store -> storage-version-1 path as existing relationship
 records and survive a normal reload. Relationship summaries are derived and are
 not persisted separately.
+
+### TDD 366-370 bulk lifecycle
+
+Yönlek supports one-dispatch bulk restore for archived Task roots and explicitly confirmed bulk deletion for selected active Tasks. Both operations keep subtree semantics and append deterministic Task Activity entries.

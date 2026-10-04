@@ -205,6 +205,7 @@ export type WorkspaceBaseAction =
   | { type: 'task/archived'; taskId: string; archivedAt: string }
   | { type: 'task/archivedBulk'; taskIds: string[]; archivedAt: string }
   | { type: 'task/restored'; taskId: string }
+  | { type: 'task/restoredBulk'; taskIds: string[] }
   | { type: 'task/statusChanged'; taskId: string; status: TaskStatus }
   | { type: 'task/recurringCompleted'; taskId: string; occurrence: Task }
   | { type: 'task/recurrenceChanged'; taskId: string; recurrence: TaskRecurrenceRule | null }
@@ -244,6 +245,7 @@ export type WorkspaceBaseAction =
   | { type: 'task/checklistItemDeleted'; taskId: string; itemId: string }
   | { type: 'task/checklistItemMoved'; taskId: string; itemId: string; direction: MoveDirection }
   | { type: 'task/deleted'; taskId: string }
+  | { type: 'task/deletedBulk'; taskIds: string[] }
 
 export type ActivityTrackableWorkspaceAction = Extract<
   WorkspaceBaseAction,
@@ -256,6 +258,7 @@ export type ActivityTrackableWorkspaceAction = Extract<
       | 'task/archived'
       | 'task/archivedBulk'
       | 'task/restored'
+      | 'task/restoredBulk'
       | 'task/statusChanged'
       | 'task/recurringCompleted'
       | 'task/statusChangedBulk'
@@ -267,6 +270,7 @@ export type ActivityTrackableWorkspaceAction = Extract<
       | 'task/projectChanged'
       | 'task/listChanged'
       | 'task/deleted'
+      | 'task/deletedBulk'
   }
 >
 
@@ -1474,6 +1478,23 @@ export function workspaceReducer(
       }
     }
 
+    case 'task/restoredBulk': {
+      const restoredIds = new Set<string>()
+
+      for (const taskId of action.taskIds) {
+        for (const restoredId of collectTaskSubtreeIds(state.tasks, taskId)) {
+          restoredIds.add(restoredId)
+        }
+      }
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          restoredIds.has(task.id) ? restoreTask(task) : task,
+        ),
+      }
+    }
+
     case 'task/statusChanged':
       return {
         ...state,
@@ -2058,6 +2079,40 @@ export function workspaceReducer(
         tasks: state.tasks.filter((task) => !deletedIds.has(task.id)),
       }
 
+
+      if (state.goals !== undefined) {
+        next.goals = removeGoalTaskLinksForDeletedTasks(state.goals, deletedIds)
+      }
+
+      if (state.relationships !== undefined) {
+        if (relationships.length === 0) {
+          delete next.relationships
+        } else {
+          next.relationships = relationships
+        }
+      }
+
+      return next
+    }
+
+    case 'task/deletedBulk': {
+      const deletedIds = new Set<string>()
+
+      for (const taskId of action.taskIds) {
+        for (const deletedId of collectTaskSubtreeIds(state.tasks, taskId)) {
+          deletedIds.add(deletedId)
+        }
+      }
+
+      const relationships = (state.relationships ?? []).filter(
+        (relationship) =>
+          !deletedIds.has(relationship.sourceTaskId) &&
+          !deletedIds.has(relationship.targetTaskId),
+      )
+      const next: WorkspaceState = {
+        ...state,
+        tasks: state.tasks.filter((task) => !deletedIds.has(task.id)),
+      }
 
       if (state.goals !== undefined) {
         next.goals = removeGoalTaskLinksForDeletedTasks(state.goals, deletedIds)

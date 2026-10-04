@@ -539,3 +539,9 @@ Knowledge section membership is derived UI state and is not persisted separately
 The Task relationship roadmap block TDD 361-365 is complete. Relationship
 summaries remain derived UI state; only Workspace relationship edge records are
 persisted. Storage version remains 1.
+
+## Bulk Task lifecycle - TDD 366-370: Bulk restore and delete
+
+- Archived root Tasks can be selected and restored together; each selected root restores its archived subtree.
+- Selected active Tasks can be deleted together only after an explicit confirmation step; deleting a selected root deletes its subtree.
+- Bulk restore and delete each cross the Workspace command boundary with one dispatch and preserve Task Activity in pre-mutation Workspace order.
