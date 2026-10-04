@@ -677,3 +677,10 @@ Because the Dashboard is derived from the subscribed Workspace state, accepted T
 TDD 346-350 introduces the browser-local Knowledge document domain model without adding persistence or UI yet. A Knowledge document has a stable trimmed ID and title, an explicit `note` or `doc` kind, and editable string content that is preserved exactly rather than trimmed. Documents may optionally link to one Project and may carry a sparse source-of-truth marker.
 
 The Workspace owns an optional ordered `knowledgeDocuments` collection. Duplicate document IDs are rejected, new Project links must reference an existing Project, and document edits reuse immutable domain helpers. Deleting a linked Project preserves the document and removes only its Project link so knowledge is not lost with Project lifecycle cleanup. Deleting the final document removes the optional collection. Storage validation, commands, browser persistence, and the Notes/Docs/Wiki UI remain TDD 351-360. Workspace storage remains version 1.
+
+
+## Knowledge persistence and commands
+
+TDD 351-355 makes Knowledge documents persistence-safe while keeping Workspace storage at version 1. Loading validates every persisted Knowledge document, duplicate document IDs, and optional Project references before accepting the Workspace. Older version-1 documents with no `knowledgeDocuments` field remain valid.
+
+`WorkspaceCommands` now creates, renames, edits, retypes, links/unlinks, marks/unmarks source-of-truth, and deletes Knowledge documents through the same persisted Store path used by the rest of the browser-local product. Document content continues to preserve exact string bytes at the domain boundary. Browser Notes/Docs/Wiki rendering and reload interaction remain TDD 356-360.

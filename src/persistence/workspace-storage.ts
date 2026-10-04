@@ -9,6 +9,10 @@ import {
 } from '../domain/custom-field'
 import { validateGoal, type Goal } from '../domain/goal'
 import {
+  validateKnowledgeDocument,
+  type KnowledgeDocument,
+} from '../domain/knowledge-document'
+import {
   setTaskDueDate,
   setTaskRecurrence,
   setTaskStartDate,
@@ -68,6 +72,19 @@ export function migrateWorkspaceStorageDocument(
 }
 
 
+
+function isValidKnowledgeDocument(value: unknown): boolean {
+  if (!isRecord(value)) {
+    return false
+  }
+
+  try {
+    validateKnowledgeDocument(value as unknown as KnowledgeDocument)
+    return true
+  } catch {
+    return false
+  }
+}
 
 function isValidGoal(value: unknown): boolean {
   if (!isRecord(value)) {
@@ -836,6 +853,8 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     (workspace.activity !== undefined && !Array.isArray(workspace.activity)) ||
     (workspace.automations !== undefined && !Array.isArray(workspace.automations)) ||
     (workspace.goals !== undefined && !Array.isArray(workspace.goals)) ||
+    (workspace.knowledgeDocuments !== undefined &&
+      !Array.isArray(workspace.knowledgeDocuments)) ||
     !Array.isArray(workspace.projects) ||
     !Array.isArray(workspace.tasks)
   ) {
@@ -853,6 +872,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   const activity = workspace.activity ?? []
   const automations = workspace.automations ?? []
   const goals = workspace.goals ?? []
+  const knowledgeDocuments = workspace.knowledgeDocuments ?? []
 
   if (
     !areas.every(isValidArea) ||
@@ -866,6 +886,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
     !activity.every(isValidTaskActivityEntry) ||
     !automations.every(isValidAutomation) ||
     !goals.every(isValidGoal) ||
+    !knowledgeDocuments.every(isValidKnowledgeDocument) ||
     !workspace.projects.every(isValidProject) ||
     !workspace.tasks.every(isValidTask)
   ) {
@@ -894,6 +915,16 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   )
 
   if (goalIds.size !== goals.length) {
+    invalidStorage()
+  }
+
+  const knowledgeDocumentIds = new Set(
+    knowledgeDocuments.map(
+      (document) => (document as { id: string }).id,
+    ),
+  )
+
+  if (knowledgeDocumentIds.size !== knowledgeDocuments.length) {
     invalidStorage()
   }
 
@@ -968,6 +999,15 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   )
 
   if (projectIds.size !== workspace.projects.length) {
+    invalidStorage()
+  }
+
+  if (
+    knowledgeDocuments.some((document) => {
+      const projectId = (document as { projectId?: string }).projectId
+      return projectId !== undefined && !projectIds.has(projectId)
+    })
+  ) {
     invalidStorage()
   }
 

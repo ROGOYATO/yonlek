@@ -3220,3 +3220,14 @@ Dashboard rendering remains derived state: `DashboardPanel` does not dispatch co
 - **350:** add the optional ordered Workspace Knowledge document collection, duplicate-ID and missing-Project rejection, immutable document edit actions, final-delete cleanup, and Project-deletion unlink semantics that preserve document content.
 
 Knowledge documents are not persisted or rendered by the browser yet. Storage validation, command composition, browser reload, and Notes/Docs/Wiki UI remain TDD 351-360. Workspace storage remains version 1.
+
+
+## TDD 351-355 — Knowledge persistence and commands
+
+- **351:** round-trip the optional Knowledge document collection through Workspace storage version 1.
+- **352:** reject malformed Knowledge records, duplicate document IDs, and persisted Project links to missing Projects.
+- **353:** create normalized Knowledge documents through `WorkspaceCommands` and the persisted Store path.
+- **354:** edit title, exact content, kind, and source-of-truth through persisted commands.
+- **355:** link/unlink Project context and delete Knowledge documents through persisted commands, including final optional-collection cleanup.
+
+Workspace storage remains version 1. Browser Notes/Docs/Wiki CRUD, reload, and presentation continue at TDD 356-360.

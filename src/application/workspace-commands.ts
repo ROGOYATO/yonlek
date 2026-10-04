@@ -7,6 +7,10 @@ import {
 import { createChecklistItem } from '../domain/checklist'
 import { createGoal, type GoalTargetType } from '../domain/goal'
 import {
+  createKnowledgeDocument,
+  type KnowledgeDocumentKind,
+} from '../domain/knowledge-document'
+import {
   createCustomField,
   type CustomFieldFormula,
   type CustomFieldOption,
@@ -49,6 +53,27 @@ export interface WorkspaceRuntime {
 }
 
 export interface WorkspaceCommands {
+  addKnowledgeDocument(
+    title: string,
+    input: {
+      kind: KnowledgeDocumentKind
+      content: string
+      projectId?: string
+      sourceOfTruth?: boolean
+    },
+  ): ReturnType<typeof createKnowledgeDocument>
+  renameKnowledgeDocument(documentId: string, title: string): void
+  changeKnowledgeDocumentContent(documentId: string, content: string): void
+  changeKnowledgeDocumentKind(documentId: string, kind: KnowledgeDocumentKind): void
+  changeKnowledgeDocumentSourceOfTruth(
+    documentId: string,
+    sourceOfTruth: boolean,
+  ): void
+  changeKnowledgeDocumentProject(
+    documentId: string,
+    projectId: string | null,
+  ): void
+  deleteKnowledgeDocument(documentId: string): void
   addGoal(
     name: string,
     input: {
@@ -186,6 +211,64 @@ export function createWorkspaceCommands(
   }
 
   return {
+    addKnowledgeDocument(title, input) {
+      const document = createKnowledgeDocument({
+        id: runtime.nextId(),
+        title,
+        kind: input.kind,
+        content: input.content,
+        projectId: input.projectId,
+        sourceOfTruth: input.sourceOfTruth,
+      })
+
+      store.dispatch({ type: 'knowledgeDocument/added', document })
+      return document
+    },
+
+    renameKnowledgeDocument(documentId, title) {
+      store.dispatch({
+        type: 'knowledgeDocument/titleChanged',
+        documentId,
+        title,
+      })
+    },
+
+    changeKnowledgeDocumentContent(documentId, content) {
+      store.dispatch({
+        type: 'knowledgeDocument/contentChanged',
+        documentId,
+        content,
+      })
+    },
+
+    changeKnowledgeDocumentKind(documentId, kind) {
+      store.dispatch({
+        type: 'knowledgeDocument/kindChanged',
+        documentId,
+        kind,
+      })
+    },
+
+    changeKnowledgeDocumentSourceOfTruth(documentId, sourceOfTruth) {
+      store.dispatch({
+        type: 'knowledgeDocument/sourceOfTruthChanged',
+        documentId,
+        sourceOfTruth,
+      })
+    },
+
+    changeKnowledgeDocumentProject(documentId, projectId) {
+      store.dispatch({
+        type: 'knowledgeDocument/projectChanged',
+        documentId,
+        projectId,
+      })
+    },
+
+    deleteKnowledgeDocument(documentId) {
+      store.dispatch({ type: 'knowledgeDocument/deleted', documentId })
+    },
+
     addGoal(name, input) {
       const goal = createGoal({
         id: runtime.nextId(),

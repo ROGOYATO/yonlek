@@ -501,3 +501,13 @@ The Goals block TDD 311-330 is complete. TDD 331-335 adds pure reporting primiti
 Dashboard output remains derived and is not persisted. Storage version remains 1. The reporting/dashboard block TDD 331-345 is complete; Notes/Docs/Wiki begin at TDD 346.
 
 TDD 346-350 adds the pure Knowledge document model and optional Workspace collection. Documents support `note`/`doc` kind, exact string content, optional Project linkage, and a source-of-truth marker. Project deletion unlinks documents instead of deleting them. Persistence validation, Workspace commands, reload behavior, and browser editing remain TDD 351-360. Storage version remains 1.
+
+
+## Knowledge documents — persistence and command surface
+
+- [x] validate optional Knowledge document collections in Workspace storage version 1
+- [x] reject duplicate Knowledge document IDs and missing persisted Project references
+- [x] create Knowledge documents through the persisted Workspace command path
+- [x] edit title, content, kind, and source-of-truth through commands
+- [x] link/unlink Project context and delete documents through commands
+- [ ] render and edit Notes/Docs/Wiki in the browser (TDD 356-360)

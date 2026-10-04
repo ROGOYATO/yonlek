@@ -1407,3 +1407,10 @@ TDD 341-345 renders only derived Dashboard data. `DashboardPanel` receives a `Da
 ## Knowledge document boundary after TDD 350
 
 Knowledge documents are domain-owned Workspace records. Keep document identity, kind/content validation, Project-link normalization, and source-of-truth semantics in `src/domain/knowledge-document.ts`; UI code must not duplicate those rules. Project deletion preserves Knowledge documents and removes only the optional Project link. TDD 346-350 does not make `knowledgeDocuments` persistence-safe yet: do not route browser commands through storage until the storage validator and command surface are added in TDD 351-360. Workspace storage remains version 1.
+
+
+## Knowledge persistence contract after TDD 355
+
+Knowledge documents now travel through normal Workspace storage and commands. Keep storage version 1 backward-compatible with workspaces that omit `knowledgeDocuments`; persisted records must pass `validateKnowledgeDocument`, document IDs must be unique, and any persisted `projectId` must resolve to an existing Project. Do not persist derived Knowledge UI state.
+
+Browser features must call `WorkspaceCommands` rather than dispatching Knowledge actions directly. Content remains an exact string and must not be trimmed by persistence or UI adapters. Project deletion semantics remain domain-owned: preserve the document and clear only its Project link. Browser Notes/Docs/Wiki UI and reload coverage continue at TDD 356-360.
