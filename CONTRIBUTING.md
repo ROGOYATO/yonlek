@@ -1421,3 +1421,39 @@ Browser features must call `WorkspaceCommands` rather than dispatching Knowledge
 Keep Notes/Docs/Wiki editing on the existing `WorkspaceCommands` and subscribed Workspace Store path. `KnowledgePanel` may derive presentation buckets, but it must not reimplement Knowledge validation, mutate Workspace records directly, or persist separate section membership. A source-of-truth document renders in Wiki; otherwise `note` renders in Notes and `doc` renders in Docs, so one document has one primary browser section.
 
 Document content remains an exact string across textarea editing and storage reload. Project selection maps an empty choice to `null` and a concrete choice to the existing Project ID. Project deletion continues to preserve the document and clear only the Project link. Browser reload must reconstruct kind, content, Project context, and source-of-truth from Workspace storage version 1. Screenshot/demo data used for visual review must stay outside committed production source and tests.
+## Task relationship extension contract after TDD 365
+
+The Workspace relationship graph supports four explicit runtime types: directional
+`blocks`, symmetric `related`, directional `duplicates`, and directional
+`references`. Keep the runtime registry in `src/domain/task-relationship.ts` as
+the single source of truth for supported type values; persistence must validate
+against that registry instead of maintaining a separate string list.
+
+Only `blocks` participates in dependency-cycle rejection. `related` remains
+symmetric and canonicalizes endpoint order. `duplicates` and `references` remain
+directional and must preserve the supplied source/target orientation. Relationship
+summaries are derived read-only state and must distinguish both directions:
+`Duplicates` / `Duplicated by` and `References` / `Referenced by`.
+
+Existing relationship behavior is compatibility-sensitive. When no additional
+relationship types are present for a Task, the historical browser summary text
+for `Blocks`, `Blocked by`, and `Related` must stay unchanged so unrelated UI
+tests and consumers do not regress.
+
+## Public GitHub Wiki maintenance
+
+The repository root Markdown files remain the authoritative engineering record.
+The GitHub Wiki is a public documentation layer derived from that record and from
+confirmed live UI screenshots; it must not become a second independent source of
+truth.
+
+Maintain English as the default Wiki page set and Turkish mirrors under `TR-*`
+page names, with explicit language links between matching pages. Use tables for
+structured comparisons, Mermaid diagrams for architecture/data-flow/relationship
+graphs when they improve comprehension, and real Yönlek screenshots for UI pages.
+Do not add decorative images that do not explain product behavior.
+
+Publish Wiki updates only from confirmed live checkpoints. Screenshot fixtures
+and capture helpers stay outside committed production source. If a feature batch
+changes UI, architecture, data model, persistence, or roadmap state, update the
+affected Wiki pages after the main repository commit/push succeeds.

@@ -1,4 +1,20 @@
-export type TaskRelationshipType = 'blocks' | 'related'
+export const TASK_RELATIONSHIP_TYPES = [
+  'blocks',
+  'related',
+  'duplicates',
+  'references',
+] as const
+
+export type TaskRelationshipType = (typeof TASK_RELATIONSHIP_TYPES)[number]
+
+export function isTaskRelationshipType(
+  value: unknown,
+): value is TaskRelationshipType {
+  return (
+    typeof value === 'string' &&
+    (TASK_RELATIONSHIP_TYPES as readonly string[]).includes(value)
+  )
+}
 
 export interface TaskRelationship {
   id: string
@@ -19,6 +35,10 @@ export interface CreateTaskRelationshipInput {
 export function createTaskRelationship(
   input: CreateTaskRelationshipInput,
 ): TaskRelationship {
+  if (!isTaskRelationshipType(input.type)) {
+    throw new Error('Unsupported task relationship type')
+  }
+
   if (input.sourceTaskId === input.targetTaskId) {
     throw new Error('A task cannot relate to itself')
   }

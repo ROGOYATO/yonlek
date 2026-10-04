@@ -691,3 +691,25 @@ TDD 351-355 makes Knowledge documents persistence-safe while keeping Workspace s
 TDD 356-360 adds the browser Knowledge workspace. Users can create Notes or Docs with exact editable content, optionally link them to a Project, mark or unmark them as source-of-truth, rename or retype them, and delete them through the persisted `WorkspaceCommands` path. The browser groups ordinary `note` records under Notes, ordinary `doc` records under Docs, and any source-of-truth record under Wiki so one document appears in exactly one primary Knowledge section.
 
 Knowledge documents reload from Workspace storage version 1 with Project linkage, content, kind, and source-of-truth state intact. UI-only grouping is derived and is not persisted. Project deletion still preserves Knowledge content and clears only the optional Project link. The Notes/Docs/Wiki roadmap block TDD 346-360 is complete; additional Task relationships begin at TDD 361.
+## Additional Task relationships
+
+TDD 361-365 extends the Workspace-level Task relationship graph without changing
+the existing `blocks` or `related` contracts. The supported runtime relationship
+types are now:
+
+| Type | Direction | Browser inverse |
+| --- | --- | --- |
+| `blocks` | directional | `Blocked by` |
+| `related` | symmetric | same relationship from either Task |
+| `duplicates` | directional | `Duplicated by` |
+| `references` | directional | `Referenced by` |
+
+Only `blocks` edges participate in dependency-cycle rejection. `related` edges
+continue to canonicalize endpoint order because they are symmetric.
+`duplicates` and `references` preserve the supplied source/target orientation.
+
+The browser exposes all four types through the existing relationship controls and
+renders directional labels plus counts. New edges use the same
+`WorkspaceCommands` -> Store -> storage-version-1 path as existing relationship
+records and survive a normal reload. Relationship summaries are derived and are
+not persisted separately.

@@ -3242,3 +3242,22 @@ Workspace storage remains version 1. Browser Notes/Docs/Wiki CRUD, reload, and p
 - **360:** integrate the Knowledge panel into `WorkspaceRoot` and prove a Project-linked source-of-truth document survives a normal `BrowserApp` reload from storage version 1.
 
 Knowledge UI state is derived from persisted Workspace documents; no new preference or storage document is introduced. Storage version remains 1. TDD 346-360 is complete; the roadmap continues with additional Task relationships at TDD 361.
+## TDD 361-365 — Additional Task relationships
+
+- **361:** add one runtime registry/guard for the supported relationship types:
+  `blocks`, `related`, `duplicates`, and `references`.
+- **362:** keep `duplicates` and `references` directional, preserve existing
+  `related` canonicalization, and reject unsupported relationship types at the
+  domain constructor boundary.
+- **363:** persist the two additional directional relationship types through the
+  existing `WorkspaceCommands` and Workspace storage version-1 path.
+- **364:** add a pure relationship summary that distinguishes `Blocks`,
+  `Blocked by`, `Related`, `Duplicates`, `Duplicated by`, `References`, and
+  `Referenced by` without mutating relationship records.
+- **365:** expose both additional types in the browser relationship controls,
+  render directional labels/summaries, and prove those edges survive a normal
+  Store reload from persisted Workspace state.
+
+Storage version remains 1. Only `blocks` participates in dependency-cycle
+validation; `related` remains symmetric. Additional relationship summary state is
+derived and is not persisted.

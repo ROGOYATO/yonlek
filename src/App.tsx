@@ -21,6 +21,7 @@ import {
 import { summarizeTasks } from './domain/task-summary'
 import type { MoveDirection } from './domain/manual-order'
 import type { TaskRelationshipType } from './domain/task-relationship'
+import { summarizeTaskRelationships } from './domain/task-relationship-summary'
 import {
   createDefaultViewPreferences,
   applyTaskFilterSet,
@@ -2502,20 +2503,13 @@ export function App({
                         relationship.sourceTaskId === task.id ||
                         relationship.targetTaskId === task.id,
                     )
-                    const blocksCount = taskRelationships.filter(
-                      (relationship) =>
-                        relationship.type === 'blocks' &&
-                        relationship.sourceTaskId === task.id,
-                    ).length
-                    const blockedByCount = taskRelationships.filter(
-                      (relationship) =>
-                        relationship.type === 'blocks' &&
-                        relationship.targetTaskId === task.id,
-                    ).length
-                    const relatedCount = taskRelationships.filter(
-                      (relationship) =>
-                        relationship.type === 'related',
-                    ).length
+                    const relationshipSummary =
+                      summarizeTaskRelationships(task.id, taskRelationships)
+                    const hasAdditionalRelationshipCounts =
+                      relationshipSummary.duplicates > 0 ||
+                      relationshipSummary.duplicatedBy > 0 ||
+                      relationshipSummary.references > 0 ||
+                      relationshipSummary.referencedBy > 0
                     const editedTitle = taskEdits[task.id] ?? task.title
                     const editedDescription = taskDescriptions[task.id] ?? task.description ?? ''
 
@@ -2580,8 +2574,11 @@ export function App({
                             <span
                               aria-label={`Relationship summary for ${task.title}`}
                             >
-                              Blocks {blocksCount}; Blocked by {blockedByCount};
-                              {' '}Related {relatedCount}
+                              {`Blocks ${relationshipSummary.blocks}; Blocked by ${relationshipSummary.blockedBy}; Related ${relationshipSummary.related}${
+                                hasAdditionalRelationshipCounts
+                                  ? `; Duplicates ${relationshipSummary.duplicates}; Duplicated by ${relationshipSummary.duplicatedBy}; References ${relationshipSummary.references}; Referenced by ${relationshipSummary.referencedBy}`
+                                  : ''
+                              }`}
                             </span>
                             <form
                               onSubmit={(event) => {
@@ -2622,6 +2619,8 @@ export function App({
                               >
                                 <option value="blocks">Blocks</option>
                                 <option value="related">Related</option>
+                                <option value="duplicates">Duplicates</option>
+                                <option value="references">References</option>
                               </select>
                               <label
                                 htmlFor={`relationship-target-${task.id}`}
@@ -2671,18 +2670,34 @@ export function App({
                                       candidate.id ===
                                       relationship.targetTaskId,
                                   )
-                                  const label =
-                                    relationship.type === 'related'
-                                      ? `Related to ${
-                                          relationship.sourceTaskId ===
-                                          task.id
-                                            ? target?.title
-                                            : source?.title
-                                        }`
-                                      : relationship.sourceTaskId ===
-                                          task.id
+                                  const isSource =
+                                    relationship.sourceTaskId === task.id
+                                  let label: string
+
+                                  switch (relationship.type) {
+                                    case 'related':
+                                      label = `Related to ${
+                                        isSource
+                                          ? target?.title
+                                          : source?.title
+                                      }`
+                                      break
+                                    case 'blocks':
+                                      label = isSource
                                         ? `Blocks ${target?.title}`
                                         : `Blocked by ${source?.title}`
+                                      break
+                                    case 'duplicates':
+                                      label = isSource
+                                        ? `Duplicates ${target?.title}`
+                                        : `Duplicated by ${source?.title}`
+                                      break
+                                    case 'references':
+                                      label = isSource
+                                        ? `References ${target?.title}`
+                                        : `Referenced by ${source?.title}`
+                                      break
+                                  }
 
                                   return (
                                     <li key={relationship.id}>

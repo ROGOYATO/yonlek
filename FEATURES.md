@@ -524,3 +524,18 @@ TDD 346-350 adds the pure Knowledge document model and optional Workspace collec
 - [x] reload Project-linked Wiki documents from storage version 1
 
 Knowledge section membership is derived UI state and is not persisted separately. The Knowledge roadmap block TDD 346-360 is complete.
+## Additional Task relationships
+
+- [x] runtime registry for supported relationship types
+- [x] directional `duplicates` relationship
+- [x] directional `references` relationship
+- [x] inverse `Duplicated by` and `Referenced by` summaries
+- [x] Workspace storage version-1 validation and reload
+- [x] persisted command path for both additional relationship types
+- [x] browser create/render/reload behavior
+- [x] existing `blocks` dependency-cycle semantics preserved
+- [x] existing symmetric `related` canonicalization preserved
+
+The Task relationship roadmap block TDD 361-365 is complete. Relationship
+summaries remain derived UI state; only Workspace relationship edge records are
+persisted. Storage version remains 1.

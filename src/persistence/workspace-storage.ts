@@ -13,6 +13,10 @@ import {
   type KnowledgeDocument,
 } from '../domain/knowledge-document'
 import {
+  isTaskRelationshipType,
+  type TaskRelationshipType,
+} from '../domain/task-relationship'
+import {
   setTaskDueDate,
   setTaskRecurrence,
   setTaskStartDate,
@@ -579,7 +583,7 @@ function isValidTaskRelationship(value: unknown): boolean {
     isRecord(value) &&
     typeof value.id === 'string' &&
     value.id.trim().length > 0 &&
-    (value.type === 'blocks' || value.type === 'related') &&
+    isTaskRelationshipType(value.type) &&
     typeof value.sourceTaskId === 'string' &&
     value.sourceTaskId.trim().length > 0 &&
     typeof value.targetTaskId === 'string' &&
@@ -1228,7 +1232,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   const relationshipKeys = new Set<string>()
   for (const relationshipValue of relationships) {
     const relationship = relationshipValue as {
-      type: 'blocks' | 'related'
+      type: TaskRelationshipType
       sourceTaskId: string
       targetTaskId: string
     }
@@ -1260,7 +1264,7 @@ export function loadWorkspace(store: KeyValueStore): WorkspaceState {
   const dependencyAdjacency = new Map<string, string[]>()
   for (const relationshipValue of relationships) {
     const relationship = relationshipValue as {
-      type: 'blocks' | 'related'
+      type: TaskRelationshipType
       sourceTaskId: string
       targetTaskId: string
     }
