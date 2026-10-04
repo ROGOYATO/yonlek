@@ -142,6 +142,7 @@ export interface WorkspaceCommands {
   deleteTaskList(listId: string): void
   moveTaskList(listId: string, direction: MoveDirection): void
   changeTaskList(taskId: string, listId: string | null): void
+  changeTasksList(taskIds: string[], listId: string | null): void
   addChecklistItem(taskId: string, text: string): ReturnType<typeof createChecklistItem>
   renameChecklistItem(taskId: string, itemId: string, text: string): void
   changeChecklistItemCompleted(taskId: string, itemId: string, completed: boolean): void
@@ -186,6 +187,7 @@ export interface WorkspaceCommands {
   changeTaskDueDate(taskId: string, dueDate: string | null): void
   changeTaskDescription(taskId: string, description: string | null): void
   changeTaskProject(taskId: string, projectId: string): void
+  changeTasksProject(taskIds: string[], projectId: string): void
   moveTask(taskId: string, direction: MoveDirection): void
   deleteTask(taskId: string): void
   deleteTasks(taskIds: string[]): void
@@ -697,6 +699,17 @@ export function createWorkspaceCommands(
         {
           type: 'task/listChanged',
           taskId,
+          listId,
+        },
+        runtime.now(),
+      )
+    },
+
+    changeTasksList(taskIds, listId) {
+      dispatchTracked(
+        {
+          type: 'task/listChangedBulk',
+          taskIds: [...taskIds],
           listId,
         },
         runtime.now(),
@@ -1318,6 +1331,17 @@ export function createWorkspaceCommands(
         {
           type: 'task/projectChanged',
           taskId,
+          projectId,
+        },
+        runtime.now(),
+      )
+    },
+
+    changeTasksProject(taskIds, projectId) {
+      dispatchTracked(
+        {
+          type: 'task/projectChangedBulk',
+          taskIds: [...taskIds],
           projectId,
         },
         runtime.now(),

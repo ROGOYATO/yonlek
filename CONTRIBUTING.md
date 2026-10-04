@@ -1461,3 +1461,7 @@ affected Wiki pages after the main repository commit/push succeeds.
 ## Bulk lifecycle invariant - TDD 366-370
 
 Bulk Task restore/delete must remain atomic at the command/store boundary. Caller IDs may repeat, subtree membership is deduplicated, Activity follows pre-mutation Workspace Task order, and bulk delete must retain an explicit UI confirmation boundary.
+
+## Bulk movement invariant - TDD 371-375
+
+Bulk Project/List movement must remain a one-dispatch Workspace command. Project movement preserves Task hierarchy and clears List references that no longer belong to the target Project. Non-empty bulk List assignment must validate every selected Task before mutation; cross-Project selections may only clear List assignments.

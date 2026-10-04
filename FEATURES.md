@@ -545,3 +545,11 @@ persisted. Storage version remains 1.
 - Archived root Tasks can be selected and restored together; each selected root restores its archived subtree.
 - Selected active Tasks can be deleted together only after an explicit confirmation step; deleting a selected root deletes its subtree.
 - Bulk restore and delete each cross the Workspace command boundary with one dispatch and preserve Task Activity in pre-mutation Workspace order.
+
+## Bulk Task movement - TDD 371-375: Bulk Project/List movement
+
+- Selected Task roots can be moved to one Project in a single command; descendants follow their selected root.
+- Cross-Project movement clears incompatible List assignments and rejects moving a subtask away from an unselected parent.
+- Bulk List assignment is atomic and only accepts a List compatible with every selected Task.
+- Cross-Project selections can explicitly clear List assignments without partial acceptance.
+- Both bulk movement commands use one dispatch and preserve Task Activity in pre-mutation Workspace order.

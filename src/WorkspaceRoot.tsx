@@ -237,6 +237,9 @@ export function WorkspaceRoot({
       onChangeTaskList={(taskId, listId) => {
         guardedCommands.changeTaskList(taskId, listId)
       }}
+      onChangeTasksList={(taskIds, listId) => {
+        guardedCommands.changeTasksList(taskIds, listId)
+      }}
       onAddChecklistItem={(taskId, text) => {
         guardedCommands.addChecklistItem(taskId, text)
       }}
@@ -371,6 +374,9 @@ export function WorkspaceRoot({
       }}
       onChangeTaskProject={(taskId, projectId) => {
         guardedCommands.changeTaskProject(taskId, projectId)
+      }}
+      onChangeTasksProject={(taskIds, projectId) => {
+        guardedCommands.changeTasksProject(taskIds, projectId)
       }}
       />
     </>

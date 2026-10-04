@@ -80,7 +80,9 @@ export type TaskActivityAction =
   | { type: 'task/startDateChanged'; taskId: string; startDate: string | null }
   | { type: 'task/dueDateChanged'; taskId: string; dueDate: string | null }
   | { type: 'task/projectChanged'; taskId: string; projectId: string }
+  | { type: 'task/projectChangedBulk'; taskIds: string[]; projectId: string }
   | { type: 'task/listChanged'; taskId: string; listId: string | null }
+  | { type: 'task/listChangedBulk'; taskIds: string[]; listId: string | null }
   | { type: 'task/archived'; taskId: string; archivedAt: string }
   | { type: 'task/archivedBulk'; taskIds: string[]; archivedAt: string }
   | { type: 'task/restored'; taskId: string }
@@ -260,6 +262,7 @@ export function deriveTaskActivityEntries(
     }
 
     case 'task/projectChanged':
+    case 'task/projectChangedBulk':
       for (const previous of before.tasks) {
         const next = taskById(after, previous.id)
         if (!next || previous.projectId === next.projectId) continue
@@ -273,12 +276,15 @@ export function deriveTaskActivityEntries(
       }
       break
 
-    case 'task/listChanged': {
-      const previous = taskById(before, action.taskId)
-      const next = taskById(after, action.taskId)
-      const fromListId = previous?.listId ?? null
-      const toListId = next?.listId ?? null
-      if (previous && next && fromListId !== toListId) {
+    case 'task/listChanged':
+    case 'task/listChangedBulk':
+      for (const previous of before.tasks) {
+        const next = taskById(after, previous.id)
+        const fromListId = previous.listId ?? null
+        const toListId = next?.listId ?? null
+        if (!next || fromListId === toListId) {
+          continue
+        }
         append(next, {
           kind: 'task.listChanged',
           fromListId,
@@ -288,7 +294,6 @@ export function deriveTaskActivityEntries(
         })
       }
       break
-    }
 
     case 'task/archived':
     case 'task/archivedBulk':

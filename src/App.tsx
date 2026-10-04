@@ -93,6 +93,7 @@ export interface AppProps {
   onDeleteTaskList?: (listId: string) => void
   onMoveTaskList?: (listId: string, direction: MoveDirection) => void
   onChangeTaskList?: (taskId: string, listId: string | null) => void
+  onChangeTasksList?: (taskIds: string[], listId: string | null) => void
   onAddChecklistItem?: (taskId: string, text: string) => void
   onRenameChecklistItem?: (taskId: string, itemId: string, text: string) => void
   onChangeChecklistItemCompleted?: (taskId: string, itemId: string, completed: boolean) => void
@@ -141,6 +142,7 @@ export interface AppProps {
   onChangeTaskDueDate?: (taskId: string, dueDate: string | null) => void
   onChangeTaskDescription?: (taskId: string, description: string | null) => void
   onChangeTaskProject?: (taskId: string, projectId: string) => void
+  onChangeTasksProject?: (taskIds: string[], projectId: string) => void
   initialViewPreferences?: ViewPreferences
   onViewPreferencesChange?: (preferences: ViewPreferences) => void
 }
@@ -186,6 +188,7 @@ export function App({
   onDeleteTaskList,
   onMoveTaskList,
   onChangeTaskList,
+  onChangeTasksList,
   onAddChecklistItem,
   onRenameChecklistItem,
   onChangeChecklistItemCompleted,
@@ -231,6 +234,7 @@ export function App({
   onChangeTaskDueDate,
   onChangeTaskDescription,
   onChangeTaskProject,
+  onChangeTasksProject,
   initialViewPreferences = createDefaultViewPreferences(),
   onViewPreferencesChange,
 }: AppProps) {
@@ -281,8 +285,11 @@ export function App({
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
   const [selectedArchivedTaskIds, setSelectedArchivedTaskIds] = useState<string[]>([])
   const [bulkDeletePending, setBulkDeletePending] = useState(false)
+  const [bulkSelectionMode, setBulkSelectionMode] = useState(false)
   const [bulkStatus, setBulkStatus] = useState<TaskStatus>('todo')
   const [bulkPriority, setBulkPriority] = useState<TaskPriority>('normal')
+  const [bulkProjectId, setBulkProjectId] = useState('')
+  const [bulkListId, setBulkListId] = useState('')
   const [customFieldFilterFieldId, setCustomFieldFilterFieldId] = useState(
     initialViewPreferences.customFieldFilter?.fieldId ?? '',
   )
@@ -586,8 +593,32 @@ export function App({
   const allVisibleTasksSelected =
     visibleTaskIds.length > 0 &&
     visibleTaskIds.every((taskId) => selectedVisibleTaskIdSet.has(taskId))
+  const selectedVisibleProjectIds = [
+    ...new Set(
+      activeTasks
+        .filter((task) => selectedVisibleTaskIdSet.has(task.id))
+        .map((task) => task.projectId),
+    ),
+  ]
+  const selectedVisibleProjectId =
+    selectedVisibleProjectIds.length === 1
+      ? selectedVisibleProjectIds[0] ?? null
+      : null
+  const compatibleBulkLists =
+    selectedVisibleProjectId === null
+      ? []
+      : lists.filter((list) => list.projectId === selectedVisibleProjectId)
+  const bulkListValue = compatibleBulkLists.some(
+    (list) => list.id === bulkListId,
+  )
+    ? bulkListId
+    : ''
 
   function changeVisibleTaskSelection(taskId: string, selected: boolean) {
+    if (selected) {
+      setBulkSelectionMode(true)
+    }
+
     setSelectedTaskIds((current) => {
       if (selected) {
         return current.includes(taskId) ? current : [...current, taskId]
@@ -598,6 +629,10 @@ export function App({
   }
 
   function changeAllVisibleTaskSelection(selected: boolean) {
+    if (selected) {
+      setBulkSelectionMode(true)
+    }
+
     setSelectedTaskIds((current) => {
       const next = new Set(current)
 
@@ -1008,6 +1043,19 @@ export function App({
         </span>
       ) : null}
 
+      {bulkSelectionMode ? (
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedTaskIds([])
+            setBulkDeletePending(false)
+            setBulkSelectionMode(false)
+          }}
+        >
+          Exit bulk selection mode
+        </button>
+      ) : null}
+
       {onChangeTasksStatus ? (
         <>
           <label htmlFor="bulk-task-status">Bulk status</label>
@@ -1061,6 +1109,73 @@ export function App({
           >
             Apply bulk priority
           </button>
+        </>
+      ) : null}
+
+      {onChangeTasksProject ? (
+        <>
+          <label htmlFor="bulk-task-project">Bulk project</label>
+          <select
+            id="bulk-task-project"
+            value={bulkProjectId}
+            onChange={(event) => setBulkProjectId(event.target.value)}
+          >
+            <option value="">Choose project</option>
+            {activeProjects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={
+              selectedVisibleTaskIds.length === 0 || bulkProjectId === ''
+            }
+            onClick={() =>
+              runBulkAction(() =>
+                onChangeTasksProject(selectedVisibleTaskIds, bulkProjectId),
+              )
+            }
+          >
+            Move selected tasks to project
+          </button>
+        </>
+      ) : null}
+
+      {onChangeTasksList ? (
+        <>
+          <label htmlFor="bulk-task-list">Bulk list</label>
+          <select
+            id="bulk-task-list"
+            value={bulkListValue}
+            onChange={(event) => setBulkListId(event.target.value)}
+          >
+            <option value="">No list</option>
+            {compatibleBulkLists.map((list) => (
+              <option key={list.id} value={list.id}>
+                {list.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={selectedVisibleTaskIds.length === 0}
+            onClick={() =>
+              runBulkAction(() =>
+                onChangeTasksList(
+                  selectedVisibleTaskIds,
+                  bulkListValue || null,
+                ),
+              )
+            }
+          >
+            Apply bulk list
+          </button>
+          {selectedVisibleTaskIds.length > 0 &&
+          selectedVisibleProjectId === null ? (
+            <span>Only list clearing is available across projects.</span>
+          ) : null}
         </>
       ) : null}
 
@@ -2559,6 +2674,29 @@ export function App({
                     }
 
                     const task = entry.task
+
+                    if (bulkSelectionMode && taskViewMode === 'list') {
+                      return (
+                        <li key={task.id}>
+                          <label>
+                            <input
+                              type="checkbox"
+                              aria-label={`Select task ${task.title}`}
+                              checked={selectedVisibleTaskIdSet.has(task.id)}
+                              onChange={(event) =>
+                                changeVisibleTaskSelection(
+                                  task.id,
+                                  event.target.checked,
+                                )
+                              }
+                            />
+                            Select task {task.title}
+                          </label>
+                          <span>{task.title}</span>
+                        </li>
+                      )
+                    }
+
                     const parentTask =
                       task.parentTaskId === undefined
                         ? undefined

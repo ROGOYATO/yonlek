@@ -232,7 +232,9 @@ export type WorkspaceBaseAction =
   | { type: 'task/dueDateChanged'; taskId: string; dueDate: string | null }
   | { type: 'task/descriptionChanged'; taskId: string; description: string | null }
   | { type: 'task/projectChanged'; taskId: string; projectId: string }
+  | { type: 'task/projectChangedBulk'; taskIds: string[]; projectId: string }
   | { type: 'task/listChanged'; taskId: string; listId: string | null }
+  | { type: 'task/listChangedBulk'; taskIds: string[]; listId: string | null }
   | { type: 'task/moved'; taskId: string; direction: MoveDirection }
   | { type: 'task/customFieldValueChanged'; taskId: string; fieldId: string; value: CustomFieldValue | null }
   | { type: 'task/assigneeAdded'; taskId: string; personId: string }
@@ -268,7 +270,9 @@ export type ActivityTrackableWorkspaceAction = Extract<
       | 'task/startDateChanged'
       | 'task/dueDateChanged'
       | 'task/projectChanged'
+      | 'task/projectChangedBulk'
       | 'task/listChanged'
+      | 'task/listChangedBulk'
       | 'task/deleted'
       | 'task/deletedBulk'
   }
@@ -1743,6 +1747,59 @@ export function workspaceReducer(
       }
     }
 
+    case 'task/projectChangedBulk': {
+      const projectExists = state.projects.some(
+        (project) => project.id === action.projectId,
+      )
+
+      if (!projectExists) {
+        throw new Error('Cannot move tasks to a missing project')
+      }
+
+      const requested = new Set(action.taskIds)
+      const movedIds = new Set<string>()
+
+      for (const task of state.tasks) {
+        if (!requested.has(task.id)) {
+          continue
+        }
+
+        for (const movedId of collectTaskSubtreeIds(state.tasks, task.id)) {
+          movedIds.add(movedId)
+        }
+      }
+
+      for (const task of state.tasks) {
+        if (
+          !movedIds.has(task.id) ||
+          task.parentTaskId === undefined ||
+          movedIds.has(task.parentTaskId) ||
+          task.projectId === action.projectId
+        ) {
+          continue
+        }
+
+        throw new Error(
+          'Cannot move a subtask away from its parent project',
+        )
+      }
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) => {
+          if (!movedIds.has(task.id)) {
+            return task
+          }
+
+          const moved = moveTaskToProject(task, action.projectId)
+
+          return task.projectId === action.projectId
+            ? moved
+            : setTaskList(moved, null)
+        }),
+      }
+    }
+
     case 'task/listChanged': {
       const task = state.tasks.find((candidate) => candidate.id === action.taskId)
 
@@ -1770,6 +1827,39 @@ export function workspaceReducer(
           candidate.id === action.taskId
             ? setTaskList(candidate, action.listId)
             : candidate,
+        ),
+      }
+    }
+
+    case 'task/listChangedBulk': {
+      const requested = new Set(action.taskIds)
+      const list =
+        action.listId === null
+          ? undefined
+          : (state.lists ?? []).find(
+              (candidate) => candidate.id === action.listId,
+            )
+
+      if (action.listId !== null && !list) {
+        throw new Error('Cannot assign tasks to a missing list')
+      }
+
+      if (list) {
+        for (const task of state.tasks) {
+          if (requested.has(task.id) && task.projectId !== list.projectId) {
+            throw new Error(
+              'Cannot assign tasks to a list from another project',
+            )
+          }
+        }
+      }
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          requested.has(task.id)
+            ? setTaskList(task, action.listId)
+            : task,
         ),
       }
     }

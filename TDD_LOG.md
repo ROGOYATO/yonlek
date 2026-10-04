@@ -3271,3 +3271,13 @@ derived and is not persisted.
 - 370: selected active Task bulk delete with explicit two-step confirmation.
 
 Storage remains version 1. The batch extends existing lifecycle semantics rather than introducing a parallel archive/delete model.
+
+## TDD 371-375 - Bulk Project/List movement
+
+- 371: atomic bulk Project movement with subtree semantics and incompatible List clearing.
+- 372: atomic bulk List assignment/clearing with whole-selection compatibility validation.
+- 373: one-dispatch WorkspaceCommands and ordered Task Activity integration.
+- 374: visible-selection bulk Project movement UI.
+- 375: compatible bulk List UI with explicit cross-Project clearing behavior.
+
+Storage remains version 1. The batch extends the existing Project/List commands rather than introducing a parallel movement model.
