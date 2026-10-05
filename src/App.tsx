@@ -79,10 +79,12 @@ export interface AppProps {
   onRenamePerson?: (personId: string, name: string) => void
   onDeletePerson?: (personId: string) => void
   onChangeTaskAssignee?: (taskId: string, personId: string, assigned: boolean) => void
+  onChangeTasksAssignee?: (taskIds: string[], personId: string, assigned: boolean) => void
   onCreateTag?: (name: string) => void
   onRenameTag?: (tagId: string, name: string) => void
   onDeleteTag?: (tagId: string) => void
   onChangeTaskTag?: (taskId: string, tagId: string, assigned: boolean) => void
+  onChangeTasksTag?: (taskIds: string[], tagId: string, assigned: boolean) => void
   onCreateArea?: (name: string) => void
   onRenameArea?: (areaId: string, name: string) => void
   onDeleteArea?: (areaId: string) => void
@@ -176,10 +178,12 @@ export function App({
   onRenamePerson,
   onDeletePerson,
   onChangeTaskAssignee,
+  onChangeTasksAssignee,
   onCreateTag,
   onRenameTag,
   onDeleteTag,
   onChangeTaskTag,
+  onChangeTasksTag,
   onCreateArea,
   onRenameArea,
   onDeleteArea,
@@ -294,6 +298,8 @@ export function App({
   const [bulkPriority, setBulkPriority] = useState<TaskPriority>('normal')
   const [bulkStartDate, setBulkStartDate] = useState('')
   const [bulkDueDate, setBulkDueDate] = useState('')
+  const [bulkTagId, setBulkTagId] = useState('')
+  const [bulkPersonId, setBulkPersonId] = useState('')
   const [bulkProjectId, setBulkProjectId] = useState('')
   const [bulkListId, setBulkListId] = useState('')
   const [customFieldFilterFieldId, setCustomFieldFilterFieldId] = useState(
@@ -1114,6 +1120,94 @@ export function App({
             }
           >
             Apply bulk priority
+          </button>
+        </>
+      ) : null}
+
+      {onChangeTasksTag && tags.length > 0 ? (
+        <>
+          <label htmlFor="bulk-task-tag">Bulk tag</label>
+          <select
+            id="bulk-task-tag"
+            value={bulkTagId}
+            onChange={(event) => setBulkTagId(event.target.value)}
+          >
+            <option value="">Choose tag</option>
+            {tags.map((tag) => (
+              <option key={tag.id} value={tag.id}>
+                {tag.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={selectedVisibleTaskIds.length === 0 || bulkTagId === ''}
+            onClick={() =>
+              runBulkAction(() =>
+                onChangeTasksTag(selectedVisibleTaskIds, bulkTagId, true),
+              )
+            }
+          >
+            Add bulk tag
+          </button>
+          <button
+            type="button"
+            disabled={selectedVisibleTaskIds.length === 0 || bulkTagId === ''}
+            onClick={() =>
+              runBulkAction(() =>
+                onChangeTasksTag(selectedVisibleTaskIds, bulkTagId, false),
+              )
+            }
+          >
+            Remove bulk tag
+          </button>
+        </>
+      ) : null}
+
+      {onChangeTasksAssignee && people.length > 0 ? (
+        <>
+          <label htmlFor="bulk-task-assignee">Bulk assignee</label>
+          <select
+            id="bulk-task-assignee"
+            value={bulkPersonId}
+            onChange={(event) => setBulkPersonId(event.target.value)}
+          >
+            <option value="">Choose person</option>
+            {people.map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={selectedVisibleTaskIds.length === 0 || bulkPersonId === ''}
+            onClick={() =>
+              runBulkAction(() =>
+                onChangeTasksAssignee(
+                  selectedVisibleTaskIds,
+                  bulkPersonId,
+                  true,
+                ),
+              )
+            }
+          >
+            Assign bulk person
+          </button>
+          <button
+            type="button"
+            disabled={selectedVisibleTaskIds.length === 0 || bulkPersonId === ''}
+            onClick={() =>
+              runBulkAction(() =>
+                onChangeTasksAssignee(
+                  selectedVisibleTaskIds,
+                  bulkPersonId,
+                  false,
+                ),
+              )
+            }
+          >
+            Unassign bulk person
           </button>
         </>
       ) : null}

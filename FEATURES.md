@@ -561,3 +561,11 @@ persisted. Storage version remains 1.
 - Bulk date changes reuse the single-Task calendar-date and start/due range rules for every selected Task before acceptance.
 - Clearing due dates preserves existing single-Task semantics, including removing recurrence rules that require a due date.
 - Bulk start/due commands use one dispatch and append Task Activity in pre-mutation Workspace order without duplicate caller IDs.
+
+## Bulk Tags and People - TDD 381-385: Bulk Tags and People
+
+- Selected active Tasks can receive or remove one existing Tag in a single bulk operation.
+- Selected active Tasks can receive or remove one existing Person assignment in a single bulk operation.
+- Repeated caller Task IDs are deduplicated before assignment semantics are applied.
+- Assigning a deleted or missing Tag/Person is rejected before Task mutation; removing an already-deleted reference remains idempotent.
+- Each bulk Tag or Person command crosses the Workspace store boundary with exactly one dispatch.

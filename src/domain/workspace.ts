@@ -241,8 +241,10 @@ export type WorkspaceBaseAction =
   | { type: 'task/customFieldValueChanged'; taskId: string; fieldId: string; value: CustomFieldValue | null }
   | { type: 'task/assigneeAdded'; taskId: string; personId: string }
   | { type: 'task/assigneeRemoved'; taskId: string; personId: string }
+  | { type: 'task/assigneeChangedBulk'; taskIds: string[]; personId: string; assigned: boolean }
   | { type: 'task/tagAdded'; taskId: string; tagId: string }
   | { type: 'task/tagRemoved'; taskId: string; tagId: string }
+  | { type: 'task/tagChangedBulk'; taskIds: string[]; tagId: string; assigned: boolean }
   | { type: 'task/checklistItemAdded'; taskId: string; item: ChecklistItem }
   | { type: 'task/checklistItemTextChanged'; taskId: string; itemId: string; text: string }
   | { type: 'task/checklistItemCompletedChanged'; taskId: string; itemId: string; completed: boolean }
@@ -2027,6 +2029,41 @@ export function workspaceReducer(
         }),
       }
 
+    case 'task/assigneeChangedBulk': {
+      const requested = new Set(action.taskIds)
+
+      if (
+        action.assigned &&
+        !(state.people ?? []).some((person) => person.id === action.personId)
+      ) {
+        throw new Error('Cannot assign a missing person')
+      }
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) => {
+          if (!requested.has(task.id)) {
+            return task
+          }
+
+          const assigneeIds = new Set(task.assigneeIds ?? [])
+          if (action.assigned) {
+            assigneeIds.add(action.personId)
+          } else {
+            assigneeIds.delete(action.personId)
+          }
+
+          const next = { ...task }
+          if (assigneeIds.size === 0) {
+            delete next.assigneeIds
+          } else {
+            next.assigneeIds = [...assigneeIds]
+          }
+          return next
+        }),
+      }
+    }
+
     case 'task/tagAdded': {
       const taskExists = state.tasks.some(
         (task) => task.id === action.taskId,
@@ -2085,6 +2122,41 @@ export function workspaceReducer(
           return next
         }),
       }
+
+    case 'task/tagChangedBulk': {
+      const requested = new Set(action.taskIds)
+
+      if (
+        action.assigned &&
+        !(state.tags ?? []).some((tag) => tag.id === action.tagId)
+      ) {
+        throw new Error('Cannot assign a missing tag')
+      }
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) => {
+          if (!requested.has(task.id)) {
+            return task
+          }
+
+          const tagIds = new Set(task.tagIds ?? [])
+          if (action.assigned) {
+            tagIds.add(action.tagId)
+          } else {
+            tagIds.delete(action.tagId)
+          }
+
+          const next = { ...task }
+          if (tagIds.size === 0) {
+            delete next.tagIds
+          } else {
+            next.tagIds = [...tagIds]
+          }
+          return next
+        }),
+      }
+    }
 
     case 'task/checklistItemAdded': {
       const target = state.tasks.find((task) => task.id === action.taskId)

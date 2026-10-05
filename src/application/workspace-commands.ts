@@ -127,11 +127,13 @@ export interface WorkspaceCommands {
   deletePerson(personId: string): void
   assignTaskAssignee(taskId: string, personId: string): void
   removeTaskAssignee(taskId: string, personId: string): void
+  changeTasksAssignee(taskIds: string[], personId: string, assigned: boolean): void
   addTag(name: string): ReturnType<typeof createTag>
   renameTag(tagId: string, name: string): void
   deleteTag(tagId: string): void
   assignTaskTag(taskId: string, tagId: string): void
   removeTaskTag(taskId: string, tagId: string): void
+  changeTasksTag(taskIds: string[], tagId: string, assigned: boolean): void
   addArea(name: string): ReturnType<typeof createArea>
   renameArea(areaId: string, name: string): void
   deleteArea(areaId: string): void
@@ -565,6 +567,15 @@ export function createWorkspaceCommands(
       })
     },
 
+    changeTasksAssignee(taskIds, personId, assigned) {
+      store.dispatch({
+        type: 'task/assigneeChangedBulk',
+        taskIds: [...taskIds],
+        personId,
+        assigned,
+      })
+    },
+
     addTag(name) {
       const tag = createTag({
         id: runtime.nextId(),
@@ -608,6 +619,15 @@ export function createWorkspaceCommands(
         type: 'task/tagRemoved',
         taskId,
         tagId,
+      })
+    },
+
+    changeTasksTag(taskIds, tagId, assigned) {
+      store.dispatch({
+        type: 'task/tagChangedBulk',
+        taskIds: [...taskIds],
+        tagId,
+        assigned,
       })
     },
 

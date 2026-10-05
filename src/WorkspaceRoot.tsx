@@ -191,6 +191,9 @@ export function WorkspaceRoot({
           guardedCommands.removeTaskAssignee(taskId, personId)
         }
       }}
+      onChangeTasksAssignee={(taskIds, personId, assigned) => {
+        guardedCommands.changeTasksAssignee(taskIds, personId, assigned)
+      }}
       onCreateTag={(name) => {
         guardedCommands.addTag(name)
       }}
@@ -206,6 +209,9 @@ export function WorkspaceRoot({
         } else {
           guardedCommands.removeTaskTag(taskId, tagId)
         }
+      }}
+      onChangeTasksTag={(taskIds, tagId, assigned) => {
+        guardedCommands.changeTasksTag(taskIds, tagId, assigned)
       }}
       onCreateArea={(name) => {
         guardedCommands.addArea(name)

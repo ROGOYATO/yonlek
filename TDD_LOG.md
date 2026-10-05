@@ -3291,3 +3291,13 @@ Storage remains version 1. The batch extends the existing Project/List commands 
 - 380: visible-selection browser controls for setting and clearing bulk start/due dates.
 
 Storage remains version 1. Bulk date operations extend the existing Task start/due commands and do not introduce separate schedule fields or subtree propagation.
+
+## TDD 381-385 - Bulk Tags and People
+
+- 381: bulk Tag add/remove reducer behavior across selected Tasks.
+- 382: bulk Person assign/unassign reducer behavior across selected Tasks.
+- 383: caller-ID deduplication plus deleted/missing Tag/Person reference handling with no partial mutation.
+- 384: one-dispatch WorkspaceCommands for bulk Tag and Person changes.
+- 385: visible-selection browser controls for bulk Tag add/remove and Person assign/unassign.
+
+Storage remains version 1. Bulk Tag/Person operations extend the existing single-Task reference model and do not add a second assignment representation or subtree propagation.

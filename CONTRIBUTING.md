@@ -1469,3 +1469,7 @@ Bulk Project/List movement must remain a one-dispatch Workspace command. Project
 ## Bulk date invariant - TDD 376-380
 
 Bulk start/due changes must remain one-dispatch Workspace commands over the explicitly selected Task IDs. Validate the complete selection through the existing single-Task date helpers before returning a new Workspace; never accept a valid subset when another selected Task violates calendar or schedule-range rules. Clearing a due date must keep the existing recurrence cleanup behavior. Activity follows pre-mutation Workspace Task order.
+
+## Bulk Tag and Person invariant - TDD 381-385
+
+Bulk Tag and Person operations target only the explicitly selected Task IDs and use one Workspace dispatch per operation. Repeated caller IDs must not duplicate Task references. Adding or assigning requires the referenced Tag/Person to still exist; removal/unassignment is idempotent so stale/deleted references can be cleaned safely. Do not expand bulk selection into Task subtrees.

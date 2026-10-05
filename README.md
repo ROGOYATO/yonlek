@@ -725,3 +725,7 @@ YÃ¶nlek supports atomic bulk Project movement for selected Task subtrees and b
 ### TDD 376-380 bulk dates
 
 YÃ¶nlek supports atomic bulk start-date and due-date changes for selected active Tasks. The reducer validates every selected Task with the existing single-Task schedule rules before accepting the new date, so an invalid range rejects the whole operation. Clearing a due date also clears recurrence exactly as the single-Task command does. Bulk date commands use one persisted dispatch and ordered Task Activity.
+
+### TDD 381-385 bulk Tags and People
+
+YÃ¶nlek supports bulk Tag assignment/removal and bulk Person assignment/removal for the current visible Task selection. The reducer deduplicates repeated Task IDs, rejects assignment to missing Tag/Person references, and keeps removal idempotent after a reference has already been deleted. Each bulk operation uses one persisted Workspace dispatch.
