@@ -184,7 +184,9 @@ export interface WorkspaceCommands {
   changeTaskPriority(taskId: string, priority: TaskPriority): void
   changeTasksPriority(taskIds: string[], priority: TaskPriority): void
   changeTaskStartDate(taskId: string, startDate: string | null): void
+  changeTasksStartDate(taskIds: string[], startDate: string | null): void
   changeTaskDueDate(taskId: string, dueDate: string | null): void
+  changeTasksDueDate(taskIds: string[], dueDate: string | null): void
   changeTaskDescription(taskId: string, description: string | null): void
   changeTaskProject(taskId: string, projectId: string): void
   changeTasksProject(taskIds: string[], projectId: string): void
@@ -1307,11 +1309,33 @@ export function createWorkspaceCommands(
       )
     },
 
+    changeTasksStartDate(taskIds, startDate) {
+      dispatchTracked(
+        {
+          type: 'task/startDateChangedBulk',
+          taskIds: [...taskIds],
+          startDate,
+        },
+        runtime.now(),
+      )
+    },
+
     changeTaskDueDate(taskId, dueDate) {
       dispatchTracked(
         {
           type: 'task/dueDateChanged',
           taskId,
+          dueDate,
+        },
+        runtime.now(),
+      )
+    },
+
+    changeTasksDueDate(taskIds, dueDate) {
+      dispatchTracked(
+        {
+          type: 'task/dueDateChangedBulk',
+          taskIds: [...taskIds],
           dueDate,
         },
         runtime.now(),

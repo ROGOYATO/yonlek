@@ -3281,3 +3281,13 @@ Storage remains version 1. The batch extends existing lifecycle semantics rather
 - 375: compatible bulk List UI with explicit cross-Project clearing behavior.
 
 Storage remains version 1. The batch extends the existing Project/List commands rather than introducing a parallel movement model.
+
+## TDD 376-380 - Bulk dates
+
+- 376: bulk due-date set/clear reducer behavior for selected Tasks.
+- 377: bulk start-date set/clear reducer behavior for selected Tasks.
+- 378: whole-selection calendar/schedule validation, no partial acceptance, and single-Task due-clear recurrence parity.
+- 379: one-dispatch WorkspaceCommands plus deterministic bulk start/due Task Activity.
+- 380: visible-selection browser controls for setting and clearing bulk start/due dates.
+
+Storage remains version 1. Bulk date operations extend the existing Task start/due commands and do not introduce separate schedule fields or subtree propagation.

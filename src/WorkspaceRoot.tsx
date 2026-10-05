@@ -366,8 +366,14 @@ export function WorkspaceRoot({
       onChangeTaskStartDate={(taskId, startDate) => {
         guardedCommands.changeTaskStartDate(taskId, startDate)
       }}
+      onChangeTasksStartDate={(taskIds, startDate) => {
+        guardedCommands.changeTasksStartDate(taskIds, startDate)
+      }}
       onChangeTaskDueDate={(taskId, dueDate) => {
         guardedCommands.changeTaskDueDate(taskId, dueDate)
+      }}
+      onChangeTasksDueDate={(taskIds, dueDate) => {
+        guardedCommands.changeTasksDueDate(taskIds, dueDate)
       }}
       onChangeTaskDescription={(taskId, description) => {
         guardedCommands.changeTaskDescription(taskId, description)

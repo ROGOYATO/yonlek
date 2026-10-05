@@ -139,7 +139,9 @@ export interface AppProps {
   onChangeTasksPriority?: (taskIds: string[], priority: TaskPriority) => void
   onArchiveTasks?: (taskIds: string[]) => void
   onChangeTaskStartDate?: (taskId: string, startDate: string | null) => void
+  onChangeTasksStartDate?: (taskIds: string[], startDate: string | null) => void
   onChangeTaskDueDate?: (taskId: string, dueDate: string | null) => void
+  onChangeTasksDueDate?: (taskIds: string[], dueDate: string | null) => void
   onChangeTaskDescription?: (taskId: string, description: string | null) => void
   onChangeTaskProject?: (taskId: string, projectId: string) => void
   onChangeTasksProject?: (taskIds: string[], projectId: string) => void
@@ -231,7 +233,9 @@ export function App({
   onChangeTasksPriority,
   onArchiveTasks,
   onChangeTaskStartDate,
+  onChangeTasksStartDate,
   onChangeTaskDueDate,
+  onChangeTasksDueDate,
   onChangeTaskDescription,
   onChangeTaskProject,
   onChangeTasksProject,
@@ -288,6 +292,8 @@ export function App({
   const [bulkSelectionMode, setBulkSelectionMode] = useState(false)
   const [bulkStatus, setBulkStatus] = useState<TaskStatus>('todo')
   const [bulkPriority, setBulkPriority] = useState<TaskPriority>('normal')
+  const [bulkStartDate, setBulkStartDate] = useState('')
+  const [bulkDueDate, setBulkDueDate] = useState('')
   const [bulkProjectId, setBulkProjectId] = useState('')
   const [bulkListId, setBulkListId] = useState('')
   const [customFieldFilterFieldId, setCustomFieldFilterFieldId] = useState(
@@ -1108,6 +1114,84 @@ export function App({
             }
           >
             Apply bulk priority
+          </button>
+        </>
+      ) : null}
+
+      {onChangeTasksStartDate ? (
+        <>
+          <label htmlFor="bulk-task-start-date">Bulk start date</label>
+          <input
+            id="bulk-task-start-date"
+            type="date"
+            value={bulkStartDate}
+            onChange={(event) => setBulkStartDate(event.target.value)}
+          />
+          <button
+            type="button"
+            disabled={
+              selectedVisibleTaskIds.length === 0 || bulkStartDate === ''
+            }
+            onClick={() =>
+              runBulkAction(() =>
+                onChangeTasksStartDate(
+                  selectedVisibleTaskIds,
+                  bulkStartDate,
+                ),
+              )
+            }
+          >
+            Apply bulk start date
+          </button>
+          <button
+            type="button"
+            disabled={selectedVisibleTaskIds.length === 0}
+            onClick={() =>
+              runBulkAction(() =>
+                onChangeTasksStartDate(selectedVisibleTaskIds, null),
+              )
+            }
+          >
+            Clear bulk start date
+          </button>
+        </>
+      ) : null}
+
+      {onChangeTasksDueDate ? (
+        <>
+          <label htmlFor="bulk-task-due-date">Bulk due date</label>
+          <input
+            id="bulk-task-due-date"
+            type="date"
+            value={bulkDueDate}
+            onChange={(event) => setBulkDueDate(event.target.value)}
+          />
+          <button
+            type="button"
+            disabled={
+              selectedVisibleTaskIds.length === 0 || bulkDueDate === ''
+            }
+            onClick={() =>
+              runBulkAction(() =>
+                onChangeTasksDueDate(
+                  selectedVisibleTaskIds,
+                  bulkDueDate,
+                ),
+              )
+            }
+          >
+            Apply bulk due date
+          </button>
+          <button
+            type="button"
+            disabled={selectedVisibleTaskIds.length === 0}
+            onClick={() =>
+              runBulkAction(() =>
+                onChangeTasksDueDate(selectedVisibleTaskIds, null),
+              )
+            }
+          >
+            Clear bulk due date
           </button>
         </>
       ) : null}

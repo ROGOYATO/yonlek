@@ -1465,3 +1465,7 @@ Bulk Task restore/delete must remain atomic at the command/store boundary. Calle
 ## Bulk movement invariant - TDD 371-375
 
 Bulk Project/List movement must remain a one-dispatch Workspace command. Project movement preserves Task hierarchy and clears List references that no longer belong to the target Project. Non-empty bulk List assignment must validate every selected Task before mutation; cross-Project selections may only clear List assignments.
+
+## Bulk date invariant - TDD 376-380
+
+Bulk start/due changes must remain one-dispatch Workspace commands over the explicitly selected Task IDs. Validate the complete selection through the existing single-Task date helpers before returning a new Workspace; never accept a valid subset when another selected Task violates calendar or schedule-range rules. Clearing a due date must keep the existing recurrence cleanup behavior. Activity follows pre-mutation Workspace Task order.

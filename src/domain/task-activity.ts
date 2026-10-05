@@ -78,7 +78,9 @@ export type TaskActivityAction =
   | { type: 'task/priorityChanged'; taskId: string; priority: TaskActivityPriority }
   | { type: 'task/priorityChangedBulk'; taskIds: string[]; priority: TaskActivityPriority }
   | { type: 'task/startDateChanged'; taskId: string; startDate: string | null }
+  | { type: 'task/startDateChangedBulk'; taskIds: string[]; startDate: string | null }
   | { type: 'task/dueDateChanged'; taskId: string; dueDate: string | null }
+  | { type: 'task/dueDateChangedBulk'; taskIds: string[]; dueDate: string | null }
   | { type: 'task/projectChanged'; taskId: string; projectId: string }
   | { type: 'task/projectChangedBulk'; taskIds: string[]; projectId: string }
   | { type: 'task/listChanged'; taskId: string; listId: string | null }
@@ -250,6 +252,20 @@ export function deriveTaskActivityEntries(
       break
     }
 
+    case 'task/startDateChangedBulk': {
+      const requested = new Set(action.taskIds)
+      for (const previous of before.tasks) {
+        if (!requested.has(previous.id)) continue
+        const next = taskById(after, previous.id)
+        const from = previous.startDate ?? null
+        const to = next?.startDate ?? null
+        if (next && from !== to) {
+          append(next, { kind: 'task.startDateChanged', from, to })
+        }
+      }
+      break
+    }
+
     case 'task/dueDateChanged': {
       const previous = taskById(before, action.taskId)
       const next = taskById(after, action.taskId)
@@ -257,6 +273,20 @@ export function deriveTaskActivityEntries(
       const to = next?.dueDate ?? null
       if (previous && next && from !== to) {
         append(next, { kind: 'task.dueDateChanged', from, to })
+      }
+      break
+    }
+
+    case 'task/dueDateChangedBulk': {
+      const requested = new Set(action.taskIds)
+      for (const previous of before.tasks) {
+        if (!requested.has(previous.id)) continue
+        const next = taskById(after, previous.id)
+        const from = previous.dueDate ?? null
+        const to = next?.dueDate ?? null
+        if (next && from !== to) {
+          append(next, { kind: 'task.dueDateChanged', from, to })
+        }
       }
       break
     }

@@ -229,7 +229,9 @@ export type WorkspaceBaseAction =
   | { type: 'task/priorityChanged'; taskId: string; priority: TaskPriority }
   | { type: 'task/priorityChangedBulk'; taskIds: string[]; priority: TaskPriority }
   | { type: 'task/startDateChanged'; taskId: string; startDate: string | null }
+  | { type: 'task/startDateChangedBulk'; taskIds: string[]; startDate: string | null }
   | { type: 'task/dueDateChanged'; taskId: string; dueDate: string | null }
+  | { type: 'task/dueDateChangedBulk'; taskIds: string[]; dueDate: string | null }
   | { type: 'task/descriptionChanged'; taskId: string; description: string | null }
   | { type: 'task/projectChanged'; taskId: string; projectId: string }
   | { type: 'task/projectChangedBulk'; taskIds: string[]; projectId: string }
@@ -268,7 +270,9 @@ export type ActivityTrackableWorkspaceAction = Extract<
       | 'task/priorityChanged'
       | 'task/priorityChangedBulk'
       | 'task/startDateChanged'
+      | 'task/startDateChangedBulk'
       | 'task/dueDateChanged'
+      | 'task/dueDateChangedBulk'
       | 'task/projectChanged'
       | 'task/projectChangedBulk'
       | 'task/listChanged'
@@ -1667,6 +1671,22 @@ export function workspaceReducer(
         ),
       }
 
+    case 'task/startDateChangedBulk': {
+      const taskIds = new Set(action.taskIds)
+      const updates = new Map<string, Task>()
+
+      for (const task of state.tasks) {
+        if (taskIds.has(task.id)) {
+          updates.set(task.id, setTaskStartDate(task, action.startDate))
+        }
+      }
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) => updates.get(task.id) ?? task),
+      }
+    }
+
     case 'task/dueDateChanged':
       return {
         ...state,
@@ -1676,6 +1696,22 @@ export function workspaceReducer(
             : task,
         ),
       }
+
+    case 'task/dueDateChangedBulk': {
+      const taskIds = new Set(action.taskIds)
+      const updates = new Map<string, Task>()
+
+      for (const task of state.tasks) {
+        if (taskIds.has(task.id)) {
+          updates.set(task.id, setTaskDueDate(task, action.dueDate))
+        }
+      }
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) => updates.get(task.id) ?? task),
+      }
+    }
 
     case 'task/descriptionChanged':
       return {

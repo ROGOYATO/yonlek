@@ -721,3 +721,7 @@ Yönlek supports one-dispatch bulk restore for archived Task roots and explicitl
 ### TDD 371-375 bulk movement
 
 YÃ¶nlek supports atomic bulk Project movement for selected Task subtrees and bulk List assignment/clearing. Project moves clear incompatible List references, while List assignment validates the entire selection before accepting any change.
+
+### TDD 376-380 bulk dates
+
+YÃ¶nlek supports atomic bulk start-date and due-date changes for selected active Tasks. The reducer validates every selected Task with the existing single-Task schedule rules before accepting the new date, so an invalid range rejects the whole operation. Clearing a due date also clears recurrence exactly as the single-Task command does. Bulk date commands use one persisted dispatch and ordered Task Activity.

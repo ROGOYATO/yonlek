@@ -553,3 +553,11 @@ persisted. Storage version remains 1.
 - Bulk List assignment is atomic and only accepts a List compatible with every selected Task.
 - Cross-Project selections can explicitly clear List assignments without partial acceptance.
 - Both bulk movement commands use one dispatch and preserve Task Activity in pre-mutation Workspace order.
+
+## Bulk Task dates - TDD 376-380: Bulk dates
+
+- Selected active Tasks can receive or clear one due date in a single atomic bulk operation.
+- Selected active Tasks can receive or clear one start date in a single atomic bulk operation.
+- Bulk date changes reuse the single-Task calendar-date and start/due range rules for every selected Task before acceptance.
+- Clearing due dates preserves existing single-Task semantics, including removing recurrence rules that require a due date.
+- Bulk start/due commands use one dispatch and append Task Activity in pre-mutation Workspace order without duplicate caller IDs.
