@@ -75,6 +75,7 @@ export interface AppProps {
   onRenameCustomFieldOption?: (fieldId: string, optionId: string, name: string) => void
   onDeleteCustomFieldOption?: (fieldId: string, optionId: string) => void
   onChangeTaskCustomFieldValue?: (taskId: string, fieldId: string, value: CustomFieldValue | null) => void
+  onChangeTasksCustomFieldValue?: (taskIds: string[], fieldId: string, value: CustomFieldValue | null) => void
   onCreatePerson?: (name: string) => void
   onRenamePerson?: (personId: string, name: string) => void
   onDeletePerson?: (personId: string) => void
@@ -174,6 +175,7 @@ export function App({
   onRenameCustomFieldOption,
   onDeleteCustomFieldOption,
   onChangeTaskCustomFieldValue,
+  onChangeTasksCustomFieldValue,
   onCreatePerson,
   onRenamePerson,
   onDeletePerson,
@@ -300,6 +302,9 @@ export function App({
   const [bulkDueDate, setBulkDueDate] = useState('')
   const [bulkTagId, setBulkTagId] = useState('')
   const [bulkPersonId, setBulkPersonId] = useState('')
+  const [bulkCustomFieldId, setBulkCustomFieldId] = useState('')
+  const [bulkCustomFieldValue, setBulkCustomFieldValue] = useState('')
+  const [bulkCustomFieldChecked, setBulkCustomFieldChecked] = useState(false)
   const [bulkProjectId, setBulkProjectId] = useState('')
   const [bulkListId, setBulkListId] = useState('')
   const [customFieldFilterFieldId, setCustomFieldFilterFieldId] = useState(
@@ -625,6 +630,12 @@ export function App({
   )
     ? bulkListId
     : ''
+  const editableBulkCustomFields = customFields.filter(
+    (field) => field.type !== 'formula',
+  )
+  const bulkCustomField =
+    editableBulkCustomFields.find((field) => field.id === bulkCustomFieldId) ??
+    null
 
   function changeVisibleTaskSelection(taskId: string, selected: boolean) {
     if (selected) {
@@ -1286,6 +1297,135 @@ export function App({
             }
           >
             Clear bulk due date
+          </button>
+        </>
+      ) : null}
+
+      {onChangeTasksCustomFieldValue && editableBulkCustomFields.length > 0 ? (
+        <>
+          <label htmlFor="bulk-task-custom-field">Bulk custom field</label>
+          <select
+            id="bulk-task-custom-field"
+            value={bulkCustomField?.id ?? ''}
+            onChange={(event) => {
+              setBulkCustomFieldId(event.target.value)
+              setBulkCustomFieldValue('')
+              setBulkCustomFieldChecked(false)
+            }}
+          >
+            <option value="">Choose custom field</option>
+            {editableBulkCustomFields.map((field) => (
+              <option key={field.id} value={field.id}>
+                {field.name}
+              </option>
+            ))}
+          </select>
+
+          {bulkCustomField?.type === 'select' ? (
+            <>
+              <label htmlFor="bulk-task-custom-field-select-value">
+                Bulk custom field value
+              </label>
+              <select
+                id="bulk-task-custom-field-select-value"
+                value={bulkCustomFieldValue}
+                onChange={(event) => setBulkCustomFieldValue(event.target.value)}
+              >
+                <option value="">No selection</option>
+                {(bulkCustomField.options ?? []).map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : bulkCustomField?.type === 'checkbox' ? (
+            <>
+              <label htmlFor="bulk-task-custom-field-checkbox-value">
+                Bulk custom field value
+              </label>
+              <input
+                id="bulk-task-custom-field-checkbox-value"
+                type="checkbox"
+                checked={bulkCustomFieldChecked}
+                onChange={(event) =>
+                  setBulkCustomFieldChecked(event.target.checked)
+                }
+              />
+            </>
+          ) : bulkCustomField ? (
+            <>
+              <label htmlFor="bulk-task-custom-field-value">
+                Bulk custom field value
+              </label>
+              <input
+                id="bulk-task-custom-field-value"
+                type={
+                  bulkCustomField.type === 'number'
+                    ? 'number'
+                    : bulkCustomField.type === 'date'
+                      ? 'date'
+                      : 'text'
+                }
+                value={bulkCustomFieldValue}
+                onChange={(event) => setBulkCustomFieldValue(event.target.value)}
+              />
+            </>
+          ) : null}
+
+          <button
+            type="button"
+            disabled={
+              selectedVisibleTaskIds.length === 0 ||
+              bulkCustomField === null ||
+              ((bulkCustomField.type === 'number' ||
+                bulkCustomField.type === 'date' ||
+                bulkCustomField.type === 'select') &&
+                bulkCustomFieldValue === '')
+            }
+            onClick={() => {
+              if (!bulkCustomField) {
+                return
+              }
+
+              const value: CustomFieldValue =
+                bulkCustomField.type === 'checkbox'
+                  ? bulkCustomFieldChecked
+                  : bulkCustomField.type === 'number'
+                    ? Number(bulkCustomFieldValue)
+                    : bulkCustomFieldValue
+
+              runBulkAction(() =>
+                onChangeTasksCustomFieldValue(
+                  selectedVisibleTaskIds,
+                  bulkCustomField.id,
+                  value,
+                ),
+              )
+            }}
+          >
+            Apply bulk custom field
+          </button>
+          <button
+            type="button"
+            disabled={
+              selectedVisibleTaskIds.length === 0 || bulkCustomField === null
+            }
+            onClick={() => {
+              if (!bulkCustomField) {
+                return
+              }
+
+              runBulkAction(() =>
+                onChangeTasksCustomFieldValue(
+                  selectedVisibleTaskIds,
+                  bulkCustomField.id,
+                  null,
+                ),
+              )
+            }}
+          >
+            Clear bulk custom field
           </button>
         </>
       ) : null}

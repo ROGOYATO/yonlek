@@ -239,6 +239,7 @@ export type WorkspaceBaseAction =
   | { type: 'task/listChangedBulk'; taskIds: string[]; listId: string | null }
   | { type: 'task/moved'; taskId: string; direction: MoveDirection }
   | { type: 'task/customFieldValueChanged'; taskId: string; fieldId: string; value: CustomFieldValue | null }
+  | { type: 'task/customFieldValueChangedBulk'; taskIds: string[]; fieldId: string; value: CustomFieldValue | null }
   | { type: 'task/assigneeAdded'; taskId: string; personId: string }
   | { type: 'task/assigneeRemoved'; taskId: string; personId: string }
   | { type: 'task/assigneeChangedBulk'; taskIds: string[]; personId: string; assigned: boolean }
@@ -1959,6 +1960,50 @@ export function workspaceReducer(
             next.customFieldValues = customFieldValues
           }
 
+          return next
+        }),
+      }
+    }
+
+    case 'task/customFieldValueChangedBulk': {
+      const requested = new Set(action.taskIds)
+      const field = (state.customFields ?? []).find(
+        (candidate) => candidate.id === action.fieldId,
+      )
+
+      if (!field) {
+        throw new Error('Cannot set a missing custom field')
+      }
+
+
+      const normalizedValue =
+        action.value === null
+          ? null
+          : normalizeCustomFieldValueForDefinition(field, action.value)
+
+      return {
+        ...state,
+        tasks: state.tasks.map((task) => {
+          if (!requested.has(task.id)) {
+            return task
+          }
+
+          const customFieldValues = {
+            ...task.customFieldValues,
+          }
+
+          if (normalizedValue === null) {
+            delete customFieldValues[action.fieldId]
+          } else {
+            customFieldValues[action.fieldId] = normalizedValue
+          }
+
+          const next = { ...task }
+          if (Object.keys(customFieldValues).length === 0) {
+            delete next.customFieldValues
+          } else {
+            next.customFieldValues = customFieldValues
+          }
           return next
         }),
       }

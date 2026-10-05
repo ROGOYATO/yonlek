@@ -3301,3 +3301,13 @@ Storage remains version 1. Bulk date operations extend the existing Task start/d
 - 385: visible-selection browser controls for bulk Tag add/remove and Person assign/unassign.
 
 Storage remains version 1. Bulk Tag/Person operations extend the existing single-Task reference model and do not add a second assignment representation or subtree propagation.
+
+## TDD 386-390 - Bulk Custom Field values
+
+- 386: bulk Text and Number set/clear reducer behavior.
+- 387: bulk Checkbox and Date typed-value behavior.
+- 388: Select option compatibility plus existing missing-field, Formula, and type-migration validation.
+- 389: one-dispatch WorkspaceCommands boundary for bulk Custom Field changes.
+- 390: visible-selection browser controls with a type-aware editable Custom Field value editor.
+
+Storage remains version 1. Bulk Custom Field writes extend the existing `customFieldValues` map and normalization boundary; they do not introduce a second value representation.

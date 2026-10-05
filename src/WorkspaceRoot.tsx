@@ -175,6 +175,9 @@ export function WorkspaceRoot({
       onChangeTaskCustomFieldValue={(taskId, fieldId, value) => {
         guardedCommands.changeTaskCustomFieldValue(taskId, fieldId, value)
       }}
+      onChangeTasksCustomFieldValue={(taskIds, fieldId, value) => {
+        guardedCommands.changeTasksCustomFieldValue(taskIds, fieldId, value)
+      }}
       onCreatePerson={(name) => {
         guardedCommands.addPerson(name)
       }}

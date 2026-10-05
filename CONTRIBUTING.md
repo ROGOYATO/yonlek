@@ -1473,3 +1473,7 @@ Bulk start/due changes must remain one-dispatch Workspace commands over the expl
 ## Bulk Tag and Person invariant - TDD 381-385
 
 Bulk Tag and Person operations target only the explicitly selected Task IDs and use one Workspace dispatch per operation. Repeated caller IDs must not duplicate Task references. Adding or assigning requires the referenced Tag/Person to still exist; removal/unassignment is idempotent so stale/deleted references can be cleaned safely. Do not expand bulk selection into Task subtrees.
+
+## Bulk Custom Field invariant - TDD 386-390
+
+Bulk Custom Field changes target only explicitly selected Task IDs and use one Workspace dispatch per operation. Reuse `normalizeCustomFieldValueForDefinition`; do not maintain a second bulk validation path. Text, Number, Checkbox, Date, and Select values must obey the same normalization and option/type checks as single-Task edits. Formula values remain derived/read-only. Custom Field type migration continues to clear incompatible Task values before any later bulk write is accepted.

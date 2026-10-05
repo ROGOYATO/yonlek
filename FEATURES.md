@@ -569,3 +569,12 @@ persisted. Storage version remains 1.
 - Repeated caller Task IDs are deduplicated before assignment semantics are applied.
 - Assigning a deleted or missing Tag/Person is rejected before Task mutation; removing an already-deleted reference remains idempotent.
 - Each bulk Tag or Person command crosses the Workspace store boundary with exactly one dispatch.
+
+## Bulk Custom Field values - TDD 386-390: Bulk Custom Field values
+
+- Selected active Tasks can set or clear one editable Custom Field value in a single bulk operation.
+- Text, Number, Checkbox, Date, and Select fields reuse the existing Custom Field normalization and validation rules.
+- Select values must reference an option that exists on the selected field; Date values retain exact `YYYY-MM-DD` validation.
+- Formula fields remain read-only and are excluded from the bulk value editor.
+- Type migration keeps its existing behavior: changing a field type clears incompatible Task values, and later bulk writes must match the new type.
+- Repeated caller Task IDs are deduplicated by the reducer action boundary, and each bulk command uses one Workspace dispatch.

@@ -729,3 +729,7 @@ YÃ¶nlek supports atomic bulk start-date and due-date changes for selected acti
 ### TDD 381-385 bulk Tags and People
 
 YÃ¶nlek supports bulk Tag assignment/removal and bulk Person assignment/removal for the current visible Task selection. The reducer deduplicates repeated Task IDs, rejects assignment to missing Tag/Person references, and keeps removal idempotent after a reference has already been deleted. Each bulk operation uses one persisted Workspace dispatch.
+
+### TDD 386-390 bulk Custom Field values
+
+YÃ¶nlek supports bulk set/clear for Text, Number, Checkbox, Date, and Select Custom Fields on the current visible Task selection. Bulk writes reuse the same domain normalization as single-Task edits, reject missing fields, invalid Select options, and type-incompatible values before Task mutation, and keep Formula fields read-only. Each bulk value change uses one persisted Workspace dispatch.

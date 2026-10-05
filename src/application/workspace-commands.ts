@@ -122,6 +122,7 @@ export interface WorkspaceCommands {
   renameCustomFieldOption(fieldId: string, optionId: string, name: string): void
   deleteCustomFieldOption(fieldId: string, optionId: string): void
   changeTaskCustomFieldValue(taskId: string, fieldId: string, value: CustomFieldValue | null): void
+  changeTasksCustomFieldValue(taskIds: string[], fieldId: string, value: CustomFieldValue | null): void
   addPerson(name: string): ReturnType<typeof createPerson>
   renamePerson(personId: string, name: string): void
   deletePerson(personId: string): void
@@ -516,6 +517,15 @@ export function createWorkspaceCommands(
       store.dispatch({
         type: 'task/customFieldValueChanged',
         taskId,
+        fieldId,
+        value,
+      })
+    },
+
+    changeTasksCustomFieldValue(taskIds, fieldId, value) {
+      store.dispatch({
+        type: 'task/customFieldValueChangedBulk',
+        taskIds: [...taskIds],
         fieldId,
         value,
       })
