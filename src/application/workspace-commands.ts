@@ -5,6 +5,7 @@ import {
   type AutomationTrigger,
 } from '../domain/automation'
 import { createChecklistItem } from '../domain/checklist'
+import { createTaskGanttScheduleChange } from '../domain/task-gantt'
 import { createGoal, type GoalTargetType } from '../domain/goal'
 import {
   createKnowledgeDocument,
@@ -190,6 +191,7 @@ export interface WorkspaceCommands {
   changeTasksStartDate(taskIds: string[], startDate: string | null): void
   changeTaskDueDate(taskId: string, dueDate: string | null): void
   changeTasksDueDate(taskIds: string[], dueDate: string | null): void
+  changeTaskGanttSchedule(taskId: string, startDate: string, dueDate: string): void
   changeTaskDescription(taskId: string, description: string | null): void
   changeTaskProject(taskId: string, projectId: string): void
   changeTasksProject(taskIds: string[], projectId: string): void
@@ -1370,6 +1372,44 @@ export function createWorkspaceCommands(
         },
         runtime.now(),
       )
+    },
+
+    changeTaskGanttSchedule(taskId, startDate, dueDate) {
+      const task = store.getState().tasks.find(
+        (candidate) => candidate.id === taskId,
+      )
+
+      if (!task) {
+        throw new Error('Cannot schedule a missing task')
+      }
+
+      const schedule = createTaskGanttScheduleChange(
+        task,
+        startDate,
+        dueDate,
+      )
+      const occurredAt = runtime.now()
+      const movesForwardPastCurrentDue =
+        task.dueDate !== undefined && schedule.startDate > task.dueDate
+
+      const startAction = {
+        type: 'task/startDateChanged' as const,
+        taskId,
+        startDate: schedule.startDate,
+      }
+      const dueAction = {
+        type: 'task/dueDateChanged' as const,
+        taskId,
+        dueDate: schedule.dueDate,
+      }
+
+      if (movesForwardPastCurrentDue) {
+        dispatchTracked(dueAction, occurredAt)
+        dispatchTracked(startAction, occurredAt)
+      } else {
+        dispatchTracked(startAction, occurredAt)
+        dispatchTracked(dueAction, occurredAt)
+      }
     },
 
     changeTaskDescription(taskId, description) {

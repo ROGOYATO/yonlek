@@ -145,6 +145,7 @@ export interface AppProps {
   onChangeTasksStartDate?: (taskIds: string[], startDate: string | null) => void
   onChangeTaskDueDate?: (taskId: string, dueDate: string | null) => void
   onChangeTasksDueDate?: (taskIds: string[], dueDate: string | null) => void
+  onChangeTaskGanttSchedule?: (taskId: string, startDate: string, dueDate: string) => void
   onChangeTaskDescription?: (taskId: string, description: string | null) => void
   onChangeTaskProject?: (taskId: string, projectId: string) => void
   onChangeTasksProject?: (taskIds: string[], projectId: string) => void
@@ -242,6 +243,7 @@ export function App({
   onChangeTasksStartDate,
   onChangeTaskDueDate,
   onChangeTasksDueDate,
+  onChangeTaskGanttSchedule,
   onChangeTaskDescription,
   onChangeTaskProject,
   onChangeTasksProject,
@@ -307,6 +309,9 @@ export function App({
   const [bulkCustomFieldChecked, setBulkCustomFieldChecked] = useState(false)
   const [bulkProjectId, setBulkProjectId] = useState('')
   const [bulkListId, setBulkListId] = useState('')
+  const [ganttScheduleDrafts, setGanttScheduleDrafts] = useState<
+    Record<string, { startDate: string; dueDate: string }>
+  >({})
   const [customFieldFilterFieldId, setCustomFieldFilterFieldId] = useState(
     initialViewPreferences.customFieldFilter?.fieldId ?? '',
   )
@@ -676,6 +681,23 @@ export function App({
       action()
       setSelectedTaskIds([])
       setBulkDeletePending(false)
+      setError(null)
+    } catch (caught) {
+      setError(errorMessage(caught))
+    }
+  }
+
+  function runGanttScheduleAction(
+    taskId: string,
+    startDate: string,
+    dueDate: string,
+  ) {
+    if (!onChangeTaskGanttSchedule) {
+      return
+    }
+
+    try {
+      onChangeTaskGanttSchedule(taskId, startDate, dueDate)
       setError(null)
     } catch (caught) {
       setError(errorMessage(caught))
@@ -2883,23 +2905,102 @@ export function App({
                       className="task-gantt-summary"
                       aria-label={`Task Gantt for ${project.name}`}
                     >
-                      {ganttItems.map((item) => (
-                        <li
-                          key={item.task.id}
-                          aria-label={
-                            item.isScheduled
-                              ? `${item.startDate} to ${item.dueDate} Gantt item ${item.task.title}`
-                              : `Unscheduled Gantt item ${item.task.title}`
-                          }
-                        >
-                          <span>{item.task.title}</span>
-                          {item.isScheduled ? (
-                            <span>{item.startDate} to {item.dueDate}</span>
-                          ) : (
-                            <span>Unscheduled</span>
-                          )}
-                        </li>
-                      ))}
+                      {ganttItems.map((item) => {
+                        const draft = ganttScheduleDrafts[item.task.id] ?? {
+                          startDate: item.startDate ?? '',
+                          dueDate: item.dueDate ?? '',
+                        }
+
+                        return (
+                          <li
+                            key={item.task.id}
+                            draggable={onChangeTaskGanttSchedule !== undefined}
+                            onDragStart={(event) =>
+                              event.dataTransfer.setData('text/plain', item.task.id)
+                            }
+                            aria-label={
+                              item.isScheduled
+                                ? `${item.startDate} to ${item.dueDate} Gantt item ${item.task.title}`
+                                : `Unscheduled Gantt item ${item.task.title}`
+                            }
+                          >
+                            <span>{item.task.title}</span>
+                            {item.isScheduled ? (
+                              <span>{item.startDate} to {item.dueDate}</span>
+                            ) : (
+                              <span>Unscheduled</span>
+                            )}
+                            {onChangeTaskGanttSchedule ? (
+                              <span>
+                                <label>
+                                  Gantt start for {item.task.title}
+                                  <input
+                                    type="date"
+                                    value={draft.startDate}
+                                    onChange={(event) =>
+                                      setGanttScheduleDrafts((current) => ({
+                                        ...current,
+                                        [item.task.id]: {
+                                          ...draft,
+                                          startDate: event.target.value,
+                                        },
+                                      }))
+                                    }
+                                  />
+                                </label>
+                                <label>
+                                  Gantt due for {item.task.title}
+                                  <input
+                                    type="date"
+                                    value={draft.dueDate}
+                                    onChange={(event) =>
+                                      setGanttScheduleDrafts((current) => ({
+                                        ...current,
+                                        [item.task.id]: {
+                                          ...draft,
+                                          dueDate: event.target.value,
+                                        },
+                                      }))
+                                    }
+                                  />
+                                </label>
+                                <span
+                                  aria-label={`Drop Gantt schedule for ${item.task.title}`}
+                                  onDragOver={(event) => event.preventDefault()}
+                                  onDrop={(event) => {
+                                    event.preventDefault()
+                                    if (
+                                      event.dataTransfer.getData('text/plain') !==
+                                      item.task.id
+                                    ) {
+                                      return
+                                    }
+                                    runGanttScheduleAction(
+                                      item.task.id,
+                                      draft.startDate,
+                                      draft.dueDate,
+                                    )
+                                  }}
+                                >
+                                  Drop schedule here
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    runGanttScheduleAction(
+                                      item.task.id,
+                                      draft.startDate,
+                                      draft.dueDate,
+                                    )
+                                  }
+                                >
+                                  Apply Gantt schedule for {item.task.title}
+                                </button>
+                              </span>
+                            ) : null}
+                          </li>
+                        )
+                      })}
                     </ol>
                   ) : null}
                   {taskViewMode === 'timeline' ? (

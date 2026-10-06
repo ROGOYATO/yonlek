@@ -108,7 +108,7 @@ describe('BrowserApp Custom Field filtering and sorting', () => {
     const { workspace, team, score, phase } = buildWorkspace()
     saveWorkspace(storage, workspace)
 
-    const firstRender = render(
+    render(
       <BrowserApp
         storage={storage}
         runtime={{
@@ -155,7 +155,21 @@ describe('BrowserApp Custom Field filtering and sorting', () => {
     expect(persisted.customFieldSortFieldId).toBe(score.id)
     expect(loadWorkspace(storage)).toEqual(workspace)
 
-    firstRender.unmount()
+  })
+
+  it('restores persisted Custom Field filter and sort state after reload', () => {
+    const storage = new MemoryStore()
+    const { workspace, score, phase } = buildWorkspace()
+    saveWorkspace(storage, workspace)
+    saveViewPreferences(storage, {
+      ...createDefaultViewPreferences(),
+      customFieldFilter: {
+        fieldId: phase.id,
+        fieldType: 'select',
+        value: 'option-review',
+      },
+      customFieldSortFieldId: score.id,
+    })
 
     render(
       <BrowserApp
