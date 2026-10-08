@@ -1,4 +1,5 @@
 import { setTaskDueDate, setTaskStartDate, type Task } from './task'
+import type { TaskRelationship } from './task-relationship'
 
 export interface TaskGanttItem {
   task: Task
@@ -14,6 +15,47 @@ export function createTaskGanttItems(tasks: Task[]): TaskGanttItem[] {
     dueDate: task.dueDate ?? null,
     isScheduled: task.startDate !== undefined && task.dueDate !== undefined,
   }))
+}
+
+export interface TaskGanttDependencyEdge {
+  relationshipId: string
+  sourceTaskId: string
+  targetTaskId: string
+  sourceTitle: string
+  targetTitle: string
+  directionLabel: string
+}
+
+export function createTaskGanttDependencyEdges(
+  tasks: readonly Task[],
+  relationships: readonly TaskRelationship[],
+): TaskGanttDependencyEdge[] {
+  const taskById = new Map(tasks.map((task) => [task.id, task]))
+  const edges: TaskGanttDependencyEdge[] = []
+
+  for (const relationship of relationships) {
+    if (relationship.type !== 'blocks') {
+      continue
+    }
+
+    const sourceTask = taskById.get(relationship.sourceTaskId)
+    const targetTask = taskById.get(relationship.targetTaskId)
+
+    if (!sourceTask || !targetTask) {
+      continue
+    }
+
+    edges.push({
+      relationshipId: relationship.id,
+      sourceTaskId: relationship.sourceTaskId,
+      targetTaskId: relationship.targetTaskId,
+      sourceTitle: sourceTask.title,
+      targetTitle: targetTask.title,
+      directionLabel: `${sourceTask.title} blocks ${targetTask.title}`,
+    })
+  }
+
+  return edges
 }
 
 export interface TaskGanttScheduleChange {

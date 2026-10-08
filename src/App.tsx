@@ -2,7 +2,10 @@ import { useState, type FormEvent } from 'react'
 
 import { createTaskBoardColumns } from './domain/task-board'
 import { createTaskCalendarSections } from './domain/task-calendar'
-import { createTaskGanttItems } from './domain/task-gantt'
+import {
+  createTaskGanttDependencyEdges,
+  createTaskGanttItems,
+} from './domain/task-gantt'
 import { createTaskTableRows } from './domain/task-table'
 import { createTaskTimelineItems } from './domain/task-timeline'
 import { groupTasks, type TaskGroup } from './domain/task-group'
@@ -2477,6 +2480,10 @@ export function App({
           const tableRows = createTaskTableRows(tasks, projectLists)
           const timelineItems = createTaskTimelineItems(tasks)
           const ganttItems = createTaskGanttItems(tasks)
+          const ganttDependencyEdges = createTaskGanttDependencyEdges(
+            tasks,
+            relationships,
+          )
           const taskEntries =
             taskViewMode === 'board'
               ? boardColumns.flatMap((column) => [
@@ -3001,6 +3008,23 @@ export function App({
                           </li>
                         )
                       })}
+                    </ol>
+                  ) : null}
+                  {taskViewMode === 'gantt' &&
+                  ganttDependencyEdges.length > 0 ? (
+                    <ol
+                      className="task-gantt-dependency-lines"
+                      aria-label={`Gantt dependencies for ${project.name}`}
+                    >
+                      {ganttDependencyEdges.map((edge) => (
+                        <li
+                          key={edge.relationshipId}
+                          className="task-gantt-dependency-line"
+                          aria-label={`Gantt dependency ${edge.directionLabel}`}
+                        >
+                          {edge.directionLabel}
+                        </li>
+                      ))}
                     </ol>
                   ) : null}
                   {taskViewMode === 'timeline' ? (
