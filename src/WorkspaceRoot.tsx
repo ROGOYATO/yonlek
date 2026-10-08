@@ -384,6 +384,12 @@ export function WorkspaceRoot({
       onChangeTasksDueDate={(taskIds, dueDate) => {
         guardedCommands.changeTasksDueDate(taskIds, dueDate)
       }}
+      onChangeTaskMilestone={(taskId, isMilestone) => {
+        guardedCommands.changeTaskMilestone(taskId, isMilestone)
+      }}
+      onCaptureTaskGanttBaseline={(taskId) => {
+        guardedCommands.captureTaskGanttBaseline(taskId)
+      }}
       onChangeTaskGanttSchedule={(taskId, startDate, dueDate) => {
         guardedCommands.changeTaskGanttSchedule(taskId, startDate, dueDate)
       }}

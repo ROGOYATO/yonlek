@@ -722,6 +722,15 @@ function isValidTask(value: unknown): boolean {
       value.priority !== 'high') ||
     !isIsoInstant(value.createdAt) ||
     (value.archivedAt !== undefined && !isIsoInstant(value.archivedAt)) ||
+    (value.isMilestone !== undefined && typeof value.isMilestone !== 'boolean') ||
+    (value.ganttBaseline !== undefined &&
+      (!isRecord(value.ganttBaseline) ||
+        typeof value.ganttBaseline.startDate !== 'string' ||
+        typeof value.ganttBaseline.dueDate !== 'string' ||
+        !isValidTaskActivityDate(value.ganttBaseline.startDate) ||
+        !isValidTaskActivityDate(value.ganttBaseline.dueDate) ||
+        value.ganttBaseline.startDate > value.ganttBaseline.dueDate ||
+        !isIsoInstant(value.ganttBaseline.capturedAt))) ||
     (value.description !== undefined &&
       typeof value.description !== 'string') ||
     (value.estimateMinutes !== undefined && !isValidTaskTimeEstimate(value.estimateMinutes)) ||

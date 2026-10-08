@@ -17,6 +17,17 @@ export function createTaskGanttItems(tasks: Task[]): TaskGanttItem[] {
   }))
 }
 
+export type TaskGanttBaselineStatus = 'none' | 'unchanged' | 'changed' | 'unscheduled'
+
+export function createTaskGanttBaselineComparison(task: Task): TaskGanttBaselineStatus {
+  const baseline = task.ganttBaseline
+  if (!baseline) return 'none'
+  if (task.startDate === undefined || task.dueDate === undefined) return 'unscheduled'
+  return task.startDate === baseline.startDate && task.dueDate === baseline.dueDate
+    ? 'unchanged'
+    : 'changed'
+}
+
 export interface TaskGanttDependencyEdge {
   relationshipId: string
   sourceTaskId: string

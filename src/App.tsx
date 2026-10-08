@@ -5,6 +5,7 @@ import { createTaskCalendarSections } from './domain/task-calendar'
 import {
   createTaskGanttDependencyEdges,
   createTaskGanttItems,
+  createTaskGanttBaselineComparison,
 } from './domain/task-gantt'
 import { createTaskTableRows } from './domain/task-table'
 import { createTaskTimelineItems } from './domain/task-timeline'
@@ -148,6 +149,8 @@ export interface AppProps {
   onChangeTasksStartDate?: (taskIds: string[], startDate: string | null) => void
   onChangeTaskDueDate?: (taskId: string, dueDate: string | null) => void
   onChangeTasksDueDate?: (taskIds: string[], dueDate: string | null) => void
+  onChangeTaskMilestone?: (taskId: string, isMilestone: boolean) => void
+  onCaptureTaskGanttBaseline?: (taskId: string) => void
   onChangeTaskGanttSchedule?: (taskId: string, startDate: string, dueDate: string) => void
   onChangeTaskDescription?: (taskId: string, description: string | null) => void
   onChangeTaskProject?: (taskId: string, projectId: string) => void
@@ -247,6 +250,8 @@ export function App({
   onChangeTaskDueDate,
   onChangeTasksDueDate,
   onChangeTaskGanttSchedule,
+  onChangeTaskMilestone,
+  onCaptureTaskGanttBaseline,
   onChangeTaskDescription,
   onChangeTaskProject,
   onChangeTasksProject,
@@ -2932,6 +2937,27 @@ export function App({
                             }
                           >
                             <span>{item.task.title}</span>
+                            {item.task.isMilestone ? <span>Milestone</span> : null}
+                            {item.task.ganttBaseline ? (
+                              <span>Baseline {createTaskGanttBaselineComparison(item.task)}</span>
+                            ) : null}
+                            {onChangeTaskMilestone ? (
+                              <button
+                                type="button"
+                                onClick={() => onChangeTaskMilestone(item.task.id, !item.task.isMilestone)}
+                              >
+                                {item.task.isMilestone ? `Unmark milestone ${item.task.title}` : `Mark milestone ${item.task.title}`}
+                              </button>
+                            ) : null}
+                            {onCaptureTaskGanttBaseline ? (
+                              <button
+                                type="button"
+                                disabled={!item.isScheduled}
+                                onClick={() => onCaptureTaskGanttBaseline(item.task.id)}
+                              >
+                                Capture Gantt baseline for {item.task.title}
+                              </button>
+                            ) : null}
                             {item.isScheduled ? (
                               <span>{item.startDate} to {item.dueDate}</span>
                             ) : (

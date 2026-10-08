@@ -89,6 +89,8 @@ import {
   startTaskTimer,
   stopTaskTimer,
   setTaskStartDate,
+  setTaskMilestone,
+  captureTaskGanttBaseline,
   type Task,
   type TaskPriority,
   type TaskRecurrenceRule,
@@ -228,6 +230,8 @@ export type WorkspaceBaseAction =
   | { type: 'task/titleChanged'; taskId: string; title: string }
   | { type: 'task/priorityChanged'; taskId: string; priority: TaskPriority }
   | { type: 'task/priorityChangedBulk'; taskIds: string[]; priority: TaskPriority }
+  | { type: 'task/ganttBaselineCaptured'; taskId: string; capturedAt: string }
+  | { type: 'task/milestoneChanged'; taskId: string; isMilestone: boolean }
   | { type: 'task/startDateChanged'; taskId: string; startDate: string | null }
   | { type: 'task/startDateChangedBulk'; taskIds: string[]; startDate: string | null }
   | { type: 'task/dueDateChanged'; taskId: string; dueDate: string | null }
@@ -1663,6 +1667,26 @@ export function workspaceReducer(
         ),
       }
     }
+
+    case 'task/ganttBaselineCaptured':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? captureTaskGanttBaseline(task, action.capturedAt)
+            : task,
+        ),
+      }
+
+    case 'task/milestoneChanged':
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === action.taskId
+            ? setTaskMilestone(task, action.isMilestone)
+            : task,
+        ),
+      }
 
     case 'task/startDateChanged':
       return {

@@ -34,6 +34,8 @@ export interface Task {
   archivedAt?: string
   startDate?: string
   dueDate?: string
+  isMilestone?: boolean
+  ganttBaseline?: { startDate: string; dueDate: string; capturedAt: string }
   recurrence?: TaskRecurrenceRule
   estimateMinutes?: number
   timeEntries?: TaskTimeEntry[]
@@ -46,6 +48,33 @@ export interface Task {
   tagIds?: string[]
   assigneeIds?: string[]
   customFieldValues?: Record<string, CustomFieldValue>
+}
+
+export function setTaskMilestone(task: Task, isMilestone: boolean): Task {
+  if (typeof isMilestone !== 'boolean') {
+    throw new Error('Task milestone flag must be boolean')
+  }
+  const next = { ...task }
+  if (isMilestone) {
+    next.isMilestone = true
+  } else {
+    delete next.isMilestone
+  }
+  return next
+}
+
+export function captureTaskGanttBaseline(task: Task, capturedAt: string): Task {
+  if (task.startDate === undefined || task.dueDate === undefined) {
+    throw new Error('Cannot capture baseline without both Task dates')
+  }
+  return {
+    ...task,
+    ganttBaseline: {
+      startDate: task.startDate,
+      dueDate: task.dueDate,
+      capturedAt,
+    },
+  }
 }
 
 export interface CreateTaskInput {

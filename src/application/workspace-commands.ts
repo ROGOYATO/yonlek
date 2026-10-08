@@ -191,6 +191,8 @@ export interface WorkspaceCommands {
   changeTasksStartDate(taskIds: string[], startDate: string | null): void
   changeTaskDueDate(taskId: string, dueDate: string | null): void
   changeTasksDueDate(taskIds: string[], dueDate: string | null): void
+  captureTaskGanttBaseline(taskId: string): void
+  changeTaskMilestone(taskId: string, isMilestone: boolean): void
   changeTaskGanttSchedule(taskId: string, startDate: string, dueDate: string): void
   changeTaskDescription(taskId: string, description: string | null): void
   changeTaskProject(taskId: string, projectId: string): void
@@ -1372,6 +1374,28 @@ export function createWorkspaceCommands(
         },
         runtime.now(),
       )
+    },
+
+    captureTaskGanttBaseline(taskId) {
+      const task = store.getState().tasks.find((candidate) => candidate.id === taskId)
+      if (!task) {
+        throw new Error('Cannot capture baseline for a missing task')
+      }
+      if (task.startDate === undefined || task.dueDate === undefined) {
+        throw new Error('Cannot capture baseline without both Task dates')
+      }
+      store.dispatch({
+        type: 'task/ganttBaselineCaptured',
+        taskId,
+        capturedAt: runtime.now(),
+      })
+    },
+
+    changeTaskMilestone(taskId, isMilestone) {
+      if (!store.getState().tasks.some((task) => task.id === taskId)) {
+        throw new Error('Cannot update milestone on a missing task')
+      }
+      store.dispatch({ type: 'task/milestoneChanged', taskId, isMilestone })
     },
 
     changeTaskGanttSchedule(taskId, startDate, dueDate) {
